@@ -6,6 +6,11 @@ const clc = require("cli-color");
 const response_handler = require("./src/helpers/response_handler");
 const { request_logger, error_logger } = require("./src/middlewares/logger");
 const auth_routes = require("./src/modules/auth/auth.routes");
+const {
+  swaggerUi,
+  swagger_spec,
+  swagger_options,
+} = require("./src/swagger/swagger");
 
 //! Create an instance of the Express application
 const app = express();
@@ -33,6 +38,13 @@ app.get(BASE_PATH, (req, res) => {
     "🔐 Access point secured! Only those with the key may proceed. Do you dare to unlock the secrets within? 🚀"
   );
 });
+
+//* Swagger setup
+app.use(
+  `${BASE_PATH}/api-docs`,
+  swaggerUi.serve,
+  swaggerUi.setup(swagger_spec, swagger_options)
+);
 
 //* Configure routes for user API
 app.use(`${BASE_PATH}/auth`, auth_routes);
