@@ -5,6 +5,7 @@ const volleyball = require("volleyball");
 const clc = require("cli-color");
 const response_handler = require("./src/helpers/response_handler");
 const { request_logger, error_logger } = require("./src/middlewares/logger");
+const auth_routes = require("./src/modules/auth/auth.routes");
 
 //! Create an instance of the Express application
 const app = express();
@@ -32,6 +33,9 @@ app.get(BASE_PATH, (req, res) => {
     "🔐 Access point secured! Only those with the key may proceed. Do you dare to unlock the secrets within? 🚀"
   );
 });
+
+//* Configure routes for user API
+app.use(`${BASE_PATH}/auth`, auth_routes);
 
 //! Apply error logging middleware
 app.use(error_logger);
