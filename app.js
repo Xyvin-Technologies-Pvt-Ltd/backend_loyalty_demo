@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const volleyball = require("volleyball");
 const clc = require("cli-color");
+const response_handler = require("./src/helpers/response_handler");
 
 //! Create an instance of the Express application
 const app = express();
@@ -18,6 +19,15 @@ app.use(express.json());
 const BASE_PATH = `/api/${API_VERSION}`;
 //* Import database connection module
 require("./src/helpers/connection");
+
+//? Define a route for the API root
+app.get(BASE_PATH, (req, res) => {
+  return response_handler(
+    res,
+    200,
+    "🔐 Access point secured! Only those with the key may proceed. Do you dare to unlock the secrets within? 🚀"
+  );
+});
 
 app.listen(PORT, () => {
   const port_message = clc.redBright(`✓ App is running on port: ${PORT}`);
