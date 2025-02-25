@@ -31,7 +31,6 @@
     "nodemon": "^3.1.9",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "volleyball": "^1.5.1",
     "winston": "^3.17.0"
   }
 }
