@@ -4,6 +4,7 @@ const cors = require("cors");
 const volleyball = require("volleyball");
 const clc = require("cli-color");
 const response_handler = require("./src/helpers/response_handler");
+const { request_logger, error_logger } = require("./src/middlewares/logger");
 
 //! Create an instance of the Express application
 const app = express();
@@ -20,6 +21,9 @@ const BASE_PATH = `/api/${API_VERSION}`;
 //* Import database connection module
 require("./src/helpers/connection");
 
+//! Apply request logging middleware
+app.use(request_logger);
+
 //? Define a route for the API root
 app.get(BASE_PATH, (req, res) => {
   return response_handler(
@@ -28,6 +32,9 @@ app.get(BASE_PATH, (req, res) => {
     "🔐 Access point secured! Only those with the key may proceed. Do you dare to unlock the secrets within? 🚀"
   );
 });
+
+//! Apply error logging middleware
+app.use(error_logger);
 
 app.listen(PORT, () => {
   const port_message = clc.redBright(`✓ App is running on port: ${PORT}`);
