@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const response_handler = require("../helpers/response_handler");
+const Admin = require("../models/admin_model");
 
 const admin_protect = async (req, res, next) => {
   try {
@@ -24,12 +25,12 @@ const admin_protect = async (req, res, next) => {
     req.admin_id = decoded.admin_id;
 
     //? Find the user in the database
-    // const admin = await Admin.findById(req.userId);
-    // if (!admin) {
-    //   return response_handler(res, 401, "User not found.");
-    // }
+    const admin = await Admin.findById(req.userId);
+    if (!admin) {
+      return response_handler(res, 401, "User not found.");
+    }
 
-    // req.admin = admin;
+    req.admin = admin;
     next();
   } catch (error) {
     if (error.name === "JsonWebTokenError") {
