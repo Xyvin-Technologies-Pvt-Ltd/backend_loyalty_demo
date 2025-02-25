@@ -16,6 +16,8 @@ app.use(cors());
 app.use(express.json());
 //* Set the base path for API routes
 const BASE_PATH = `/api/${API_VERSION}`;
+//* Import database connection module
+require("./src/helpers/connection");
 
 app.listen(PORT, () => {
   const port_message = clc.redBright(`✓ App is running on port: ${PORT}`);
