@@ -89,6 +89,7 @@ exports.register = async (req, res) => {
       const jwt_token = generate_token(existing_user._id);
       return response_handler(res, 200, "Login successful!", jwt_token);
     } else {
+      //TODO: add referal logic and newly registered user points, also attach the tier based on the point
       const new_user = await User.create(req.body);
       const jwt_token = generate_token(new_user._id);
       return response_handler(res, 200, "Login successful!", jwt_token);
