@@ -15,6 +15,7 @@ const {
 } = require("./src/swagger/swagger");
 const auth_routes = require("./src/modules/auth/auth.routes");
 const log_routes = require("./src/modules/log/log.routes");
+const tier_routes = require("./src/modules/tier/tier.routes");
 
 //! Create an instance of the Express application
 const app = express();
@@ -61,6 +62,7 @@ app.use(
 //* Configure routes for user API
 app.use(`${BASE_PATH}/auth`, auth_routes);
 app.use(`${BASE_PATH}/logs`, log_routes);
+app.use(`${BASE_PATH}/tier`, tier_routes);
 
 //! Apply error logging middleware
 app.use(error_logger);
