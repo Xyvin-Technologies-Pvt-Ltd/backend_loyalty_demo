@@ -11,3 +11,10 @@ exports.login = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
 });
+
+exports.register = Joi.object({
+  customer_id: Joi.string().required(),
+  name: Joi.string().required(),
+  email: Joi.string().email().required(),
+  phone: Joi.string().required(),
+});

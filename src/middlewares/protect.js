@@ -1,8 +1,9 @@
 const jwt = require("jsonwebtoken");
 const response_handler = require("../helpers/response_handler");
 const Admin = require("../models/admin_model");
+const User = require("../models/user_model");
 
-const admin_protect = async (req, res, next) => {
+const protect = async (req, res, next) => {
   try {
     //? Check for API key
     const apiKey = req.headers["api-key"];
@@ -22,12 +23,17 @@ const admin_protect = async (req, res, next) => {
 
     //? Verify JWT token
     const decoded = jwt.verify(jwtToken, process.env.JWT_SECRET);
-    req.admin_id = decoded.admin_id;
+    req.user_id = decoded.user_id;
 
     //? Find the user in the database
-    const admin = await Admin.findById(req.admin_id);
+    const admin = await Admin.findById(req.user_id);
     if (!admin) {
-      return response_handler(res, 401, "User not found.");
+      const user = await User.findById(req.user_id);
+      if (!user) {
+        return response_handler(res, 401, "User not found.");
+      }
+      req.user = user;
+      return next();
     }
 
     req.admin = admin;
@@ -43,4 +49,4 @@ const admin_protect = async (req, res, next) => {
   }
 };
 
-module.exports = admin_protect;
+module.exports = protect;
