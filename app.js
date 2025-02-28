@@ -17,6 +17,7 @@ const auth_routes = require("./src/modules/auth/auth.routes");
 const log_routes = require("./src/modules/log/log.routes");
 const tier_routes = require("./src/modules/tier/tier.routes");
 const point_criteria_routes = require("./src/modules/point_criteria/point_criteria.routes");
+const role_routes = require("./src/modules/role/role.routes");
 
 //! Create an instance of the Express application
 const app = express();
@@ -65,6 +66,7 @@ app.use(`${BASE_PATH}/auth`, auth_routes);
 app.use(`${BASE_PATH}/logs`, log_routes);
 app.use(`${BASE_PATH}/tier`, tier_routes);
 app.use(`${BASE_PATH}/point-criteria`, point_criteria_routes);
+app.use(`${BASE_PATH}/roles`, role_routes);
 
 //! Apply error logging middleware
 app.use(error_logger);

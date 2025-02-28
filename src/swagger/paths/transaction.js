@@ -32,6 +32,12 @@
  *               merchant:
  *                 type: string
  *                 example: "Amazon"
+ *               app:
+ *                 type: string
+ *                 example: "Khedmah"
+ *               provider:
+ *                 type: string
+ *                 example: "Stripe"
  *               status:
  *                 type: string
  *                 example: "pending"

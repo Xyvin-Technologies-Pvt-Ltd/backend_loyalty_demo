@@ -8,6 +8,11 @@ const tier_schema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    app: {
+      type: String,
+      trim: true,
+      enum: ["Khedmah-Mobile", "Khedmah-Merchant"],
+    },
   },
   { timestamps: true }
 );

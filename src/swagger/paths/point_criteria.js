@@ -29,6 +29,9 @@
  *               type:
  *                 type: string
  *                 example: "Referral"
+ *               app:
+ *                 type: string
+ *                 example: "Khedmah"
  *               point:
  *                 type: number
  *                 example: 50
@@ -117,6 +120,9 @@
  *               type:
  *                 type: string
  *                 example: "Loyalty"
+ *               app:
+ *                 type: string
+ *                 example: "Khedmah"
  *               point:
  *                 type: number
  *                 example: 75

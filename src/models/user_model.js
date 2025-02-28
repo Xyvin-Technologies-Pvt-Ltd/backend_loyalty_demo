@@ -11,9 +11,26 @@ const user_schema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Tier",
     },
+    referral_code: {
+      type: String,
+      unique: true,
+    },
+    referred_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    user_referer_count: {
+      type: Number,
+      default: 0,
+    },
     status: {
       type: Boolean,
       default: true,
+    },
+    app: {
+      type: [String],
+      trim: true,
+      enum: ["Khedmah-Mobile", "Khedmah-Merchant"],
     },
   },
   { timestamps: true }

@@ -2,6 +2,9 @@ const response_handler = require("../../helpers/response_handler");
 const Admin = require("../../models/admin_model");
 const User = require("../../models/user_model");
 const { hash_password, compare_passwords } = require("../../utils/bcrypt");
+const {
+  generate_referral_code,
+} = require("../../utils/generate_referral_code");
 const { generate_token } = require("../../utils/generate_token");
 const validator = require("./auth.validator");
 
@@ -84,12 +87,24 @@ exports.register = async (req, res) => {
         { customer_id: req.body.customer_id },
       ],
     });
-
+    let point = 0;
     if (existing_user) {
       const jwt_token = generate_token(existing_user._id);
       return response_handler(res, 200, "Login successful!", jwt_token);
     } else {
       //TODO: add referal logic and newly registered user points, also attach the tier based on the point
+      req.body.referral_code = await generate_referral_code(req.body.name);
+      if (req.body.refer_code) {
+        const refer_user = await User.findOne({
+          referral_code: req.body.refer_code,
+        });
+        if (!refer_user) {
+          return response_handler(res, 400, "Invalid referal code.");
+        }
+        refer_user.user_referer_count += 1;
+        await refer_user.save();
+        req.body.referred_by = refer_user._id;
+      }
       const new_user = await User.create(req.body);
       const jwt_token = generate_token(new_user._id);
       return response_handler(res, 200, "Login successful!", jwt_token);

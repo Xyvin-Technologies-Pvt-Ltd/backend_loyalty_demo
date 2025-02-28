@@ -11,7 +11,7 @@
  *   post:
  *     summary: Create a new tier
  *     description: Creates a new tier with the provided details.
- *     tags: 
+ *     tags:
  *       - Tier
  *     requestBody:
  *       required: true
@@ -26,6 +26,9 @@
  *               points_required:
  *                 type: number
  *                 example: 100
+ *               app:
+ *                 type: string
+ *                 example: "Khedmah"
  *     responses:
  *       201:
  *         description: Tier created successfully
@@ -41,7 +44,7 @@
  *   get:
  *     summary: Get all tiers
  *     description: Retrieves a list of all tiers.
- *     tags: 
+ *     tags:
  *       - Tier
  *     responses:
  *       200:
@@ -56,7 +59,7 @@
  *   get:
  *     summary: Get a tier by ID
  *     description: Retrieves details of a specific tier by its ID.
- *     tags: 
+ *     tags:
  *       - Tier
  *     parameters:
  *       - in: path
@@ -80,7 +83,7 @@
  *   put:
  *     summary: Update a tier
  *     description: Updates an existing tier with new details.
- *     tags: 
+ *     tags:
  *       - Tier
  *     parameters:
  *       - in: path
@@ -99,6 +102,9 @@
  *               name:
  *                 type: string
  *                 example: "Platinum"
+ *               app:
+ *                 type: string
+ *                 example: "Khedmah"
  *               points_required:
  *                 type: number
  *                 example: 150
@@ -122,7 +128,7 @@
  *   delete:
  *     summary: Delete a tier
  *     description: Deletes a tier by its ID.
- *     tags: 
+ *     tags:
  *       - Tier
  *     parameters:
  *       - in: path
