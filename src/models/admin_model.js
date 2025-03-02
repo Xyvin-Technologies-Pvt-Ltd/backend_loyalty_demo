@@ -9,6 +9,10 @@ const admin_schema = new mongoose.Schema(
       default: true,
     },
     password: { type: String, trim: true },
+    role: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Role",
+    },
   },
   { timestamps: true }
 );
