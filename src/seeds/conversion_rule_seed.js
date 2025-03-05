@@ -1,5 +1,5 @@
-const ConversionRule = require('../models/conversion_rule.model');
-const logger = require('../utils/logger');
+const ConversionRule = require('../models/conversion_rule_model');
+const { logger } = require('../middlewares/logger');
 
 /**
  * Seeds default conversion rules if none exist

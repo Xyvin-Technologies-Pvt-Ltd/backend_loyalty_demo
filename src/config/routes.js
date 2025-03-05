@@ -19,6 +19,9 @@ const { sdkAccessKeyRoutes, sdkApiRoutes } = require('../modules/sdk');
 const { auditRoutes } = require('../modules/audit');
 const { themeSettingsRoutes } = require('../modules/theme_settings');
 const { conversionRoutes, conversionRuleRoutes } = require('../modules/conversion');
+const app_type_routes = require('../modules/app_types/app_type.routes');
+const trigger_event_routes = require('../modules/trigger_event/trigger_event.routes');
+const trigger_services_routes = require('../modules/trigger_services/trigger_services.routes');
 
 /**
  * Register all application routes
@@ -55,6 +58,10 @@ function registerRoutes(app, basePath) {
     app.use(`${basePath}/roles`, role_routes);
     app.use(`${basePath}/redemption-rules`, redemption_rules_routes);
     app.use(`${basePath}/points-expiration`, points_expiration_routes);
+    app.use(`${basePath}/app-types`, app_type_routes);
+    app.use(`${basePath}/trigger-events`, trigger_event_routes);
+    app.use(`${basePath}/trigger-services`, trigger_services_routes);
+
 
     // SDK routes
     app.use(`${basePath}/sdk/access-keys`, sdkAccessKeyRoutes);

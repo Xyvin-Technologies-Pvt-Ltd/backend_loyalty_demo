@@ -1,4 +1,4 @@
-const ConversionRule = require('../../../models/conversion_rule.model');
+const ConversionRule = require('../../../models/conversion_rule_model');
 const response_handler = require('../../../helpers/response_handler');
 const { logger } = require('../../../middlewares/logger');
 const { AuditService } = require('../../audit');

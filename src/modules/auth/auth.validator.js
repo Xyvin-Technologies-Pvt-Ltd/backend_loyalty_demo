@@ -4,6 +4,7 @@ exports.signup = Joi.object({
   name: Joi.string().required(),
   email: Joi.string().email().required(),
   status: Joi.boolean(),
+  role: Joi.string().required(),
   password: Joi.string(),
 });
 

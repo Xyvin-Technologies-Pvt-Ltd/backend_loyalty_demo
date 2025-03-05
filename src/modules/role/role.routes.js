@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const role_controller = require("./role.controller");
-const { protect } = require("../../middlewares/protect");
+const { protect } = require("../../middlewares/auth/protect");
 const { createAuditMiddleware } = require("../audit");
 
 // Create audit middleware for the role module

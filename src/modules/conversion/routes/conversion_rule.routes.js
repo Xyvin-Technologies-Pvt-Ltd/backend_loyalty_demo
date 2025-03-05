@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const conversionRuleController = require('../controllers/conversion_rule.controller');
-const { protect } = require('../../../middlewares/protect');
-const { authorize } = require('../../../middlewares/auth');
+const { protect } = require('../../../middlewares/auth/protect');
+const { authorizePermission } = require('../../../middlewares/auth/auth');
 const { validate } = require('../../../middlewares/validate');
 const {
     createConversionRuleValidator,
@@ -19,7 +19,7 @@ router.use(protect);
 // Get all conversion rules (admin only)
 router.get(
     '/',
-    authorize('MANAGE_CONVERSION_RULES'),
+    authorizePermission('MANAGE_CONVERSION_RULES'),
     conversionAudit.adminAction('view_conversion_rules', {
         description: 'Admin viewed all conversion rules',
         details: req => ({
@@ -41,7 +41,7 @@ router.get(
 // Get conversion rule by ID (admin only)
 router.get(
     '/:id',
-    authorize('MANAGE_CONVERSION_RULES'),
+    authorizePermission('MANAGE_CONVERSION_RULES'),
     conversionAudit.adminAction('view_conversion_rule', {
         targetModel: 'ConversionRule',
         description: 'Admin viewed a conversion rule',
@@ -53,8 +53,8 @@ router.get(
 // Create a new conversion rule (admin only)
 router.post(
     '/',
-    authorize('MANAGE_CONVERSION_RULES'),
-    validate(createConversionRuleValidator),
+    authorizePermission('MANAGE_CONVERSION_RULES'),
+    // validate(createConversionRuleValidator),
     conversionAudit.captureResponse(),
     conversionAudit.dataModification('create_conversion_rule', {
         targetModel: 'ConversionRule',
@@ -73,8 +73,8 @@ router.post(
 // Update a conversion rule (admin only)
 router.put(
     '/:id',
-    authorize('MANAGE_CONVERSION_RULES'),
-    validate(updateConversionRuleValidator),
+    authorizePermission('MANAGE_CONVERSION_RULES'),
+    // validate(updateConversionRuleValidator),
     conversionAudit.captureResponse(),
     conversionAudit.dataModification('update_conversion_rule', {
         targetModel: 'ConversionRule',
@@ -82,7 +82,7 @@ router.put(
         targetId: req => req.params.id,
         details: req => req.body,
         getOriginalData: async req => {
-            const ConversionRule = require('../../../models/conversion_rule.model');
+            const ConversionRule = require('../../../models/conversion_rule_model');
             const rule = await ConversionRule.findById(req.params.id);
             return rule ? rule.toObject() : null;
         },
@@ -99,13 +99,13 @@ router.put(
 // Delete a conversion rule (admin only)
 router.delete(
     '/:id',
-    authorize('MANAGE_CONVERSION_RULES'),
+    authorizePermission('MANAGE_CONVERSION_RULES'),
     conversionAudit.dataModification('delete_conversion_rule', {
         targetModel: 'ConversionRule',
         description: 'Admin deleted a conversion rule',
         targetId: req => req.params.id,
         getOriginalData: async req => {
-            const ConversionRule = require('../../../models/conversion_rule.model');
+            const ConversionRule = require('../../../models/conversion_rule_model');
             const rule = await ConversionRule.findById(req.params.id);
             return rule ? rule.toObject() : null;
         }

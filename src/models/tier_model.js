@@ -13,6 +13,7 @@ const tier_schema = new mongoose.Schema(
       trim: true,
       enum: ["Khedmah-Mobile", "Khedmah-Merchant"],
     },
+    description: { type: String, trim: true },
   },
   { timestamps: true }
 );

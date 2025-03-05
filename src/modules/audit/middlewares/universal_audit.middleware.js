@@ -49,15 +49,32 @@ const getRequestInfo = (req) => {
 };
 
 /**
+ * Get default config for a category
+ * @param {string} category - Audit category
+ * @param {string} property - Config property
+ * @param {*} defaultValue - Default value if not found in config
+ * @returns {*} Config value
+ */
+const getDefaultConfig = (category, property, defaultValue) => {
+    try {
+        return auditConfig?.defaults?.[category]?.[property] ?? defaultValue;
+    } catch (error) {
+        return defaultValue;
+    }
+};
+
+/**
  * Universal audit middleware factory
  * @param {Object} options - Configuration options
  * @returns {Function} Express middleware
  */
 const auditRoute = (options = {}) => {
     // Default options
+    const category = options.category || "api";
+
     const config = {
         // Audit category (required)
-        category: options.category || "api",
+        category,
 
         // Action name (defaults to HTTP method + path)
         action: options.action,
@@ -78,15 +95,18 @@ const auditRoute = (options = {}) => {
         details: options.details,
 
         // Whether to log request body
-        logRequestBody: options.logRequestBody ||
-            auditConfig.defaults[options.category || "api"].logRequestBody,
+        logRequestBody: options.logRequestBody !== undefined ?
+            options.logRequestBody :
+            getDefaultConfig(category, "logRequestBody", false),
 
         // Whether to log response body
-        logResponseBody: options.logResponseBody ||
-            auditConfig.defaults[options.category || "api"].logResponseBody
+        logResponseBody: options.logResponseBody !== undefined ?
+            options.logResponseBody :
+            getDefaultConfig(category, "logResponseBody", false)
     };
 
-    return async (req, res, next) => {
+    // Return a standard Express middleware function (not async)
+    return (req, res, next) => {
         // Generate and attach request ID if not present
         if (!req.requestId) {
             req.requestId = uuidv4();
@@ -95,11 +115,15 @@ const auditRoute = (options = {}) => {
         // Store original data if needed
         let originalData = null;
         if (config.getOriginalData && typeof config.getOriginalData === 'function') {
-            try {
-                originalData = await config.getOriginalData(req);
-            } catch (error) {
-                console.error("Error getting original data for audit:", error);
-            }
+            // Handle async operation with Promise
+            Promise.resolve()
+                .then(() => config.getOriginalData(req))
+                .then(data => {
+                    originalData = data;
+                })
+                .catch(error => {
+                    console.error("Error getting original data for audit:", error);
+                });
         }
 
         // Store the start time to calculate response time
@@ -109,7 +133,7 @@ const auditRoute = (options = {}) => {
         const originalEnd = res.end;
 
         // Override the end method to capture response data
-        res.end = async function (chunk, encoding) {
+        res.end = function (chunk, encoding) {
             // Calculate response time
             const responseTime = Date.now() - startTime;
 
@@ -129,7 +153,7 @@ const auditRoute = (options = {}) => {
             let modifiedData = null;
             if (config.getModifiedData && typeof config.getModifiedData === 'function') {
                 try {
-                    modifiedData = await config.getModifiedData(req, res);
+                    modifiedData = config.getModifiedData(req, res);
                 } catch (error) {
                     console.error("Error getting modified data for audit:", error);
                 }
@@ -159,96 +183,109 @@ const auditRoute = (options = {}) => {
                 details.responseBody = res.locals.responseBody;
             }
 
-            // Create the audit log based on category
-            switch (config.category) {
-                case "authentication":
-                    await AuditService.logAuthentication({
-                        action,
-                        status,
-                        ...userInfo,
-                        ...requestInfo,
-                        description: config.description || `Authentication ${action}`,
-                        details,
-                        sessionId: req.session ? req.session.id : null,
-                        authMethod: config.authMethod || "password",
-                    });
-                    break;
+            // Create the audit log based on category - use Promise to handle async operations
+            const auditPromise = (function () {
+                switch (config.category) {
+                    case "authentication":
+                        return AuditService.logAuthentication({
+                            action,
+                            status,
+                            ...userInfo,
+                            ...requestInfo,
+                            description: config.description || `Authentication ${action}`,
+                            details,
+                            sessionId: req.session ? req.session.id : null,
+                            authMethod: config.authMethod || "password",
+                        });
 
-                case "data_access":
-                    await AuditService.logDataAccess({
-                        action,
-                        status,
-                        ...userInfo,
-                        ...requestInfo,
-                        targetId,
-                        targetModel: config.targetModel,
-                        targetName,
-                        description: config.description || `Data access: ${action}`,
-                        details,
-                    });
-                    break;
+                    case "data_access":
+                        return AuditService.logDataAccess({
+                            action,
+                            status,
+                            ...userInfo,
+                            ...requestInfo,
+                            targetId,
+                            targetModel: config.targetModel,
+                            targetName,
+                            description: config.description || `Data access: ${action}`,
+                            details,
+                        });
 
-                case "admin_action":
-                    await AuditService.logAdminAction({
-                        action,
-                        status,
-                        ...userInfo,
-                        ...requestInfo,
-                        targetId,
-                        targetModel: config.targetModel,
-                        targetName,
-                        description: config.description || `Admin action: ${action}`,
-                        details,
-                    });
-                    break;
+                    case "admin_action":
+                        return AuditService.logAdminAction({
+                            action,
+                            status,
+                            ...userInfo,
+                            ...requestInfo,
+                            targetId,
+                            targetModel: config.targetModel,
+                            targetName,
+                            description: config.description || `Admin action: ${action}`,
+                            details,
+                        });
 
-                case "data_modification":
-                    await AuditService.logDataModification({
-                        action,
-                        status,
-                        ...userInfo,
-                        ...requestInfo,
-                        targetId,
-                        targetModel: config.targetModel,
-                        targetName,
-                        description: config.description || `Data modification: ${action}`,
-                        details,
-                        before: originalData,
-                        after: modifiedData,
-                    });
-                    break;
+                    case "data_modification":
+                        return AuditService.logDataModification({
+                            action,
+                            status,
+                            ...userInfo,
+                            ...requestInfo,
+                            targetId,
+                            targetModel: config.targetModel,
+                            targetName,
+                            description: config.description || `Data modification: ${action}`,
+                            details,
+                            before: originalData,
+                            after: modifiedData,
+                        });
 
-                case "point_transaction":
-                    await AuditService.logPointTransaction({
-                        action,
-                        status,
-                        ...userInfo,
-                        ...requestInfo,
-                        targetId,
-                        targetModel: config.targetModel || "Transaction",
-                        description: config.description || `Point transaction: ${action}`,
-                        details,
-                        points: details.points,
-                        transactionType: details.transactionType,
-                    });
-                    break;
+                    case "point_transaction":
+                        return AuditService.logPointTransaction({
+                            action,
+                            status,
+                            ...userInfo,
+                            ...requestInfo,
+                            targetId,
+                            targetModel: config.targetModel || "Transaction",
+                            description: config.description || `Point transaction: ${action}`,
+                            details,
+                            points: details.points,
+                            transactionType: details.transactionType,
+                        });
 
-                case "api":
-                default:
-                    await AuditService.logApiCall({
-                        action,
-                        status,
-                        ...userInfo,
-                        ...requestInfo,
-                        description: config.description || `API call: ${action}`,
-                        details,
-                        endpoint: requestInfo.endpoint,
-                        method: requestInfo.method,
-                        responseTime,
-                        responseStatus: res.statusCode,
-                    });
-                    break;
-            }
+                    case "sdk_action":
+                        return AuditService.logSdkAction({
+                            action,
+                            status,
+                            ...userInfo,
+                            ...requestInfo,
+                            targetId,
+                            targetModel: config.targetModel,
+                            description: config.description || `SDK action: ${action}`,
+                            details,
+                        });
+
+                    case "api":
+                    default:
+                        return AuditService.logApiCall({
+                            action,
+                            status,
+                            ...userInfo,
+                            ...requestInfo,
+                            description: config.description || `API call: ${action}`,
+                            details,
+                            endpoint: requestInfo.endpoint,
+                            method: requestInfo.method,
+                            responseTime,
+                            responseStatus: res.statusCode,
+                        });
+                }
+            })();
+
+            // Handle the audit logging asynchronously
+            auditPromise.catch(error => {
+                console.error("Error logging audit event:", error);
+            });
 
             // Call the original end method
             originalEnd.apply(res, arguments);
@@ -258,4 +295,4 @@ const auditRoute = (options = {}) => {
     };
 };
 
-module.exports = auditRoute; 
+module.exports = auditRoute;

@@ -1,6 +1,6 @@
 const swaggerJSDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
-const { PORT, API_VERSION } = process.env;
+const { PORT, API_VERSION, SWAGGER_API_KEY, SWAGGER_SUPER_ADMIN_TOKEN } = process.env;
 
 const swagger_definition = {
   openapi: "3.0.0",
@@ -16,14 +16,14 @@ const swagger_definition = {
     },
   },
   servers: [
-    {
-      url: `https://api.loyaltyapp.com/${API_VERSION}`,
-      description: "Production Server",
-    },
-    {
-      url: `https://staging-api.loyaltyapp.com/${API_VERSION}`,
-      description: "Staging Server",
-    },
+    // {
+    //   url: `https://api.loyaltyapp.com/${API_VERSION}`,
+    //   description: "Production Server",
+    // },
+    // {
+    //   url: `https://staging-api.loyaltyapp.com/${API_VERSION}`,
+    //   description: "Staging Server",
+    // },
     {
       url: `http://localhost:${PORT}/api/${API_VERSION}`,
       description: "Local Development Server",
@@ -65,6 +65,11 @@ const swagger_options = {
     filter: true,
     tagsSorter: "alpha",
     operationsSorter: "alpha",
+    requestInterceptor: (req) => {
+      req.headers["api-key"] = `H0RIRxapB4Uo7im`; // Set your default API key here
+      req.headers["Authorization"] = `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbl9pZCI6IjY3YzgzZjM1YzI1NTdhZjI4NmFkM2MzNCIsIm5hbWUiOiJUaWpvIEpvc2VwaCIsImVtYWlsIjoidHRqQGR1Y2suY29tIiwicm9sZSI6IlN1cGVyIEFkbWluIiwicGVybWlzc2lvbnMiOlsiVklFV19DVVNUT01FUlMiLCJFRElUX0NVU1RPTUVSUyIsIkRFTEVURV9DVVNUT01FUlMiLCJFWFBPUlRfQ1VTVE9NRVJTIiwiTUFOQUdFX1BPSU5UUyIsIlZJRVdfUE9JTlRTX0hJU1RPUlkiLCJBREpVU1RfUE9JTlRTIiwiTUFOQUdFX0NSSVRFUklBIiwiQ1JFQVRFX09GRkVSUyIsIkVESVRfT0ZGRVJTIiwiREVMRVRFX09GRkVSUyIsIk1BTkFHRV9SRURFTVBUSU9OUyIsIk1BTkFHRV9USUVSUyIsIlZJRVdfVElFUlMiLCJBU1NJR05fVElFUlMiLCJWSUVXX1JFUE9SVFMiLCJFWFBPUlRfUkVQT1JUUyIsIk1BTkFHRV9BTkFMWVRJQ1MiLCJWSUVXX0RBU0hCT0FSRCIsIk1BTkFHRV9ST0xFUyIsIk1BTkFHRV9BRE1JTlMiLCJWSUVXX0FVRElUX0xPR1MiLCJNQU5BR0VfU0VUVElOR1MiXSwic3RhdHVzIjp0cnVlLCJpYXQiOjE3NDExNzcyMjMsImV4cCI6MTc0Mzc2OTIyM30.l8gzOirP8lWx5JrHy5UCroN8lvlGgM5KSdWwHfOLLHc`;
+      return req;
+    },
   },
 };
 

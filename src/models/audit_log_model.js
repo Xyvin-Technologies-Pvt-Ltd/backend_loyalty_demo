@@ -71,6 +71,7 @@ const auditLogSchema = new mongoose.Schema(
                 "Transaction",
                 "SDKAccessKey",
                 "PointCriteria",
+                "AppType",
                 "RedemptionRule",
                 "PointsExpiration",
                 "Tier"

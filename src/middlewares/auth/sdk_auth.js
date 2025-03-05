@@ -1,54 +1,73 @@
-const response_handler = require("../helpers/response_handler");
-const { logger } = require("./logger");
-const SDKAccessKey = require("../models/sdk_access_key_model");
-const User = require("../models/user_model");
+const response_handler = require("../../helpers/response_handler");
+const { logger } = require("../../middlewares/logger");
+const SDKAccessKey = require("../../models/sdk_access_key_model");
+const User = require("../../models/user_model");
 
 /**
  * Middleware to authenticate SDK access keys
  * This middleware validates the access key and attaches client information to the request
+ * @param {Array} requiredPermissions - Array of permissions required for this route
+ * @returns {Function} - Express middleware
  */
-const sdkAuth = async (req, res, next) => {
-    try {
-        // Check for access key in headers
-        const accessKey = req.headers["x-access-key"] || req.headers["access-key"];
-        if (!accessKey) {
-            logger.warn("SDK API request without access key");
-            return response_handler(res, 401, "Access key is required for SDK API access");
+const sdkAuth = (requiredPermissions = []) => {
+    return async (req, res, next) => {
+        try {
+            // Ensure headers exist
+            if (!req.headers) {
+                logger.warn("SDK API request missing headers");
+                return response_handler(res, 400, "Missing request headers");
+            }
+
+            // Check for access key in headers
+            const accessKey = req.headers["x-access-key"] || req.headers["access-key"];
+            if (!accessKey) {
+                logger.warn("SDK API request without access key");
+                return response_handler(res, 401, "Access key is required for SDK API access");
+            }
+
+            // Find the access key in the database
+            const keyData = await SDKAccessKey.findOne({ key: accessKey });
+            if (!keyData) {
+                logger.warn(`Invalid SDK access key attempt: ${accessKey.substring(0, 8)}...`);
+                return response_handler(res, 401, "Invalid access key");
+            }
+
+            // Check if the key is active
+            if (!keyData.active) {
+                logger.warn(`Attempt to use revoked SDK key: ${keyData.name}`);
+                return response_handler(res, 401, "This SDK key has been revoked");
+            }
+
+            // Check if the key has expired
+            if (keyData.expiresAt && new Date(keyData.expiresAt) < new Date()) {
+                logger.warn(`Attempt to use expired SDK key: ${keyData.name}`);
+                return response_handler(res, 401, "This SDK key has expired");
+            }
+
+            // Check permissions if required
+            if (requiredPermissions.length > 0) {
+                const hasAllPermissions = requiredPermissions.every(perm =>
+                    keyData.permissions.includes(perm)
+                );
+
+                if (!hasAllPermissions) {
+                    logger.warn(`SDK key ${keyData.name} missing required permissions: ${requiredPermissions.join(', ')}`);
+                    return response_handler(res, 403, "This SDK key does not have the required permissions");
+                }
+            }
+
+            // Attach SDK key data to the request
+            req.sdkKey = keyData;
+
+            // Log the access
+            logger.info(`SDK API access: ${keyData.name} (${keyData.clientId})`);
+
+            next();
+        } catch (error) {
+            logger.error(`SDK authentication error: ${error.message}`);
+            return response_handler(res, 500, "Authentication error");
         }
-
-        // Find the access key in the database
-        const keyData = await SDKAccessKey.findOne({ key: accessKey });
-        if (!keyData) {
-            logger.warn(`Invalid SDK access key attempt: ${accessKey.substring(0, 8)}...`);
-            return response_handler(res, 401, "Invalid access key");
-        }
-
-        // Check if the key is active
-        if (!keyData.isValid()) {
-            logger.warn(`Attempt to use inactive/revoked SDK key: ${keyData.name}`);
-            return response_handler(res, 403, "This access key has been deactivated or revoked");
-        }
-
-        // Update usage statistics (don't await to avoid slowing down the request)
-        keyData.updateUsage().catch(err => {
-            logger.error(`Error updating key usage stats: ${err.message}`);
-        });
-
-        // Attach client information to the request
-        req.sdkClient = {
-            id: keyData._id,
-            name: keyData.name,
-            client: keyData.client,
-            permissions: keyData.permissions,
-            environment: keyData.environment
-        };
-
-        logger.info(`SDK API access granted to client: ${keyData.client.name} (${keyData.name})`);
-        next();
-    } catch (error) {
-        logger.error(`SDK authentication error: ${error.message}`, { stack: error.stack });
-        return response_handler(res, 500, `Internal Server Error: ${error.message}`);
-    }
+    };
 };
 
 /**

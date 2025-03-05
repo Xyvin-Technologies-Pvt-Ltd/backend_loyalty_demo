@@ -1,5 +1,5 @@
 const response_handler = require("../../helpers/response_handler");
-const Criteria = require("../../models/point_criteria");
+const Criteria = require("../../models/point_criteria_model");
 const validator = require("./point_criteria.validator");
 
 exports.create = async (req, res) => {

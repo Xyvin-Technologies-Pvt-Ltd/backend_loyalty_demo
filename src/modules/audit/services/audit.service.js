@@ -574,6 +574,52 @@ class AuditService {
             throw error;
         }
     }
+
+    /**
+     * Log an SDK action
+     * @param {Object} data - SDK action data
+     * @returns {Promise<Object>} Created audit log
+     */
+    static async logSdkAction(data) {
+        if (!isAuditEnabled()) return null;
+
+        try {
+            const sanitizedData = sanitizeAuditData(data);
+
+            const auditLog = {
+                type: 'SDK_ACTION',
+                action: sanitizedData.action,
+                status: sanitizedData.status || 'success',
+                user: sanitizedData.user,
+                userModel: sanitizedData.userModel || 'SDKAccessKey',
+                userName: sanitizedData.userName,
+                userEmail: sanitizedData.userEmail,
+                ip: sanitizedData.ip,
+                userAgent: sanitizedData.userAgent,
+                requestId: sanitizedData.requestId || uuidv4(),
+                targetId: sanitizedData.targetId,
+                targetModel: sanitizedData.targetModel,
+                targetName: sanitizedData.targetName,
+                description: sanitizedData.description || `SDK action: ${sanitizedData.action}`,
+                details: sanitizedData.details || {},
+                timestamp: new Date()
+            };
+
+            // Add to queue for background processing
+            auditQueue.push(auditLog);
+
+            // Trigger queue processing
+            setTimeout(processAuditQueue, 0);
+
+            return auditLog;
+        } catch (error) {
+            logger.error(`Error logging SDK action: ${error.message}`, {
+                stack: error.stack,
+                data
+            });
+            return null;
+        }
+    }
 }
 
 module.exports = AuditService; 

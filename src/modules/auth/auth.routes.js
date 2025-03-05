@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const auth_controller = require("./auth.controller");
-const protect = require("../../middlewares/protect");
-const key_protect = require("../../middlewares/key_protect");
+const { protect } = require("../../middlewares/auth/protect");
+const key_protect = require("../../middlewares/auth/key_protect");
 const { createAuditMiddleware } = require("../audit");
 
 // Create audit middleware for the auth module
@@ -19,13 +19,13 @@ router.post(
         })
     }),
     authAudit.captureResponse(),
-    auth_controller.login
+    auth_controller.admin_login
 );
 
 // Signup route with audit logging
 router.post(
     "/signup",
-    protect,
+    key_protect,
     authAudit.dataModification("signup", {
         description: "Admin created a new user account",
         targetModel: "User",

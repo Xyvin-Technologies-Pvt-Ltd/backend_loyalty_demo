@@ -1,6 +1,6 @@
-const ConversionHistory = require('../../../models/conversion_history.model');
-const ConversionRule = require('../../../models/conversion_rule.model');
-const User = require('../../../models/user.model');
+const ConversionHistory = require('../../../models/conversion_history_model');
+const ConversionRule = require('../../../models/conversion_rule_model');
+const User = require('../../../models/user_model');
 const response_handler = require('../../../helpers/response_handler');
 const { logger } = require('../../../middlewares/logger');
 const { AuditService } = require('../../audit');

@@ -54,6 +54,9 @@
  *               email:
  *                 type: string
  *                 example: "admin@example.com"
+ *               role:
+ *                 type: string
+ *                 example: "67c5719c4ac061c4dbeefb8b"
  *               password:
  *                 type: string
  *                 example: "password123"

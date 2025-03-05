@@ -1,13 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const tier_controller = require("./tier.controller");
-const { protect } = require("../../middlewares/protect");
+const { authorizePermission } = require('../../middlewares/auth/auth');
 const { createAuditMiddleware } = require("../audit");
 
 // Create audit middleware for the tier module
 const tierAudit = createAuditMiddleware("tier");
 
-router.use(protect);
+router.use(authorizePermission("MANAGE_SETTINGS"));
 
 // Create and list tiers
 router.post(
@@ -29,6 +29,7 @@ router.post(
 
 router.get(
   "/",
+  tierAudit.captureResponse(),
   tierAudit.adminAction("list_tiers", {
     description: "Admin viewed all tiers",
     targetModel: "Tier"
@@ -39,6 +40,7 @@ router.get(
 // Get, update, and delete a specific tier
 router.get(
   "/:id",
+  tierAudit.captureResponse(),
   tierAudit.adminAction("view_tier", {
     description: "Admin viewed a tier",
     targetModel: "Tier",

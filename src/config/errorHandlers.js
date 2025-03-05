@@ -17,6 +17,7 @@ function registerErrorHandlers() {
 
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason, promise) => {
+        console.log('Unhandled Rejection', { reason, promise });
         logger.error('Unhandled Rejection', { reason, promise });
     });
 }

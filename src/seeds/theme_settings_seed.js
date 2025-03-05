@@ -1,5 +1,5 @@
-const ThemeSettings = require('../models/theme_settings.model');
-const logger = require('../utils/logger');
+const ThemeSettings = require('../models/theme_settings_model');
+const { logger } = require('../middlewares/logger');
 
 /**
  * Seeds the default theme settings if none exist

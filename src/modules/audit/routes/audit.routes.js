@@ -1,13 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const auditController = require("../controllers/audit.controller");
-const { protect } = require("../../../middlewares/protect");
-const { authorize } = require("../../../middlewares/auth");
+const { authorizePermission } = require("../../../middlewares/auth/auth");
 const { auditAdminAction } = require("../middlewares/audit.middleware");
 
 // All routes require authentication and VIEW_AUDIT_LOGS permission
-router.use(protect);
-router.use(authorize("VIEW_AUDIT_LOGS"));
+router.use(authorizePermission("VIEW_AUDIT_LOGS"));
 
 // Reports and statistics
 router.get(
@@ -18,7 +16,7 @@ router.get(
 
 router.get(
     "/reports/export",
-    authorize("EXPORT_AUDIT_LOGS"),
+    authorizePermission("EXPORT_AUDIT_LOGS"),
     auditAdminAction("export_audit_logs"),
     auditController.exportLogs
 );
@@ -40,7 +38,7 @@ router.get(
 // System logs
 router.get(
     "/system-logs",
-    authorize("VIEW_SYSTEM_LOGS"),
+    authorizePermission("VIEW_SYSTEM_LOGS"),
     auditAdminAction("view_system_logs"),
     auditController.getSystemLogs
 );
@@ -48,7 +46,7 @@ router.get(
 // API logs
 router.get(
     "/api-logs",
-    authorize("VIEW_API_LOGS"),
+    authorizePermission("VIEW_API_LOGS"),
     auditAdminAction("view_api_logs"),
     auditController.getApiLogs
 );

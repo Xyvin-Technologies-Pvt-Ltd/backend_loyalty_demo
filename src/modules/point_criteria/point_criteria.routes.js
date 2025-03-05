@@ -1,13 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const point_criteria_controller = require("./point_criteria.controller");
-const { protect } = require("../../middlewares/protect");
+const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
 
 // Create audit middleware for the point_criteria module
 const criteriaAudit = createAuditMiddleware("point_criteria");
 
-router.use(protect);
+router.use(authorizePermission("MANAGE_SETTINGS"));
 
 // Create and list point criteria
 router.post(

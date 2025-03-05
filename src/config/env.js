@@ -23,5 +23,9 @@ module.exports = {
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
 
+    // Swagger configuration
+    SWAGGER_API_KEY: process.env.SWAGGER_API_KEY,
+    SWAGGER_SUPER_ADMIN_TOKEN: process.env.SWAGGER_SUPER_ADMIN_TOKEN,
+
     // Other configurations can be added here
 }; 

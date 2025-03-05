@@ -1,14 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const sdkAccessKeyController = require("../controllers/sdk_access_key.controller");
-const { authorize } = require("../../../middlewares/auth");
+const { authorizePermission } = require("../../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../../audit");
 
 // Create audit middleware for the sdk module
 const sdkAudit = createAuditMiddleware("sdk");
 
 // All routes require MANAGE_SETTINGS permission
-router.use(authorize("MANAGE_SETTINGS"));
+router.use(authorizePermission("MANAGE_SETTINGS"));
 
 // Generate a new SDK access key
 router.post(

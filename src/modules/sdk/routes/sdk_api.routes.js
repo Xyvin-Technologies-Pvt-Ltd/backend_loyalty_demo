@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { sdkAuth, sdkUserAuth } = require("../../../middlewares/sdk_auth");
+const { sdkAuth, sdkUserAuth } = require("../../../middlewares/auth/sdk_auth");
 const sdkApiController = require("../controllers/sdk_api.controller");
 const { createAuditMiddleware } = require("../../audit");
 
@@ -18,11 +18,13 @@ router.get(
     sdkAudit.sdkAction("get_user_points", {
         description: "SDK accessed user points balance",
         targetModel: "User",
-        targetId: req => req.params.user_id,
-        details: req => ({
-            sdkKey: req.sdkKey?.id || 'unknown',
-            permissions: req.sdkKey?.permissions || []
-        })
+        targetId: (req) => { return req.params.user_id; },
+        details: (req) => {
+            return {
+                sdkKey: req.sdkKey?.id || 'unknown',
+                permissions: req.sdkKey?.permissions || []
+            };
+        }
     }),
     sdkApiController.getUserPoints
 );

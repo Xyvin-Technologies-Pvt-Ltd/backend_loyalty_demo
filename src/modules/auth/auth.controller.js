@@ -5,9 +5,11 @@ const { hash_password, compare_passwords } = require("../../utils/bcrypt");
 const {
   generate_referral_code,
 } = require("../../utils/generate_referral_code");
-const { generate_token } = require("../../utils/generate_token");
+const { generate_admin_token } = require("../../utils/generate_admin_token");
 const validator = require("./auth.validator");
 
+
+//for admin only
 exports.signup = async (req, res) => {
   try {
     const { error } = validator.signup.validate(req.body, {
@@ -35,7 +37,7 @@ exports.signup = async (req, res) => {
   }
 };
 
-exports.login = async (req, res) => {
+exports.admin_login = async (req, res) => {
   try {
     const { error } = validator.login.validate(req.body, {
       abortEarly: false,
@@ -58,7 +60,7 @@ exports.login = async (req, res) => {
       return response_handler(res, 400, "Invalid password.");
     }
 
-    const jwt_token = generate_token(user._id);
+    const jwt_token = await generate_admin_token(user._id);
 
     return response_handler(res, 200, "Login successful!", jwt_token);
   } catch (error) {
@@ -70,6 +72,8 @@ exports.login = async (req, res) => {
   }
 };
 
+
+//for user only
 exports.register = async (req, res) => {
   try {
     const { error } = validator.register.validate(req.body, {

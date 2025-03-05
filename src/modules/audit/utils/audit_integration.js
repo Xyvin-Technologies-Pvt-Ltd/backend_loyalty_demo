@@ -4,7 +4,8 @@
  * Helper functions to make it easier to integrate audit logging into other modules.
  */
 
-const { universalAudit, captureResponse } = require('../index');
+const universalAudit = require('../middlewares/universal_audit.middleware');
+const captureResponse = require('../middlewares/response_capture.middleware');
 
 /**
  * Create audit middleware for a specific module
@@ -123,6 +124,24 @@ const createAuditMiddleware = (moduleName) => {
          */
         captureResponse: (options = {}) => {
             return captureResponse(options);
+        },
+        /**
+       * Create middleware for auditing SDK actions
+       * @param {string} action - The action being performed
+       * @param {Object} options - Additional options
+       * @returns {Function} - Express middleware
+       */
+        sdkAction: (action, options = {}) => {
+            return universalAudit({
+                category: 'sdk_action',
+                action: `${moduleName}.${action}`,
+                description: options.description || `SDK action in ${moduleName}`,
+                targetModel: options.targetModel || moduleName,
+                targetId: options.targetId,
+                details: options.details,
+                getModifiedData: options.getModifiedData,
+                ...options
+            });
         }
     };
 };

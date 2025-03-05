@@ -1,4 +1,4 @@
-const response_handler = require("../helpers/response_handler");
+const response_handler = require("../../helpers/response_handler");
 
 const key_protect = async (req, res, next) => {
   try {
