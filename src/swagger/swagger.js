@@ -17,7 +17,7 @@ const swagger_definition = {
   },
   servers: [
     {
-      url: `https://api-loyalty.xyvin.com/${API_VERSION}`,
+      url: `https://api-loyalty.xyvin.com/api/${API_VERSION}`,
       description: "Staging Server",
     },
     // {
