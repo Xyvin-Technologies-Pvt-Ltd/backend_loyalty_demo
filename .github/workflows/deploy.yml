@@ -48,7 +48,7 @@ jobs:
             fi
 
             # Install dependencies
-            cd school-backend
+            cd loyalty-backend
             npm install
 
             # Copy environment file
