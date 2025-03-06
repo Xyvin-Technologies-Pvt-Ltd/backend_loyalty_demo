@@ -16,10 +16,10 @@ const swagger_definition = {
     },
   },
   servers: [
-    // {
-    //   url: `https://api.loyaltyapp.com/${API_VERSION}`,
-    //   description: "Production Server",
-    // },
+    {
+      url: `https://api-loyalty.xyvin.com/${API_VERSION}`,
+      description: "Staging Server",
+    },
     // {
     //   url: `https://staging-api.loyaltyapp.com/${API_VERSION}`,
     //   description: "Staging Server",

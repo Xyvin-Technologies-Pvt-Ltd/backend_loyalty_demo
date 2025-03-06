@@ -177,7 +177,7 @@
 
 /**
  * @swagger
- * /api/v1/audit/logs:
+ * /audit/logs:
  *   get:
  *     summary: Get audit logs with filtering and pagination
  *     tags: [Audit]
@@ -286,7 +286,7 @@
 
 /**
  * @swagger
- * /api/v1/audit/logs/{id}:
+ * /audit/logs/{id}:
  *   get:
  *     summary: Get audit log by ID
  *     tags: [Audit]
@@ -325,7 +325,7 @@
 
 /**
  * @swagger
- * /api/v1/audit/point-transactions:
+ * /audit/point-transactions:
  *   get:
  *     summary: Get point transaction logs
  *     tags: [Audit]
@@ -407,7 +407,7 @@
 
 /**
  * @swagger
- * /api/v1/audit/admin-actions:
+ * /audit/admin-actions:
  *   get:
  *     summary: Get admin action logs
  *     tags: [Audit]
@@ -488,7 +488,7 @@
 
 /**
  * @swagger
- * /api/v1/audit/reports/statistics:
+ * /audit/reports/statistics:
  *   get:
  *     summary: Get audit statistics
  *     tags: [Audit]

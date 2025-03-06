@@ -19,6 +19,17 @@ const auditLogSchema = new mongoose.Schema(
                 "error",          // Errors and exceptions
                 "api",            // API calls
                 "point_transaction", // Point earning, redemption, expiry
+                "sdk_action", // SDK actions
+                "app_type", // App type actions
+                "trigger_event", // Trigger event actions
+                "trigger_service", // Trigger service actions
+                "conversion", // Conversion actions
+                "redemption_rule", // Redemption rule actions
+                "points_expiration", // Points expiration actions
+                "tier", // Tier actions
+                "point_criteria", // Point criteria actions
+                "conversion_rule", // Conversion rule actions
+                
             ],
             required: true,
             index: true,
@@ -44,7 +55,7 @@ const auditLogSchema = new mongoose.Schema(
         userModel: {
             type: String,
             enum: ["User", "Admin"],
-            default: "User",
+            default: "Admin",
         },
         userName: String,
         userEmail: String,
@@ -74,7 +85,13 @@ const auditLogSchema = new mongoose.Schema(
                 "AppType",
                 "RedemptionRule",
                 "PointsExpiration",
-                "Tier"
+                "Tier",
+                "ConversionRule",
+                "TriggerEvent",
+                "TriggerService",
+                "Conversion",
+                "RedemptionRule",
+                "PointsExpiration",
             ],
         },
         targetName: String,

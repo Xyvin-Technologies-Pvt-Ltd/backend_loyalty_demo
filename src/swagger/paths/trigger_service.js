@@ -1,18 +1,18 @@
 /**
  * @swagger
  * tags:
- *   - name: ServiceProviders
- *     description: API for managing service providers for point criteria
+ *   - name: TriggerServices
+ *     description: API for managing trigger services for point criteria
  */
 
 /**
  * @swagger
- * /service-providers:
+ * /trigger-services:
  *   post:
- *     summary: Create a new service provider
- *     description: Adds a new service provider to the system.
+ *     summary: Create a new trigger service
+ *     description: Adds a new trigger service to the system.
  *     tags:
- *       - ServiceProviders
+ *       - TriggerServices
  *     requestBody:
  *       required: true
  *       content:
@@ -54,13 +54,13 @@
  *         description: Internal Server Error
  *
  *   get:
- *     summary: Get all service providers
- *     description: Retrieves a list of all service providers.
+ *     summary: Get all trigger services
+ *     description: Retrieves a list of all trigger services.
  *     tags:
- *       - ServiceProviders
+ *       - TriggerServices
  *     responses:
  *       200:
- *         description: A list of service providers
+ *         description: A list of trigger services
  *         content:
  *           application/json:
  *             schema:
@@ -106,12 +106,12 @@
 
 /**
  * @swagger
- * /service-providers/category/{category}:
+ * /trigger-services/category/{category}:
  *   get:
- *     summary: Get service providers by category
- *     description: Retrieves a list of service providers filtered by category.
+ *     summary: Get trigger services by category
+ *     description: Retrieves a list of trigger services filtered by category.
  *     tags:
- *       - ServiceProviders
+ *       - TriggerServices
  *     parameters:
  *       - in: path
  *         name: category
@@ -141,39 +141,39 @@
 
 /**
  * @swagger
- * /service-providers/{id}:
+ * /trigger-services/{id}:
  *   get:
- *     summary: Get a specific service provider
- *     description: Retrieves a specific service provider by ID.
+ *     summary: Get a specific trigger service
+ *     description: Retrieves a specific trigger service by ID.
  *     tags:
- *       - ServiceProviders
+ *       - TriggerServices
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: The service provider ID
+ *         description: The trigger service ID
  *     responses:
  *       200:
- *         description: Service provider details
+ *         description: Trigger service details
  *       404:
- *         description: Service provider not found
+ *         description: Trigger service not found
  *       500:
  *         description: Internal Server Error
  *
  *   put:
- *     summary: Update a service provider
- *     description: Updates an existing service provider.
+ *     summary: Update a trigger service
+ *     description: Updates an existing trigger service.
  *     tags:
- *       - ServiceProviders
+ *       - TriggerServices
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: The service provider ID
+ *         description: The trigger service ID
  *     requestBody:
  *       required: true
  *       content:
@@ -208,31 +208,32 @@
  *                 example: true
  *     responses:
  *       200:
- *         description: Service provider updated successfully
+ *         description: Trigger service updated successfully
  *       400:
  *         description: Invalid input
  *       404:
- *         description: Service provider not found
+ *         description: Trigger service not found
  *       500:
  *         description: Internal Server Error
  *
  *   delete:
- *     summary: Delete a service provider
- *     description: Deletes a service provider from the system.
+ *     summary: Delete a trigger service
+ *     description: Deletes a trigger service from the system.
  *     tags:
- *       - ServiceProviders
+ *       - TriggerServices
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: The service provider ID
+ *         description: The trigger service ID
  *     responses:
  *       200:
- *         description: Service provider deleted successfully
+ *         description: Trigger service deleted successfully
  *       404:
- *         description: Service provider not found
+ *         description: Trigger service not found
  *       500:
  *         description: Internal Server Error
  */
+

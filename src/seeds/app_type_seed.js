@@ -16,28 +16,13 @@ const seedAppTypes = async () => {
 
     const appTypes = [
       {
-        name: "Mobile App",
-        description: "Native mobile application for loyalty program",
+        name: "Khedmah pay",
+        description: "Native mobile application for Payment",
         status: true,
       },
       {
-        name: "Web Portal",
-        description: "Web-based portal for loyalty program management",
-        status: true,
-      },
-      {
-        name: "Kiosk",
-        description: "Self-service kiosk application for in-store loyalty",
-        status: true,
-      },
-      {
-        name: "POS Integration",
-        description: "Point of Sale integration for loyalty program",
-        status: true,
-      },
-      {
-        name: "Partner API",
-        description: "API integration for partner loyalty programs",
+        name: "Khedmah Delivery",
+        description: "Native mobile application for Delivery",
         status: true,
       },
     ];

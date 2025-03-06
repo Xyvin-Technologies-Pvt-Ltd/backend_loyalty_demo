@@ -1,18 +1,18 @@
 /**
  * @swagger
  * tags:
- *   - name: EventTriggers
+ *   - name:TriggerEvents
  *     description: API for managing event triggers for point criteria
  */
 
 /**
  * @swagger
- * /event-triggers:
+ * /trigger-events:
  *   post:
  *     summary: Create a new event trigger
  *     description: Adds a new event trigger to the system.
  *     tags:
- *       - EventTriggers
+ *       - TriggerEvents
  *     requestBody:
  *       required: true
  *       content:
@@ -59,7 +59,7 @@
  *     summary: Get all event triggers
  *     description: Retrieves a list of all event triggers.
  *     tags:
- *       - EventTriggers
+ *       - TriggerEvents
  *     responses:
  *       200:
  *         description: A list of event triggers
@@ -123,12 +123,12 @@
 
 /**
  * @swagger
- * /event-triggers/{id}:
+ * /trigger-events/{id}:
  *   get:
  *     summary: Get a specific event trigger
  *     description: Retrieves a specific event trigger by ID.
  *     tags:
- *       - EventTriggers
+ *       - TriggerEvents
  *     parameters:
  *       - in: path
  *         name: id
@@ -148,7 +148,7 @@
  *     summary: Update an event trigger
  *     description: Updates an existing event trigger.
  *     tags:
- *       - EventTriggers
+ *       - TriggerEvents
  *     parameters:
  *       - in: path
  *         name: id
@@ -204,7 +204,7 @@
  *     summary: Delete an event trigger
  *     description: Deletes an event trigger from the system.
  *     tags:
- *       - EventTriggers
+ *       - TriggerEvents
  *     parameters:
  *       - in: path
  *         name: id

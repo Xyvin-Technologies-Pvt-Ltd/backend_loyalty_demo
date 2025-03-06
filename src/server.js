@@ -59,7 +59,7 @@ async function startServer() {
         return server;
     } catch (error) {
         logger.error(`Failed to start server: ${error.message}`, { stack: error.stack });
-        console.error(clc.redBright(`❌ Failed to start server: ${error.message}`));
+        console.error(clc.redBright(`❌ Failed to start server: ${error.stack}`));
         process.exit(1);
     }
 }
