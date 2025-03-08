@@ -18,11 +18,13 @@ const seedAppTypes = async () => {
       {
         name: "Khedmah pay",
         description: "Native mobile application for Payment",
+        icon: "https://via.placeholder.com/150",
         status: true,
       },
       {
         name: "Khedmah Delivery",
         description: "Native mobile application for Delivery",
+        icon: "https://via.placeholder.com/150",
         status: true,
       },
     ];

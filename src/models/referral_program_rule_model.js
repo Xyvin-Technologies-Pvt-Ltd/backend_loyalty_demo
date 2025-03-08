@@ -1,6 +1,6 @@
 const mongoose = require("mongoose"); 
 
-const referralProgramSchema = new mongoose.Schema({
+const referralProgramRuleSchema = new mongoose.Schema({
   pointsForReferrer: { type: Number, required: true },
   pointsForReferee: { type: Number, required: true },
   minimumPurchaseAmount: { type: Number, required: true },
@@ -11,11 +11,11 @@ const referralProgramSchema = new mongoose.Schema({
 },{timestamps: true});
 
 // Ensure only one active referral program exists
-referralProgramSchema.pre("save", async function (next) {
+referralProgramRuleSchema.pre("save", async function (next) {
   if (this.isActive) {
     await this.constructor.updateMany({ isActive: true }, { isActive: false });
   }
   next();
 });
 
-module.exports = mongoose.model("ReferralProgram", referralProgramSchema);
+module.exports = mongoose.model("ReferralProgramRule", referralProgramRuleSchema);
