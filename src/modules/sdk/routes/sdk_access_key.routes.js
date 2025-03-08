@@ -19,7 +19,7 @@ router.post(
         targetModel: "SDKAccessKey",
         details: req => req.body
     }),
-    sdkAccessKeyController.generateKey
+    sdkAccessKeyController.createSDKKey 
 );
 
 // Get all SDK access keys
@@ -29,23 +29,13 @@ router.get(
         description: "Admin viewed all SDK access keys",
         targetModel: "SDKAccessKey"
     }),
-    sdkAccessKeyController.getAllKeys
+    sdkAccessKeyController.getSDKKey
 );
 
-// Get a single SDK access key by ID
-router.get(
-    "/:id",
-    sdkAudit.adminAction("view_key", {
-        description: "Admin viewed an SDK access key",
-        targetModel: "SDKAccessKey",
-        targetId: req => req.params.id
-    }),
-    sdkAccessKeyController.getKeyById
-);
 
-// Update an SDK access key
+// Create or Update an SDK access key
 router.put(
-    "/:id",
+    '/',
     sdkAudit.captureResponse(),
     sdkAudit.adminAction("update_key", {
         description: "Admin updated an SDK access key",
@@ -59,31 +49,20 @@ router.put(
             return null;
         }
     }),
-    sdkAccessKeyController.updateKey
+    sdkAccessKeyController.regenerateSDKKey
 );
 
 // Revoke an SDK access key
-router.patch(
-    "/:id/revoke",
+router.delete(
+    "/",
     sdkAudit.captureResponse(),
     sdkAudit.adminAction("revoke_key", {
         description: "Admin revoked an SDK access key",
         targetModel: "SDKAccessKey",
         targetId: req => req.params.id
     }),
-    sdkAccessKeyController.revokeKey
+    sdkAccessKeyController.revokeSDKKey
 );
 
-// Regenerate an SDK access key
-router.post(
-    "/:id/regenerate",
-    sdkAudit.captureResponse(),
-    sdkAudit.adminAction("regenerate_key", {
-        description: "Admin regenerated an SDK access key",
-        targetModel: "SDKAccessKey",
-        targetId: req => req.params.id
-    }),
-    sdkAccessKeyController.regenerateKey
-);
 
 module.exports = router; 

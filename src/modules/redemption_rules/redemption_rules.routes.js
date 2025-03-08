@@ -39,6 +39,8 @@ router.post(
 );
 
 // Update redemption status
+
+
 router.put(
     "/transaction/:transaction_id/status",
     authorizePermission(),
@@ -62,6 +64,7 @@ router.put(
 );
 
 // User routes (protected by API key only)
+//!for sdk only - need to seperated from the above routes
 // Validate redemption
 router.post(
     "/validate",

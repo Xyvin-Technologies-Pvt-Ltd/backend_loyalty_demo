@@ -1,3 +1,5 @@
+//!USER ONLY ACCESSIBLE ROUTES , NOT ADMIN
+
 const express = require("express");
 const router = express.Router();
 const { sdkAuth, sdkUserAuth } = require("../../../middlewares/auth/sdk_auth");

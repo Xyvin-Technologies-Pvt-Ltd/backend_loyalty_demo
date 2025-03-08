@@ -92,6 +92,7 @@ const auditLogSchema = new mongoose.Schema(
                 "Conversion",
                 "RedemptionRule",
                 "PointsExpiration",
+                "CoinConversionRule",
             ],
         },
         targetName: String,

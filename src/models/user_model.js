@@ -27,15 +27,21 @@ const user_schema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    app: {
-      type: [String],
-      trim: true,
-      enum: ["Khedmah-Mobile", "Khedmah-Merchant"],
+    app_type: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AppType",
     },
   },
   { timestamps: true }
 );
 
 const User = mongoose.model("User", user_schema);
+
+
+//INDEXING
+user_schema.index({ customer_id: 1 });
+user_schema.index({ email: 1 });
+user_schema.index({ phone: 1 });
+user_schema.index({ app_type: 1 });
 
 module.exports = User;

@@ -18,11 +18,12 @@ const points_expiration_routes = require('../modules/points_expiration/points_ex
 const { sdkAccessKeyRoutes, sdkApiRoutes } = require('../modules/sdk');
 const auditRoutes  = require('../modules/audit/routes/audit.routes');
 const { themeSettingsRoutes } = require('../modules/theme_settings');
-const { conversionRoutes, conversionRuleRoutes } = require('../modules/conversion');
 const app_type_routes = require('../modules/app_types/app_type.routes');
 const trigger_event_routes = require('../modules/trigger_event/trigger_event.routes');
 const trigger_services_routes = require('../modules/trigger_services/trigger_services.routes');
-
+const coin_management_routes = require('../modules/coin_convertion_rule/coin_management.routes');
+const referral_program_entry_routes = require('../modules/referral_program_entry/referral_program.routes');
+const referral_program_rules_routes = require('../modules/referral_program_rules/refferal_program_rules.routes');
 /**
  * Register all application routes
  * @param {Object} app - Express application
@@ -54,14 +55,16 @@ function registerRoutes(app, basePath) {
     app.use(`${basePath}/auth`, auth_routes);
     app.use(`${basePath}/logs`, log_routes);
     app.use(`${basePath}/tier`, tier_routes);
-    app.use(`${basePath}/point-criteria`, point_criteria_routes);
-    app.use(`${basePath}/roles`, role_routes);
+    app.use(`${basePath}/points-criteria`, point_criteria_routes);
+    app.use(`${basePath}/role-settings`, role_routes);
     app.use(`${basePath}/redemption-rules`, redemption_rules_routes);
-    app.use(`${basePath}/points-expiration`, points_expiration_routes);
+    app.use(`${basePath}/point-expiry-rules`, points_expiration_routes);
     app.use(`${basePath}/app-types`, app_type_routes);
     app.use(`${basePath}/trigger-events`, trigger_event_routes);
     app.use(`${basePath}/trigger-services`, trigger_services_routes);
-
+    app.use(`${basePath}/coin-management`, coin_management_routes);
+    app.use(`${basePath}/referral-program-entry`, referral_program_entry_routes);
+    app.use(`${basePath}/referral-program-rules`, referral_program_rules_routes);
 
     // SDK routes
     app.use(`${basePath}/sdk/access-keys`, sdkAccessKeyRoutes);
@@ -73,9 +76,6 @@ function registerRoutes(app, basePath) {
     // Theme settings routes
     app.use(`${basePath}/theme-settings`, themeSettingsRoutes);
 
-    // Conversion routes
-    app.use(`${basePath}/conversion`, conversionRoutes);
-    app.use(`${basePath}/conversion/rules`, conversionRuleRoutes);
 }
 
 module.exports = registerRoutes; 

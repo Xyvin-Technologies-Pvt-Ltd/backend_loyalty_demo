@@ -2,7 +2,7 @@ const Joi = require("joi");
 
 exports.create_criteria = Joi.object({
   name: Joi.string().required(),
-  description: Joi.string().required(),
+  description: Joi.string().required(), 
   type: Joi.string().required(),
   point: Joi.number().required(),
   amount: Joi.number().required(),

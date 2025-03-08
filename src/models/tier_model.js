@@ -8,10 +8,9 @@ const tier_schema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    app: {
-      type: String,
-      trim: true,
-      enum: ["Khedmah-Mobile", "Khedmah-Merchant"],
+    app_type: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AppType",
     },
     description: { type: String, trim: true },
   },

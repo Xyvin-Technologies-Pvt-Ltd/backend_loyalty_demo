@@ -5,11 +5,11 @@ const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
 
 // Create audit middleware for the points_expiration module
-const expirationAudit = createAuditMiddleware("points_expiration");
+const expirationAudit = createAuditMiddleware("points_expiration_rules");
 
 // Get current points expiration rules (public)
 router.get(
-    "/rules",
+    "/",
     expirationAudit.dataAccess("view_rules", {
         description: "User viewed points expiration rules",
         targetModel: "PointsExpirationRules"
@@ -19,7 +19,7 @@ router.get(
 
 // Create or update points expiration rules (requires MANAGE_POINTS permission)
 router.post(
-    "/rules",
+    "/",
     authorizePermission("MANAGE_POINTS"),
     expirationAudit.captureResponse(),
     expirationAudit.adminAction("update_rules", {

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createTriggerServices, updateTriggerServices, deleteTriggerServices, getAllTriggerServices, getTriggerServicesById } = require('./trigger_services.controller');
+const { createTriggerServices, updateTriggerServices, deleteTriggerServices, getAllTriggerServices, getTriggerServicesById, getTriggerServicesByEventId } = require('./trigger_services.controller');
 const { authorizePermission } = require('../../middlewares/auth/auth');
 const { createAuditMiddleware } = require("../audit");
 
@@ -41,6 +41,13 @@ router.delete('/:id', triggerServicesAudit.captureResponse(), triggerServicesAud
     targetModel: "TriggerServices",
     details: req => req.params
 }), deleteTriggerServices);
+
+
+router.get('/trigger-event/:eventId', triggerServicesAudit.adminAction("get_trigger_services_by_event_id", {
+    description: "Admin fetched trigger services by event id",
+    targetModel: "TriggerServices",
+    details: req => req.params
+}), getTriggerServicesByEventId);
 
 module.exports = router;
 

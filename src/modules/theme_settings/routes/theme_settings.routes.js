@@ -63,7 +63,7 @@ router.post(
 
 // Apply a color preset
 router.post(
-  "/preset/:presetName",
+  "/apply-color-preset/:presetName",
   themeAudit.captureResponse(),
   themeAudit.adminAction("apply_theme_preset", {
     targetModel: "ThemeSettings",

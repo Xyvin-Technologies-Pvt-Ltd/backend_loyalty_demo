@@ -8,16 +8,7 @@ const sdk_access_key_schema = new mongoose.Schema(
             required: true,
             trim: true
         },
-        description: {
-            type: String,
-            trim: true
-        },
-        client: {
-            name: { type: String, required: true },
-            email: { type: String, required: true },
-            company: { type: String, required: true },
-            website: { type: String }
-        },
+       
         key: {
             type: String,
             required: true,
@@ -27,12 +18,13 @@ const sdk_access_key_schema = new mongoose.Schema(
             user_data: { type: Boolean, default: true },
             transactions: { type: Boolean, default: true },
             points: { type: Boolean, default: true },
-            redemptions: { type: Boolean, default: true }
+            redemptions: { type: Boolean, default: true },  
+
         },
-        rate_limit: {
-            requests_per_minute: { type: Number, default: 60 },
-            requests_per_day: { type: Number, default: 10000 }
-        },
+        // rate_limit: {
+        //     requests_per_minute: { type: Number, default: 60 },
+        //     requests_per_day: { type: Number, default: 10000 }
+        // },
         status: {
             type: String,
             enum: ['active', 'inactive', 'revoked'],
@@ -41,7 +33,7 @@ const sdk_access_key_schema = new mongoose.Schema(
         environment: {
             type: String,
             enum: ['development', 'production'],
-            default: 'development'
+            default: 'production'
         },
         last_used: {
             type: Date

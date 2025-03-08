@@ -24,7 +24,7 @@ const pointsCriteriaSchema = new mongoose.Schema({
     {
       type: {
         type: String,
-        enum: ['Khedmah', 'KhedmahPay'], // Separate logic for Khedmah & KhedmahPay
+        enum: ['Khedmah-site', 'KhedmahPay-Wallet'], // Separate logic for Khedmah & KhedmahPay
         required: true
       },
       pointType: {
@@ -32,15 +32,9 @@ const pointsCriteriaSchema = new mongoose.Schema({
         enum: ['percentage', 'fixed'],
         required: true
       },
-      pointRate: {
-        type: Number,
-        required: true
-      },
+ 
       conditions: {
-        minTransactionValue: {
-          type: Number,
-          default: 0
-        },
+  
         maxTransactions: {
           weekly: { type: Number, default: null },
           monthly: { type: Number, default: null }

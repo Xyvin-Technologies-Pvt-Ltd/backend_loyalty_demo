@@ -237,3 +237,24 @@
  *         description: Internal Server Error
  */
 
+/**
+ * @swagger
+ * /trigger-services/event/{eventId}:
+ *   get:
+ *     summary: Get trigger services by event ID
+ *     description: Retrieves a list of trigger services filtered by event ID.
+ *     tags:
+ *       - TriggerServices
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The event ID
+ *     responses:
+ *       200:
+ *         description: A list of trigger services
+ *       500:
+ *         description: Internal Server Error
+ */
