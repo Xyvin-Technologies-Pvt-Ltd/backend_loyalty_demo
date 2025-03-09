@@ -26,7 +26,7 @@ const referral_program_entry_routes = require('../modules/referral_program_entry
 const referral_program_rules_routes = require('../modules/referral_program_rules/refferal_program_rules.routes');
 const transaction_routes = require('../modules/transaction/transaction.routes');
 const customer_routes = require('../modules/customer/customer.routes');
-
+const loyalty_points_routes = require('../modules/loyalty_points_core/loyalty_points.router');
 
 
 
@@ -68,7 +68,7 @@ function registerRoutes(app, basePath) {
     app.use(`${basePath}/referral-program-rules`, referral_program_rules_routes);
     app.use(`${basePath}/transaction`, transaction_routes);
     app.use(`${basePath}/customer`, customer_routes);
-
+    app.use(`${basePath}/loyalty-points`, loyalty_points_routes);
     // SDK routes
     app.use(`${basePath}/sdk/access-keys`, sdkAccessKeyRoutes);
     app.use(`${basePath}/sdk/api`, sdkApiRoutes);

@@ -4,7 +4,6 @@ const validator = require("./trigger_services.validators");
 
 
 
-
 exports.createTriggerServices = async (req, res) => {
     try {
         const { error } = validator.create_trigger_services.validate(req.body, {

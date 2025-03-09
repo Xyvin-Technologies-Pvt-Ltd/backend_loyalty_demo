@@ -3,6 +3,9 @@ const router = express.Router();
 const point_criteria_controller = require("./point_criteria.controller");
 const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
+const { cacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
+const { cacheMiddleware, cacheKeys } = require("../../middlewares/redis_cache/cache.middleware");
+
 
 // Create audit middleware for the point_criteria module
 const criteriaAudit = createAuditMiddleware("point_criteria");
@@ -24,6 +27,7 @@ router.post(
       return null;
     }
   }),
+  cacheInvalidationMiddleware(cacheKeys.allPointCriteria),
   point_criteria_controller.create
 );
 
@@ -33,6 +37,7 @@ router.get(
     description: "Admin viewed all point criteria",
     targetModel: "PointCriteria"
   }),
+  cacheMiddleware(60, cacheKeys.allPointCriteria),
   point_criteria_controller.list
 );
 
@@ -44,6 +49,7 @@ router.get(
     targetModel: "PointCriteria",
     targetId: req => req.params.id
   }),
+  cacheMiddleware(60, cacheKeys.allPointCriteria),
   point_criteria_controller.get_criteria
 );
 
@@ -62,16 +68,19 @@ router.put(
       return null;
     }
   }),
+  cacheInvalidationMiddleware(cacheKeys.allPointCriteria),
   point_criteria_controller.update_criteria
 );
 
 router.delete(
   "/:id",
+  criteriaAudit.captureResponse(),
   criteriaAudit.adminAction("delete_criteria", {
     description: "Admin deleted a point criteria",
     targetModel: "PointCriteria",
     targetId: req => req.params.id
   }),
+  cacheInvalidationMiddleware(cacheKeys.allPointCriteria),
   point_criteria_controller.delete_criteria
 );
 

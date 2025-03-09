@@ -7,6 +7,13 @@ const {
     getReferralProgram,
  
 } = require("./referral_program.controller");
+const {
+  cacheMiddleware,
+  cacheKeys,
+} = require("../../middlewares/redis_cache/cache.middleware");
+const {
+  cacheInvalidationMiddleware,
+} = require("../../middlewares/redis_cache/cache_invalidation.middleware");
 const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
 
@@ -19,13 +26,13 @@ router.post("/", referralProgramAudit.captureResponse(), referralProgramAudit.ad
     description: "Admin created a new referral program rules",
     targetModel: "ReferralProgram",
     details: req => req.body
-}), createReferralLink);
+}), cacheInvalidationMiddleware(cacheKeys.allReferralPrograms), createReferralLink);
 
 router.get("/", referralProgramAudit.captureResponse(), referralProgramAudit.adminAction("get_referral_program", {
     description: "Admin fetched the referral program",
     targetModel: "ReferralProgram",
     details: req => req.body
-}), getReferralProgram);
+}), cacheMiddleware(3600, cacheKeys.allReferralPrograms), getReferralProgram);
 
 
 //track referral

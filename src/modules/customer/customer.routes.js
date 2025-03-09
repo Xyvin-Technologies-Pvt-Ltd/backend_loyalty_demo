@@ -10,6 +10,10 @@ const {
 } = require("./customer.controllers");
 const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
+const {
+  cacheMiddleware,
+  cacheKeys,
+} = require("../../middlewares/redis_cache/cache.middleware");
 
 // Create audit middleware for customers
 const customerAudit = createAuditMiddleware("customer");
@@ -23,6 +27,7 @@ router.get(
     description: "Admin viewed all customers",
     targetModel: "Customer",
   }),
+  cacheMiddleware(300, cacheKeys.allCustomers),
   getAllCustomers
 );
 
@@ -34,6 +39,7 @@ router.get(
     description: "Admin viewed a customer",
     targetModel: "Customer",
   }),
+  cacheMiddleware(300, cacheKeys.customerById),
   getCustomerById
 );
 

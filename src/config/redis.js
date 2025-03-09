@@ -1,28 +1,53 @@
 /**
- * Redis configuration
+ * Redis configuration for Redis Cloud
  * Sets up Redis client for caching and other operations
  */
 
 const Redis = require("ioredis");
 const { logger } = require("../middlewares/logger");
 
-// Get Redis configuration from environment variables
+// Redis Cloud connection string (provided in your Redis Cloud dashboard)
+// Format: redis://username:password@host:port
+
+// Fallback to individual parameters if URL isn't provided
 const REDIS_HOST = process.env.REDIS_HOST || "localhost";
 const REDIS_PORT = process.env.REDIS_PORT || 6379;
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD || "";
+const REDIS_USERNAME = process.env.REDIS_USERNAME || "default"; // Redis Cloud may require a username
 const REDIS_DB = process.env.REDIS_DB || 0;
 
-// Create Redis client
-const redisClient = new Redis({
-  host: REDIS_HOST,
-  port: REDIS_PORT,
-  password: REDIS_PASSWORD,
-  db: REDIS_DB,
-  retryStrategy: (times) => {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
-  },
-});
+// Create Redis client based on available connection info
+let redisClient;
+
+if (REDIS_HOST !== "localhost") {
+  // Connect using the URL if available
+  redisClient = new Redis({
+   
+    username: REDIS_USERNAME,
+    host: REDIS_HOST,
+    port: REDIS_PORT,
+    password: REDIS_PASSWORD,
+    db: REDIS_DB,
+    retryStrategy: (times) => {
+      const delay = Math.min(times * 50, 2000);
+      return delay;
+    },
+  });
+} else {
+  // Connect using individual parameters
+  redisClient = new Redis({
+    host: REDIS_HOST,
+    port: REDIS_PORT,
+    username: REDIS_USERNAME,
+    password: REDIS_PASSWORD,
+    db: REDIS_DB,
+    tls: REDIS_HOST !== "localhost" ? { rejectUnauthorized: false } : undefined,
+    retryStrategy: (times) => {
+      const delay = Math.min(times * 50, 2000);
+      return delay;
+    },
+  });
+}
 
 // Redis event handlers
 redisClient.on("connect", () => {
@@ -31,6 +56,7 @@ redisClient.on("connect", () => {
 
 redisClient.on("error", (err) => {
   logger.error("Redis client error", { error: err.message });
+  console.log("Redis client error", { error: err.message });
 });
 
 redisClient.on("reconnecting", () => {

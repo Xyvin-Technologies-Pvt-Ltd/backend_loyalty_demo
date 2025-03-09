@@ -26,9 +26,9 @@
  *               points_required:
  *                 type: number
  *                 example: 100
- *               app:
- *                 type: string
- *                 example: "Khedmah"
+ *               description:
+ *                 type: array
+ *                 example: ["Khedmah App", "Khedmah Website"]
  *     responses:
  *       201:
  *         description: Tier created successfully

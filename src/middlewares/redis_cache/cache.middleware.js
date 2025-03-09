@@ -3,8 +3,8 @@
  * Provides middleware functions for caching API responses
  */
 
-const { getCache, setCache } = require("../config/redis");
-const { logger } = require("./logger");
+const { getCache, setCache } = require("../../config/redis");
+const { logger } = require("../logger");
 
 /**
  * Cache middleware factory
@@ -30,6 +30,7 @@ const cacheMiddleware = (ttl = 3600, keyGenerator = null) => {
 
       if (cachedData) {
         logger.debug("Cache hit", { key });
+        res.setHeader("X-Cache-Status", "HIT");  // Mark response as cached
         return res.status(200).json(cachedData);
       }
 
@@ -43,7 +44,7 @@ const cacheMiddleware = (ttl = 3600, keyGenerator = null) => {
             logger.error("Error setting cache", { error: err.message, key })
           );
         }
-
+        res.setHeader("X-Cache-Status", "MISS"); // Mark as cache miss
         originalSend.call(this, data);
       };
 
@@ -78,6 +79,64 @@ const cacheKeys = {
   // All tiers
   allTiers: () => "cache:tiers",
 
+  // All app types
+  allAppTypes: () => "cache:app_types",
+
+  // App type by ID
+  appTypeById: (req) => `cache:app_type:${req.params.id}`,
+
+  // coin management
+  allCoinConversionRules: () => "cache:coin_conversion_rules",
+
+  //all coupon categories
+  allCouponCategories: () => "cache:coupon_categories",
+
+  //coupon category by id
+  couponCategoryById: (req) => `cache:coupon_category:${req.params.id}`,
+  
+  //all coupon brands
+  allCouponBrands: () => "cache:coupon_brands",
+
+  //coupon brand by id
+  couponBrandById: (req) => `cache:coupon_brand:${req.params.id}`,
+  
+  //all points expiration rules
+  allPointsExpirationRules: () => "cache:points_expiration_rules",
+
+  //points expiration rules by user id
+  allPointsExpirationRulesByUser: (req) => `cache:points_expiration_rules:${req.params.user_id}`,
+
+  //all point criteria
+  allPointCriteria: () => "cache:point_criteria",
+
+  //redeem rules
+  allRedemptionRules: () => "cache:redemption_rules",
+  
+  //redemption history by user id
+  redemptionHistoryByUser: (req) => `cache:redemption_history:${req.params.user_id}`,
+
+  //all referral programs
+  allReferralPrograms: () => "cache:referral_programs",
+  
+  //all theme settings
+  allThemeSettings: () => "cache:theme_settings",
+
+  //all trigger events
+  allTriggerEvents: () => "cache:trigger_events",
+
+  //trigger event by id
+  triggerEventById: (req) => `cache:trigger_event:${req.params.id}`,
+
+  //all trigger services
+  allTriggerServices: () => "cache:trigger_services",
+
+  //trigger service by id
+  triggerServiceById: (req) => `cache:trigger_service:${req.params.id}`,
+
+  //trigger service by event id
+  triggerServiceByEventId: (req) => `cache:trigger_service:${req.params.event_id}`,
+  
+  
   // Custom key generator
   custom: (prefix) => (req) => {
     const id = req.params.id || "";

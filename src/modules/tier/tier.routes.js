@@ -3,7 +3,8 @@ const router = express.Router();
 const tier_controller = require("./tier.controller");
 const { authorizePermission } = require('../../middlewares/auth/auth');
 const { createAuditMiddleware } = require("../audit");
-
+const { cacheMiddleware, cacheKeys } = require("../../middlewares/redis_cache/cache.middleware");   
+const { cacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
 // Create audit middleware for the tier module
 const tierAudit = createAuditMiddleware("tier");
 
@@ -24,6 +25,7 @@ router.post(
       return null;
     }
   }),
+  cacheInvalidationMiddleware(cacheKeys.allTiers, cacheKeys.tierById),
   tier_controller.create
 );
 
@@ -34,6 +36,7 @@ router.get(
     description: "Admin viewed all tiers",
     targetModel: "Tier"
   }),
+  cacheMiddleware(3600, cacheKeys.allTiers),
   tier_controller.list
 );
 
@@ -44,8 +47,9 @@ router.get(
   tierAudit.adminAction("view_tier", {
     description: "Admin viewed a tier",
     targetModel: "Tier",
-    targetId: req => req.params.id
+    targetId: (req) => req.params.id
   }),
+  cacheMiddleware(60, cacheKeys.tierById),
   tier_controller.get_tier
 );
 
@@ -64,6 +68,7 @@ router.put(
       return null;
     }
   }),
+  cacheInvalidationMiddleware(cacheKeys.allTiers, cacheKeys.tierById),
   tier_controller.update_tier
 );
 
@@ -72,8 +77,9 @@ router.delete(
   tierAudit.adminAction("delete_tier", {
     description: "Admin deleted a tier",
     targetModel: "Tier",
-    targetId: req => req.params.id
+    targetId: (req) => req.params.id
   }),
+  cacheInvalidationMiddleware(cacheKeys.allTiers, cacheKeys.tierById),
   tier_controller.delete_tier
 );
 

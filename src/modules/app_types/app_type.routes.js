@@ -9,6 +9,9 @@ const {
 } = require("./app_type.controllers");
 const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
+const { cacheMiddleware, cacheKeys } = require("../../middlewares/redis_cache/cache.middleware");
+const { cacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
+
 
 const appTypeAudit = createAuditMiddleware("app_type");
 
@@ -22,6 +25,7 @@ router.post(
     description: "Admin created a new app type",
     targetModel: "AppType",
   }),
+    cacheInvalidationMiddleware(cacheKeys.allAppTypes, cacheKeys.appTypeById),
   createAppType
 );
 router.get(
@@ -31,6 +35,7 @@ router.get(
     description: "Admin viewed all app types",
     targetModel: "AppType",
   }),
+  cacheMiddleware(3600, cacheKeys.allAppTypes),
   getAllAppTypes
 );
 router.get(
@@ -40,6 +45,7 @@ router.get(
     description: "Admin viewed an app type",
     targetModel: "AppType",
   }),
+  cacheMiddleware(60, cacheKeys.appTypeById),
   getAppTypeById
 );
 router.put(
@@ -49,6 +55,7 @@ router.put(
     description: "Admin updated an app type",
     targetModel: "AppType",
   }),
+  cacheInvalidationMiddleware(cacheKeys.allAppTypes, cacheKeys.appTypeById),
   updateAppType
 );
 router.delete(
@@ -58,6 +65,7 @@ router.delete(
     description: "Admin deleted an app type",
     targetModel: "AppType",
   }),
+  cacheInvalidationMiddleware(cacheKeys.allAppTypes, cacheKeys.appTypeById),
   deleteAppType
 );
 

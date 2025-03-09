@@ -3,6 +3,9 @@ const router = express.Router();
 const pointsExpirationController = require("./points_expiration.controller");
 const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
+const { cacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
+const { cacheMiddleware, cacheKeys } = require("../../middlewares/redis_cache/cache.middleware");
+
 
 // Create audit middleware for the points_expiration module
 const expirationAudit = createAuditMiddleware("points_expiration_rules");
@@ -14,6 +17,7 @@ router.get(
         description: "User viewed points expiration rules",
         targetModel: "PointsExpirationRules"
     }),
+    cacheMiddleware(60, cacheKeys.allPointsExpirationRules),
     pointsExpirationController.getRules
 );
 
@@ -33,6 +37,7 @@ router.post(
             return null;
         }
     }),
+    cacheInvalidationMiddleware(cacheKeys.allPointsExpirationRules),
     pointsExpirationController.createOrUpdateRules
 );
 
@@ -45,6 +50,7 @@ router.get(
         targetModel: "User",
         targetId: req => req.params.user_id
     }),
+    cacheMiddleware(60, cacheKeys.allPointsExpirationRulesByUser),
     pointsExpirationController.getUserPointsWithExpiry
 );
 

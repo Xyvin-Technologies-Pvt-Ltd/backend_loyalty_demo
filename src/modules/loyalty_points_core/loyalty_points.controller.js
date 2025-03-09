@@ -3,6 +3,10 @@ const loyalty_points_validator = require("./loyalty_points.validator");
 const response_handler = require("../../helpers/response_handler");
 const Customer = require("../../models/customer_model");
 const mongoose = require("mongoose");
+const PointsExpirationRules = require("../../models/points_expiration_rules_model");    
+
+
+
 
 exports.earn_loyalty_points = async (req, res) => {
   try {

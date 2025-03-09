@@ -9,6 +9,9 @@ const {
 } = require("./coupon_category.controllers");
 const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
+const { cacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
+const { cacheMiddleware, cacheKeys } = require("../../middlewares/redis_cache/cache.middleware");
+
 
 const couponCategoryAudit = createAuditMiddleware("coupon_category");
 
@@ -20,6 +23,7 @@ router.post(
     description: "Admin created a coupon category",
     targetModel: "CouponCategory",
   }),
+  cacheInvalidationMiddleware(cacheKeys.allCouponCategories, cacheKeys.couponCategoryById),
   createCouponCategory
 );
 router.get(
@@ -30,6 +34,7 @@ router.get(
     description: "Admin viewed all coupon categories",
     targetModel: "CouponCategory",
   }),
+  cacheMiddleware(60, cacheKeys.allCouponCategories),
   getAllCouponCategories
 );
 
@@ -41,6 +46,7 @@ router.get(
     description: "Admin viewed a coupon category",
     targetModel: "CouponCategory",
   }),
+  cacheMiddleware(60, cacheKeys.couponCategoryById),
   getCouponCategoryById
 );
 
@@ -52,6 +58,7 @@ router.put(
     description: "Admin updated a coupon category",
     targetModel: "CouponCategory",
   }),
+  cacheInvalidationMiddleware(cacheKeys.allCouponCategories, cacheKeys.couponCategoryById),
   updateCouponCategory
 );
 
@@ -63,6 +70,7 @@ router.delete(
     description: "Admin deleted a coupon category",
     targetModel: "CouponCategory",
   }),
+  cacheInvalidationMiddleware(cacheKeys.allCouponCategories, cacheKeys.couponCategoryById),
   deleteCouponCategory
 );
 

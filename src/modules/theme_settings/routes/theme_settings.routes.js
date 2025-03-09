@@ -3,6 +3,8 @@ const router = express.Router();
 const themeSettingsController = require("../controllers/theme_settings.controller");
 const { authorizePermission } = require("../../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../../audit");
+const { cacheInvalidationMiddleware } = require("../../../middlewares/redis_cache/cache_invalidation.middleware");
+const { cacheMiddleware, cacheKeys } = require("../../../middlewares/redis_cache/cache.middleware");
 
 // Create audit middleware for the theme_settings module
 const themeAudit = createAuditMiddleware("theme_settings");
@@ -17,6 +19,7 @@ router.get(
     description: "Admin viewed theme settings",
     targetModel: "ThemeSettings",
   }),
+  cacheMiddleware(3600, cacheKeys.allThemeSettings), 
   themeSettingsController.getThemeSettings
 );
 
@@ -41,6 +44,7 @@ router.put(
       return null;
     },
   }),
+    cacheInvalidationMiddleware(cacheKeys.allThemeSettings),
   themeSettingsController.updateThemeSettings
 );
 
@@ -58,6 +62,7 @@ router.post(
       return null;
     },
   }),
+  cacheInvalidationMiddleware(cacheKeys.allThemeSettings),
   themeSettingsController.resetThemeSettings
 );
 
@@ -76,6 +81,7 @@ router.post(
       return null;
     },
   }),
+  cacheInvalidationMiddleware(cacheKeys.allThemeSettings),
   themeSettingsController.applyPreset
 );
 
