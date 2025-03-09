@@ -1,7 +1,7 @@
 /**
  * @swagger
  * tags:
- *   - name:TriggerEvents
+ *   - name: TriggerEvents
  *     description: API for managing event triggers for point criteria
  */
 

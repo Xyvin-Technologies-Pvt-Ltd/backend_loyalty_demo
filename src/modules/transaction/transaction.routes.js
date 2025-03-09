@@ -1,43 +1,86 @@
 const express = require("express");
 const router = express.Router();
-const transaction_controller = require("./transaction.controller");
-const protect = require("../../middlewares/protect");
+const {
+  createTransaction,
+  getAllTransactions,
+  getTransactionById,
+  getTransactionsByCustomer,
+  updateTransactionStatus,
+  getCustomerPointBalance,
+} = require("./transaction.controllers");
+const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
 
-// Create audit middleware for the transaction module
+// Create audit middleware for transactions
 const transactionAudit = createAuditMiddleware("transaction");
 
-router.use(protect);
-
-// Get all transactions with audit logging
+// Routes that require VIEW_TRANSACTIONS permission
 router.get(
   "/",
-  transactionAudit.dataAccess("list_transactions", {
-    description: "User viewed transaction list",
+  authorizePermission("VIEW_TRANSACTIONS"),
+  transactionAudit.captureResponse(),
+  transactionAudit.adminAction("view_transactions", {
+    description: "Admin viewed all transactions",
     targetModel: "Transaction",
-    details: req => ({
-      filters: req.query
-    })
   }),
-  transaction_controller.list
+  getAllTransactions
 );
 
-// Create a new transaction with audit logging
+router.get(
+  "/:id",
+  authorizePermission("VIEW_TRANSACTIONS"),
+  transactionAudit.captureResponse(),
+  transactionAudit.adminAction("view_transaction", {
+    description: "Admin viewed a transaction",
+    targetModel: "Transaction",
+  }),
+  getTransactionById
+);
+
+// Routes that require MANAGE_POINTS permission
 router.post(
   "/",
+  authorizePermission("MANAGE_POINTS"),
   transactionAudit.captureResponse(),
-  transactionAudit.pointTransaction("create_transaction", {
-    description: "User created a new transaction",
+  transactionAudit.adminAction("create_transaction", {
+    description: "Admin created a new transaction",
     targetModel: "Transaction",
-    details: req => req.body,
-    getModifiedData: (req, res) => {
-      if (res.locals.responseBody && res.locals.responseBody.data) {
-        return res.locals.responseBody.data;
-      }
-      return null;
-    }
   }),
-  transaction_controller.create
+  createTransaction
+);
+
+router.patch(
+  "/:id/status",
+  authorizePermission("MANAGE_POINTS"),
+  transactionAudit.captureResponse(),
+  transactionAudit.adminAction("update_transaction_status", {
+    description: "Admin updated a transaction status",
+    targetModel: "Transaction",
+  }),
+  updateTransactionStatus
+);
+
+// Customer-specific transaction routes
+router.get(
+  "/customer/:customerId",
+  authorizePermission("VIEW_TRANSACTIONS"),
+  transactionAudit.captureResponse(),
+  transactionAudit.adminAction("view_customer_transactions", {
+    description: "Admin viewed customer transactions",
+    targetModel: "Transaction",
+  }),
+  getTransactionsByCustomer
+);
+
+router.get(
+  "/customer/:customerId/balance",
+  authorizePermission("VIEW_TRANSACTIONS"),
+  transactionAudit.captureResponse(),
+  transactionAudit.adminAction("view_customer_balance", {
+    description: "Admin viewed customer point balance",
+    targetModel: "Transaction",
+  }),
+  getCustomerPointBalance
 );
 
 module.exports = router;

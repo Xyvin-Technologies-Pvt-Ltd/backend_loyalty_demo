@@ -1,132 +1,150 @@
-const Transaction = require('../models/transaction_model');
-const Customer = require('../models/customer_model');
-const PointsExpirationRules = require('../models/points_expiration_rules_model');
-const { logger } = require('../middlewares/logger');
-const { v4: uuidv4 } = require('uuid');
+const mongoose = require("mongoose");
+const Transaction = require("../models/transaction_model");
+const TriggerEvent = require("../models/trigger_event_model");
+const TriggerServices = require("../models/trigger_services_model");
+const PointsCriteria = require("../models/point_criteria_model");
+const AppType = require("../models/app_type_model");
+const { logger } = require("../middlewares/logger");
+const { v4: uuidv4 } = require("uuid");
 
 /**
- * Seed transaction data
+ * Seed transactions
  */
-async function seedTransactions() {
-    try {
-        // Check if transactions already exist
-        const existingTransactions = await Transaction.countDocuments();
-
-        if (existingTransactions > 0) {
-            logger.info(`${existingTransactions} transactions already exist, skipping seed`);
-            return;
-        }
-
-        // Get some users to associate transactions with
-        const users = await Customer.find().limit(5);
-
-        if (users.length === 0) {
-            logger.info('No users found to seed transactions, skipping');
-            return;
-        }
-
-        // Get expiration rules to calculate expiry dates
-        const expirationRules = await PointsExpirationRules.getActiveRules();
-        const defaultExpiryPeriod = expirationRules ? expirationRules.default_expiry_period : 12; // Default to 12 months
-
-        const transactionTypes = ['earning', 'redemption', 'referral', 'other'];
-        const statuses = ['pending', 'completed', 'rejected', 'cancelled'];
-        const rewardTypes = ['gift_card', 'discount', 'product', 'service'];
-
-        const sampleTransactions = [];
-
-        // Create sample transactions for each user
-        for (const user of users) {
-            // Create earning transactions
-            for (let i = 0; i < 3; i++) {
-                const transactionDate = new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000);
-                const points = Math.floor(Math.random() * 500) + 100;
-
-                // Calculate expiry date based on transaction date and expiry period
-                const expiryDate = new Date(transactionDate);
-                expiryDate.setMonth(expiryDate.getMonth() + defaultExpiryPeriod);
-
-                sampleTransactions.push({
-                    user: user._id,
-                    points: points,
-                    points_remaining: points, // Initially, points_remaining equals points
-                    type: 'earning',
-                    status: 'completed',
-                    transaction_date: transactionDate,
-                    expiry_date: expiryDate,
-                    is_expired: false,
-                    merchant: `Merchant ${i + 1}`,
-                    note: { message: `Purchase at Merchant ${i + 1}` },
-                    provider: 'POS',
-                    app: 'Khedmah Payment'
-                });
-            }
-
-            // Create redemption transactions
-            for (let i = 0; i < 2; i++) {
-                const rewardType = rewardTypes[Math.floor(Math.random() * rewardTypes.length)];
-                const points = Math.floor(Math.random() * 300) + 100;
-                const status = statuses[Math.floor(Math.random() * statuses.length)];
-
-                let rewardDetails = {};
-                if (rewardType === 'gift_card') {
-                    rewardDetails = {
-                        provider: 'Amazon',
-                        value: Math.floor(points / 10),
-                        currency: 'USD'
-                    };
-                } else if (rewardType === 'discount') {
-                    rewardDetails = {
-                        percentage: Math.floor(Math.random() * 30) + 10,
-                        code: `DISC${Math.floor(Math.random() * 1000)}`
-                    };
-                } else if (rewardType === 'product') {
-                    rewardDetails = {
-                        name: `Product ${i + 1}`,
-                        sku: `SKU${Math.floor(Math.random() * 10000)}`
-                    };
-                } else {
-                    rewardDetails = {
-                        name: `Service ${i + 1}`,
-                        duration: `${Math.floor(Math.random() * 12) + 1} months`
-                    };
-                }
-
-                sampleTransactions.push({
-                    user: user._id,
-                    points: points,
-                    type: 'redemption',
-                    status: status,
-                    transaction_date: new Date(Date.now() - Math.floor(Math.random() * 15) * 24 * 60 * 60 * 1000),
-                    reward_type: rewardType,
-                    reward_details: rewardDetails,
-                    transaction_reference: uuidv4(),
-                    note: { message: `Redemption for ${rewardType}` }
-                });
-            }
-
-            // Create referral transaction
-            sampleTransactions.push({
-                user: user._id,
-                points: 200,
-                points_remaining: 200, // Initially, points_remaining equals points
-                type: 'referral',
-                status: 'completed',
-                transaction_date: new Date(Date.now() - Math.floor(Math.random() * 20) * 24 * 60 * 60 * 1000),
-                expiry_date: new Date(Date.now() + defaultExpiryPeriod * 30 * 24 * 60 * 60 * 1000), // Expiry date for referral points
-                is_expired: false,
-                note: { message: 'Referral bonus' },
-                provider: 'App',
-                app: 'Khedmah Loyalty'
-            });
-        }
-
-        // Insert sample transactions
-        await Transaction.insertMany(sampleTransactions);
-        logger.info(`${sampleTransactions.length} transactions seeded successfully`);
-    } catch (error) {
-        logger.error(`Error seeding transactions: ${error.message}`, { stack: error.stack });
+const seedTransactions = async () => {
+  try {
+    // Check if transactions already exist
+    const existingTransactions = await Transaction.countDocuments();
+    if (existingTransactions > 0) {
+      logger.info("Transactions already seeded. Skipping transaction seed.");
+      return;
     }
-}
 
-module.exports = seedTransactions; 
+    // Get references to required models
+    const purchaseEvent = await TriggerEvent.findOne({ name: "Purchase" });
+    const rechargeEvent = await TriggerEvent.findOne({ name: "Recharge" });
+
+    const retailPurchaseService = await TriggerServices.findOne({
+      title: "Retail Purchase",
+    });
+    const mobileRechargeService = await TriggerServices.findOne({
+      title: "Mobile Recharge",
+    });
+
+    const pointCriteria = await PointsCriteria.findOne();
+
+    const mobileApp = await AppType.findOne({ name: "Mobile App" });
+
+    // Mock customer IDs (in a real scenario, these would be actual customer IDs)
+    const customerIds = [
+      new mongoose.Types.ObjectId(),
+      new mongoose.Types.ObjectId(),
+      new mongoose.Types.ObjectId(),
+    ];
+
+    // Create sample transactions
+    const transactions = [
+      // Earn transactions
+      {
+        customer_id: customerIds[0],
+        transaction_type: "earn",
+        source: "purchase",
+        points: 100,
+        transaction_id: uuidv4(),
+        trigger_event: purchaseEvent ? purchaseEvent._id : null,
+        trigger_service: retailPurchaseService
+          ? retailPurchaseService._id
+          : null,
+        point_criteria: pointCriteria ? pointCriteria._id : null,
+        app_type: mobileApp ? mobileApp._id : null,
+        status: "completed",
+        note: "Points earned from retail purchase",
+        reference_id: "POS12345",
+        transaction_date: new Date(),
+        metadata: {
+          purchase_amount: 500,
+          store_id: "STORE001",
+        },
+      },
+      {
+        customer_id: customerIds[1],
+        transaction_type: "earn",
+        source: "recharge",
+        points: 50,
+        transaction_id: uuidv4(),
+        trigger_event: rechargeEvent ? rechargeEvent._id : null,
+        trigger_service: mobileRechargeService
+          ? mobileRechargeService._id
+          : null,
+        point_criteria: pointCriteria ? pointCriteria._id : null,
+        app_type: mobileApp ? mobileApp._id : null,
+        status: "completed",
+        note: "Points earned from mobile recharge",
+        reference_id: "RECH78901",
+        transaction_date: new Date(),
+        metadata: {
+          recharge_amount: 200,
+          provider: "Telecom Provider",
+        },
+      },
+      // Redeem transaction
+      {
+        customer_id: customerIds[0],
+        transaction_type: "redeem",
+        source: "redemption",
+        points: -75,
+        transaction_id: uuidv4(),
+        app_type: mobileApp ? mobileApp._id : null,
+        status: "completed",
+        note: "Points redeemed for discount",
+        reference_id: "RED45678",
+        transaction_date: new Date(),
+        metadata: {
+          redemption_type: "discount",
+          discount_amount: 15,
+        },
+      },
+      // Expire transaction
+      {
+        customer_id: customerIds[2],
+        transaction_type: "expire",
+        source: "expiration",
+        points: -25,
+        transaction_id: uuidv4(),
+        app_type: mobileApp ? mobileApp._id : null,
+        status: "completed",
+        note: "Points expired due to inactivity",
+        transaction_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+        metadata: {
+          expiry_reason: "inactivity",
+          original_earn_date: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000), // 1 year ago
+        },
+      },
+      // Adjust transaction
+      {
+        customer_id: customerIds[1],
+        transaction_type: "adjust",
+        source: "manual_adjustment",
+        points: 30,
+        transaction_id: uuidv4(),
+        app_type: mobileApp ? mobileApp._id : null,
+        status: "completed",
+        note: "Manual adjustment by admin",
+        reference_id: "ADJ12345",
+        transaction_date: new Date(),
+        metadata: {
+          adjusted_by: "admin@example.com",
+          reason: "Customer service compensation",
+        },
+      },
+    ];
+
+    // Save all transactions
+    await Transaction.insertMany(transactions);
+
+    logger.info("Transactions seeded successfully!");
+  } catch (error) {
+    logger.error(`Error seeding transactions: ${error.message}`);
+  }
+};
+
+module.exports = seedTransactions;

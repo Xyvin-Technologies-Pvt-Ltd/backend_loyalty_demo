@@ -24,11 +24,12 @@ const trigger_services_routes = require('../modules/trigger_services/trigger_ser
 const coin_management_routes = require('../modules/coin_convertion_rule/coin_management.routes');
 const referral_program_entry_routes = require('../modules/referral_program_entry/referral_program.routes');
 const referral_program_rules_routes = require('../modules/referral_program_rules/refferal_program_rules.routes');
-/**
- * Register all application routes
- * @param {Object} app - Express application
- * @param {String} basePath - Base path for API routes
- */
+const transaction_routes = require('../modules/transaction/transaction.routes');
+const customer_routes = require('../modules/customer/customer.routes');
+
+
+
+
 function registerRoutes(app, basePath) {
     // Define a route for the API root
     app.get(basePath, (req, res) => {
@@ -65,6 +66,8 @@ function registerRoutes(app, basePath) {
     app.use(`${basePath}/coin-management`, coin_management_routes);
     app.use(`${basePath}/referral-program-entry`, referral_program_entry_routes);
     app.use(`${basePath}/referral-program-rules`, referral_program_rules_routes);
+    app.use(`${basePath}/transaction`, transaction_routes);
+    app.use(`${basePath}/customer`, customer_routes);
 
     // SDK routes
     app.use(`${basePath}/sdk/access-keys`, sdkAccessKeyRoutes);
