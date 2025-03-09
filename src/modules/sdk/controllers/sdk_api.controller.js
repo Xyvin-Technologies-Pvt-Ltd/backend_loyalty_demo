@@ -1,5 +1,5 @@
 const Transaction = require("../../../models/transaction_model");
-const User = require("../../../models/user_model");
+const Customer = require("../../../models/customer_model");
 const response_handler = require("../../../helpers/response_handler");
 const { logger } = require("../../../middlewares/logger");
 
@@ -8,7 +8,7 @@ const { logger } = require("../../../middlewares/logger");
  */
 exports.getUserPoints = async (req, res) => {
     try {
-        const user = await User.findById(req.params.user_id);
+        const user = await Customer.findById(req.params.user_id);
         if (!user) {
             return response_handler(res, 404, "User not found");
         }
@@ -72,7 +72,7 @@ exports.recordTransaction = async (req, res) => {
         }
 
         // Check if user exists
-        const user = await User.findById(user_id);
+        const user = await Customer.findById(user_id);
         if (!user) {
             return response_handler(res, 404, "User not found");
         }
@@ -117,7 +117,7 @@ exports.redeemPoints = async (req, res) => {
         }
 
         // Check if user exists and has enough points
-        const user = await User.findById(user_id);
+        const user = await Customer.findById(user_id);
         if (!user) {
             return response_handler(res, 404, "User not found");
         }

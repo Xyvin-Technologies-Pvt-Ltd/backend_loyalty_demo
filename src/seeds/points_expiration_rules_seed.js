@@ -18,11 +18,20 @@ async function seedPointsExpirationRules() {
         // Create default points expiration rules
         const defaultRules = {
             default_expiry_period: 12, // 12 months
-            tier_extensions: {
-                silver: 1,  // Silver tier gets 1 extra month
-                gold: 3,    // Gold tier gets 3 extra months
-                platinum: 6 // Platinum tier gets 6 extra months
-            },
+            tier_extensions: [
+                {
+                    tier_id: "67cc562cf71f32d55006efab", // Silver tier
+                    additional_months: 1
+                },
+                {
+                    tier_id: "67cc562cf71f32d55006efac", // Gold tier
+                    additional_months: 3
+                },
+                {
+                    tier_id: "67cc562cf71f32d55006efad", // Platinum tier
+                    additional_months: 6
+                },
+            ],
             expiry_notifications: {
                 first_reminder: 30, // 30 days before expiry
                 second_reminder: 15, // 15 days before expiry

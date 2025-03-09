@@ -1,7 +1,7 @@
 const response_handler = require("../../helpers/response_handler");
 const PointsExpirationRules = require("../../models/points_expiration_rules_model");
 const Transaction = require("../../models/transaction_model");
-const User = require("../../models/user_model");
+const Customer = require("../../models/customer_model");
 const Tier = require("../../models/tier_model");
 const validator = require("./points_expiration.validator");
 const { logger } = require("../../middlewares/logger");
@@ -88,7 +88,7 @@ exports.getUserPointsWithExpiry = async (req, res) => {
         const { user_id } = req.params;
 
         // Check if user exists
-        const user = await User.findById(user_id);
+        const user = await Customer.findById(user_id);
         if (!user) {
             return response_handler(res, 404, "User not found");
         }
@@ -136,7 +136,7 @@ exports.getPointsExpiringSoon = async (req, res) => {
         const { days = 30 } = req.query;
 
         // Check if user exists
-        const user = await User.findById(user_id);
+        const user = await Customer.findById(user_id);
         if (!user) {
             return response_handler(res, 404, "User not found");
         }

@@ -1,7 +1,7 @@
 const response_handler = require("../../helpers/response_handler");
 const { logger } = require("../../middlewares/logger");
 const SDKAccessKey = require("../../models/sdk_access_key_model");
-const User = require("../../models/user_model");
+const Customer = require("../../models/customer_model");
 
 /**
  * Middleware to authenticate SDK access keys
@@ -116,7 +116,7 @@ const sdkUserAuth = async (req, res, next) => {
 
         // In a real implementation, you would validate the token
         // For now, we'll just check if the user exists by ID (assuming the token is the user ID)
-        const user = await User.findById(userToken);
+        const user = await Customer.findById(userToken);
         if (!user) {
             logger.warn(`SDK client ${req.sdkClient.name} attempted to access with invalid user token`);
             return response_handler(res, 401, "Invalid user token");

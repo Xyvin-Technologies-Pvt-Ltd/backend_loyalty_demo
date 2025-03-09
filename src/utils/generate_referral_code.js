@@ -1,5 +1,5 @@
 const response_handler = require("../helpers/response_handler");
-const User = require("../models/user_model");
+const Customer = require("../models/customer_model");
 
 exports.generate_referral_code = async (name) => {
   if (!name) return response_handler(res, 400, "Name is required.");
@@ -14,7 +14,7 @@ exports.generate_referral_code = async (name) => {
   let referral_code = base_code;
   let counter = 1;
 
-  while (await User.exists({ referral_code: referral_code })) {
+  while (await Customer.exists({ referral_code: referral_code })) {
     referral_code = `${base_code}_${counter}`;
     counter++;
   }

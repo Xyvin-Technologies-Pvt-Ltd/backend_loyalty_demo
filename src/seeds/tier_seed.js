@@ -17,40 +17,20 @@ const seedTiers = async () => {
         const tiers = [
             {
                 name: "Silver   ",
-                app: "Khedmah-Merchant",
                 description: "Silver tier description",
                 points_required: 1000
             },
             {
                 name: "Gold",
-                app: "Khedmah-Merchant",
                 description: "Gold tier description",
                 points_required: 2000
             },
             {
                 name: "Platinum",
-                app: "Khedmah-Merchant",
                 description: "Platinum tier description",
                 points_required: 3000
             },
-            {
-                name: "Silver   ",
-                app: "Khedmah-Mobile",
-                description: "Silver tier description",
-                points_required: 1000
-            },
-            {
-                name: "Gold",
-                app: "Khedmah-Mobile",
-                description: "Gold tier description",
-                points_required: 2000
-            },
-            {
-                name: "Platinum",
-                app: "Khedmah-Mobile",
-                description: "Platinum tier description",
-                points_required: 3000
-            }
+   
         ];
 
         // Save all roles

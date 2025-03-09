@@ -1,7 +1,6 @@
 const jwt = require("jsonwebtoken");
 const response_handler = require("../../helpers/response_handler");
 const Admin = require("../../models/admin_model");
-const User = require("../../models/user_model");
 const key_protect = require("./key_protect");
 
 

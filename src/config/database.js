@@ -28,7 +28,7 @@ async function connectDatabase() {
 
         // Log success
         logger.info('Database connection established successfully');
-        console.log(clc.greenBright("✅ Database linked successfully! 🚀"));
+        console.log(clc.greenBright("✅ Database linked successfully! 🚀"+MONGO_URL));
 
         return Promise.resolve();
     } catch (error) {

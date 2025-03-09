@@ -4,15 +4,11 @@ const tier_schema = new mongoose.Schema(
   {
     name: { type: String, trim: true },
     points_required: { type: Number, default: 0, trim: true },
-    status: {
+    isActive: {
       type: Boolean,
       default: true,
     },
-    app_type: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "AppType",
-    },
-    description: { type: String, trim: true },
+    description: [{ type: String, trim: true }],
   },
   { timestamps: true }
 );

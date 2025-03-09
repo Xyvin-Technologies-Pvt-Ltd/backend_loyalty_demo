@@ -1,6 +1,5 @@
-const mongoose = require('mongoose');
 const Transaction = require('../models/transaction_model');
-const User = require('../models/user_model');
+const Customer = require('../models/customer_model');
 const PointsExpirationRules = require('../models/points_expiration_rules_model');
 const { logger } = require('../middlewares/logger');
 const { v4: uuidv4 } = require('uuid');
@@ -19,7 +18,7 @@ async function seedTransactions() {
         }
 
         // Get some users to associate transactions with
-        const users = await User.find().limit(5);
+        const users = await Customer.find().limit(5);
 
         if (users.length === 0) {
             logger.info('No users found to seed transactions, skipping');

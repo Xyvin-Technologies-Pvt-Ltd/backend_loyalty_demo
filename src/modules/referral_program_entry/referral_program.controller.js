@@ -1,6 +1,6 @@
 const ReferralProgram = require("../../models/referral_program_rule_model");
 const ReferralEntry = require("../../models/referral_entry_model");
-const User = require("../../models/user_model");
+const Customer = require("../../models/customer_model");
 const { logger } = require("../../middlewares/logger");
 const response_handler = require("../../helpers/response_handler");
 
@@ -22,7 +22,7 @@ exports.createReferralLink = async (req, res) => {
             return response_handler(res, 400, "No active referral program found.");
       }
   
-      const userReferrals = await Referral.countDocuments({ referrer: userId });
+      const userReferrals = await ReferralEntry.countDocuments({ referrer: userId });
   
       if (userReferrals >= program.maxReferralsPerUser) {
         return response_handler(res, 400, "Referral limit reached.");

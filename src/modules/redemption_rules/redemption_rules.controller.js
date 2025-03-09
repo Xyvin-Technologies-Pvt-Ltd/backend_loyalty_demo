@@ -1,7 +1,7 @@
 const response_handler = require("../../helpers/response_handler");
 const RedemptionRules = require("../../models/redemption_rules_model");
 const Transaction = require("../../models/transaction_model");
-const User = require("../../models/user_model");
+const Customer = require("../../models/customer_model");
 const Tier = require("../../models/tier_model");
 const validator = require("./redemption_rules.validator");
 const { logger } = require("../../middlewares/logger");
@@ -106,7 +106,7 @@ exports.validateRedemption = async (req, res) => {
         }
 
         // Get user
-        const user = await User.findById(user_id).populate('tier');
+        const user = await Customer.findById(user_id).populate('tier');
         if (!user) {
             return response_handler(res, 404, "User not found");
         }
@@ -267,7 +267,7 @@ exports.updateRedemptionStatus = async (req, res) => {
 
         // If transaction is rejected or cancelled, refund points to user
         if (status === "rejected" || status === "cancelled") {
-            const user = await User.findById(transaction.user);
+            const user = await Customer.findById(transaction.user);
             if (user) {
                 user.points += transaction.points;
                 await user.save();
