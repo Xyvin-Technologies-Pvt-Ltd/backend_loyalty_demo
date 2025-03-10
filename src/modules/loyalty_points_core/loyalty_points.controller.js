@@ -13,7 +13,7 @@ exports.redeem_loyalty_points = async (req, res) => {
   session.startTransaction();
 
   try {
-    const { customer_id, pointsToRedeem,metadata } = req.body;
+    const { customer_id, pointsToRedeem, metadata } = req.body;
 
     //create a transaction
     const transaction = await Transaction.create({
@@ -24,9 +24,6 @@ exports.redeem_loyalty_points = async (req, res) => {
       status: "pending",
       metadata: metadata,
     });
-
- 
-
 
     // Step 1: Calculate Total Valid Points
     const totalPoints = await LoyaltyPoints.aggregate([
@@ -79,6 +76,12 @@ exports.redeem_loyalty_points = async (req, res) => {
     // Step 4: Commit Transaction
     await session.commitTransaction();
     session.endSession();
+
+
+    //update the customer total points
+    await Customer.findByIdAndUpdate(customer_id, {
+      $inc: { total_points: -pointsToRedeem },
+    },{new:true});
 
     //update the transaction
     await Transaction.findByIdAndUpdate(transaction._id, {
@@ -243,12 +246,56 @@ exports.process_loyalty_event = async (req, res) => {
       transaction_id: transaction._id,
     });
 
+    await Customer.findByIdAndUpdate(
+      customerId,
+      {
+        $inc: { total_points: pointsOfEvent },
+      },
+      { new: true }
+    );
+
     //update the transaction
     await Transaction.findByIdAndUpdate(transaction._id, {
       status: "success",
     });
 
     return response_handler(res, 200, "Loyalty points processed successfully");
+  } catch (error) {
+    return response_handler(res, 500, error.message);
+  }
+};
+
+//adjust point by admin
+exports.adjust_point_by_admin = async (req, res) => {
+  try {
+    const { customer_id, points, metadata } = req.body;
+    const transaction = await Transaction.create({
+      customer_id: customer_id,
+      transaction_type: "adjust",
+      points: points,
+      transaction_id: uuidv4(),
+      status: "pending",
+      metadata: metadata,
+    });
+
+    const loyalty_points = await LoyaltyPoints.create({
+      customer_id: customer_id,
+      transaction_id: transaction._id,
+      points: points,
+    });
+
+    await Customer.findByIdAndUpdate(customer_id, {
+      $inc: { total_points: points },
+    },{new:true});
+
+    await Transaction.findByIdAndUpdate(transaction._id, {
+      status: "success",
+    });
+
+    return response_handler(res, 200, "Loyalty points adjusted successfully", {
+      loyalty_points: loyalty_points,
+      transaction: transaction,
+    });
   } catch (error) {
     return response_handler(res, 500, error.message);
   }

@@ -12,11 +12,6 @@ router.use(authorizePermission());
 
 
 
-router.post("/earn", loyalty_points_audit.captureResponse(), loyalty_points_audit.adminAction("earn_loyalty_points", {
-    description: "Earn loyalty points",
-    targetModel: "LoyaltyPoints",
-    details: (req) => req.body,
-}), loyalty_points_controller.earn_loyalty_points);
 
 
 router.post("/redeem", loyalty_points_audit.captureResponse(), loyalty_points_audit.adminAction("redeem_loyalty_points", {

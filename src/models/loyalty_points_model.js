@@ -7,7 +7,8 @@ const loyalty_points_schema = new mongoose.Schema({
   points: { type: Number, required: true },
   expiryDate: { type: Date, required: true }, // Expiry date for each point transaction
   transaction_id: { type: mongoose.Schema.Types.ObjectId, ref: "Transaction", required: true },
-  earnedAt: { type: Date, default: Date.now }
+  earnedAt: { type: Date, default: Date.now },
+  status: { type: String,enum:["active","expired"], default: "active" },
 },{
     timestamps: true
 });

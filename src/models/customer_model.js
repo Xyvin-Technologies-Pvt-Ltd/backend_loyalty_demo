@@ -45,6 +45,7 @@ const customer_schema = new mongoose.Schema(
       sms: { type: Boolean, default: true },
       push: { type: Boolean, default: true },
     },
+    total_points: { type: Number, default: 0 },
 
     last_active: { type: Date, default: Date.now },
   },
