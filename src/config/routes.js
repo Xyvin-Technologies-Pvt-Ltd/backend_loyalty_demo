@@ -56,7 +56,7 @@ function registerRoutes(app, basePath) {
     app.use(`${basePath}/auth`, auth_routes);
     app.use(`${basePath}/logs`, log_routes);
     app.use(`${basePath}/tier`, tier_routes);
-    app.use(`${basePath}/points-criteria`, point_criteria_routes);
+    app.use(`${basePath}/point-criteria`, point_criteria_routes);
     app.use(`${basePath}/role-settings`, role_routes);
     app.use(`${basePath}/redemption-rules`, redemption_rules_routes);
     app.use(`${basePath}/point-expiry-rules`, points_expiration_routes);

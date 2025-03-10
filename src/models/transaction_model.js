@@ -10,33 +10,10 @@ const transaction_schema = new mongoose.Schema(
 
     transaction_type: {
       type: String,
-      trim: true,
-      enum: ["earn", "redeem", "expire", "adjust", "transfer"],
+      enum: ["earn", "redeem","adjust", "expire"],
       required: true,
     },
-
-    source: {
-      type: String,
-      enum: [
-        "purchase",
-        "referral",
-        "registration",
-        "social_share",
-        "review",
-        "login",
-        "bill_payment",
-        "recharge",
-        "birthday",
-        "manual_adjustment",
-        "redemption",
-        "expiration",
-        "tier_upgrade",
-        "special_event",
-        "other",
-      ],
-      default: "other",
-    },
-
+   
     points: {
       type: Number,
       required: true,
@@ -49,30 +26,18 @@ const transaction_schema = new mongoose.Schema(
       required: true,
     },
 
-    // References to related models
-    trigger_event: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "TriggerEvent",
-      default: null,
-    },
-
-    trigger_service: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "TriggerServices",
-      default: null,
-    },
 
     point_criteria: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "PointsCriteria",
       default: null,
     },
-
-    app_type: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "AppType",
+    payment_method: {
+      type: String,
+      enum: ["Khedmah-site", "KhedmahPay-Wallet"], // Separate logic for Khedmah & KhedmahPay
+      default: null,
     },
-
+   
     status: {
       type: String,
       trim: true,
@@ -117,7 +82,6 @@ transaction_schema.index({ customer_id: 1, transaction_date: -1 });
 transaction_schema.index({ customer_id: 1, transaction_type: 1 });
 transaction_schema.index({ transaction_id: 1 }, { unique: true });
 transaction_schema.index({ reference_id: 1 });
-transaction_schema.index({ trigger_event: 1 });
 transaction_schema.index({ point_criteria: 1 });
 
 const Transaction = mongoose.model("Transaction", transaction_schema);

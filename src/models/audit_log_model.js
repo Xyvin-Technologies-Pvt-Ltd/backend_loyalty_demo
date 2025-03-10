@@ -135,9 +135,9 @@ const auditLogSchema = new mongoose.Schema(
     }
 );
 
-// Create TTL index for automatic log rotation (default 90 days)
+// Create TTL index for automatic log rotation (default 1 days)
 auditLogSchema.index({ createdAt: 1 }, {
-    expireAfterSeconds: process.env.AUDIT_LOG_TTL || 7776000
+    expireAfterSeconds: process.env.AUDIT_LOG_TTL || 86400
 });
 
 // Create compound indexes for common queries

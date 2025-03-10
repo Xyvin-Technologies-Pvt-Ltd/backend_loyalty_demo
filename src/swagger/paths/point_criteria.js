@@ -20,25 +20,35 @@
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               eventType: 
  *                 type: string
- *                 example: "Referral Bonus"
- *               description:
+ *                 example: "67cc562cf71f32d55006efba"
+ *               serviceType:
  *                 type: string
- *                 example: "Points awarded for referring new users"
- *               type:
+ *                 example: "67cc562df71f32d55006efcb"
+ *               appType:
  *                 type: string
- *                 example: "Referral"
- *               app:
- *                 type: string
- *                 example: "Khedmah"
- *               point:
- *                 type: number
- *                 example: 50
- *               amount:
- *                 type: number
- *                 example: 100
- *               status:
+ *                 example: "67cc562cf71f32d55006efb5"
+ *               pointSystem:
+ *                 type: array
+ *                 example: [{
+ *                   paymentMethod: "Khedmah-site",
+ *                   pointType: "percentage",
+ *                   conditions: {
+ *                     maxTransactions: {
+ *                       weekly: 10,
+ *                       monthly: 50
+ *                     },   
+ *                     transactionValueLimits: [
+ *                       {
+ *                         minValue: 100,
+ *                         maxValue: 1000,
+ *                         pointRate: 10
+ *                       }
+ *                     ]
+ *                   }
+ *                 }]
+ *               isActive:
  *                 type: boolean
  *                 example: true
  *     responses:
