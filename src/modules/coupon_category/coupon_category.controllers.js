@@ -1,8 +1,6 @@
 const CouponCategory = require('../../models/coupon_category_model');
-const CouponBrand = require('../../models/coupon_brand_model');
-const response_handler = require('../../utils/response_handler');
-const logger = require('../../utils/logger');
-
+const response_handler = require('../../helpers/response_handler');
+const { createCouponCategory } = require('./coupon_category.validator');
 
 exports.createCouponCategory = async (req, res) => {
     try {

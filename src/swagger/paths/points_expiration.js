@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /points-expiration/rules:
+ * /point-expiry-rules:
  *   get:
  *     summary: Get current points expiration rules
  *     tags: [Points Expiration]
@@ -163,7 +163,7 @@
 
 /**
  * @swagger
- * /points-expiration/users/{user_id}:
+ * /point-expiry-rules/users/{user_id}:
  *   get:
  *     summary: Get user's points with expiration information
  *     tags: [Points Expiration]
@@ -233,7 +233,7 @@
 
 /**
  * @swagger
- * /points-expiration/process:
+ * /point-expiry-rules/process:
  *   post:
  *     summary: Process expired points (admin only)
  *     tags: [Points Expiration]
@@ -273,7 +273,7 @@
 
 /**
  * @swagger
- * /points-expiration/users/{user_id}/expiring-soon:
+ * /point-expiry-rules/users/{user_id}/expiring-soon:
  *   get:
  *     summary: Get points expiring soon for a user
  *     tags: [Points Expiration]

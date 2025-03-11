@@ -1,5 +1,6 @@
 const CouponBrand = require("../../models/coupon_brand_model");
-const { response_handler } = require("../../utils/response_handler");
+const response_handler = require("../../helpers/response_handler");
+const { createCouponBrand } = require("./coupon_brand.validators");
 
 exports.createCouponBrand = async (req, res) => {
   const { title, description, image } = req.body;

@@ -27,6 +27,8 @@ const referral_program_rules_routes = require('../modules/referral_program_rules
 const transaction_routes = require('../modules/transaction/transaction.routes');
 const customer_routes = require('../modules/customer/customer.routes');
 const loyalty_points_routes = require('../modules/loyalty_points_core/loyalty_points.router');
+const coupon_brand_routes = require('../modules/coupon_brand/coupon_brand.routes');
+const coupon_category_routes = require('../modules/coupon_category/coupon_category.routes');
 
 
 
@@ -69,6 +71,8 @@ function registerRoutes(app, basePath) {
     app.use(`${basePath}/transaction`, transaction_routes);
     app.use(`${basePath}/customer`, customer_routes);
     app.use(`${basePath}/loyalty-points`, loyalty_points_routes);
+    app.use(`${basePath}/coupon-brand`, coupon_brand_routes);
+    app.use(`${basePath}/coupon-category`, coupon_category_routes);
     // SDK routes
     app.use(`${basePath}/sdk/access-keys`, sdkAccessKeyRoutes);
     app.use(`${basePath}/sdk/api`, sdkApiRoutes);
