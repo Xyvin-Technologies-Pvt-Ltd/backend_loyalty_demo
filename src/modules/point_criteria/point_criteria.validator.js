@@ -1,17 +1,41 @@
 const Joi = require("joi");
+const mongoose = require("mongoose");
 
-exports.create_criteria = Joi.object({
-  category: Joi.string().required(),
-  serviceName: Joi.string().required(),
-  appType: Joi.string().required(),
-  pointSystem: Joi.array().required(),
-  isActive: Joi.boolean(),
+const objectId = Joi.string().regex(/^[0-9a-fA-F]{24}$/); // MongoDB ObjectId validation
+
+const pointsCriteriaValidationSchema = Joi.object({
+  eventType: objectId.required(),
+
+  serviceType: objectId.required(),
+
+  appType: objectId.required(),
+
+  pointSystem: Joi.array()
+    .items(
+      Joi.object({
+        paymentMethod: Joi.string()
+          .valid("Khedmah-site", "KhedmahPay-Wallet")
+          .required(),
+        pointType: Joi.string().valid("percentage", "fixed").required(),
+        pointRate: Joi.number().required(),
+      })
+    )
+    .min(1)
+    .required(),
+
+  conditions: Joi.object({
+    maxTransactions: Joi.object({
+      weekly: Joi.number().allow(null),
+      monthly: Joi.number().allow(null),
+    }).default({}),
+
+    transactionValueLimits: Joi.object({
+      minValue: Joi.number().default(0),
+      maxValue: Joi.number().allow(null),
+    }).default({}),
+  }).default({}),
+
+  isActive: Joi.boolean().default(true),
 });
 
-exports.update_criteria = Joi.object({
-  category: Joi.string(),
-  serviceName: Joi.string(),
-  appType: Joi.string(),
-  pointSystem: Joi.array(),
-  isActive: Joi.boolean(),
-});
+module.exports = pointsCriteriaValidationSchema;
