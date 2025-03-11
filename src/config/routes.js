@@ -65,7 +65,7 @@ function registerRoutes(app, basePath) {
     app.use(`${basePath}/app-types`, app_type_routes);
     app.use(`${basePath}/trigger-events`, trigger_event_routes);
     app.use(`${basePath}/trigger-services`, trigger_services_routes);
-    app.use(`${basePath}/coin-management`, coin_management_routes);
+    app.use(`${basePath}/coin-conversion`, coin_management_routes);
     app.use(`${basePath}/referral-program-entry`, referral_program_entry_routes);
     app.use(`${basePath}/referral-program-rules`, referral_program_rules_routes);
     app.use(`${basePath}/transaction`, transaction_routes);

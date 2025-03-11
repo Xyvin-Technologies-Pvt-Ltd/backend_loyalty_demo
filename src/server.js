@@ -53,10 +53,10 @@ async function startServer() {
       console.log(`${port_message}\n${env_message}\n${status_message}`);
 
       // Initialize scheduled jobs
-      startScheduledJobs();
+      // startScheduledJobs();
 
       // Run database seeds in development mode
-      runDatabaseSeeds(NODE_ENV);
+      // runDatabaseSeeds(NODE_ENV);
     });
 
     // Setup graceful shutdown

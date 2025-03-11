@@ -3,7 +3,7 @@ const RedemptionRules = require("../../models/redemption_rules_model");
 const Transaction = require("../../models/transaction_model");
 const Customer = require("../../models/customer_model");
 const Tier = require("../../models/tier_model");
-const validator = require("./redemption_rules.validator");
+const { redemptionRulesSchema } = require("./redemption_rules.validator");
 const { logger } = require("../../middlewares/logger");
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require('uuid');
@@ -13,8 +13,15 @@ const { v4: uuidv4 } = require('uuid');
  */
 exports.getRules = async (req, res) => {
     try {
-        const rules = await RedemptionRules.getActiveRules();
-
+        const rules = await RedemptionRules.find({is_active: true})
+        .populate({
+            path: "tier_multipliers.tier_id",
+            select: "name -_id"  // Exclude _id, only include 'name'
+        })
+        .populate({
+            path: "updated_by",
+            select: "name email -_id"  // Exclude _id, include 'name' and 'email'
+        });
         if (!rules) {
             return response_handler(res, 404, "No redemption rules found");
         }
@@ -32,7 +39,7 @@ exports.getRules = async (req, res) => {
 exports.createOrUpdateRules = async (req, res) => {
     try {
         // Validate request body
-        const { error } = validator.createOrUpdateRules.validate(req.body, {
+        const { error } = redemptionRulesSchema.validate(req.body, {
             abortEarly: false,
         });
 

@@ -32,7 +32,10 @@ exports.create = async (req, res) => {
 
 exports.list = async (req, res) => {
   try {
-    const criteria = await Criteria.find();
+    const criteria = await Criteria.find()
+    .populate("eventType")
+    .populate("serviceType")
+    .populate("appType");
     return response_handler(
       res,
       200,
@@ -51,7 +54,10 @@ exports.list = async (req, res) => {
 exports.get_criteria = async (req, res) => {
   try {
     const { id } = req.params;
-    const criteria = await Criteria.findById(id);
+    const criteria = await Criteria.findById(id)
+    .populate("eventType")
+    .populate("serviceType")
+    .populate("appType");
     return response_handler(
       res,
       200,
@@ -70,13 +76,7 @@ exports.get_criteria = async (req, res) => {
 exports.update_criteria = async (req, res) => {
   try {
     const { id } = req.params;
-    const { error } = validator.update_criteria.validate(req.body, {
-      abortEarly: false,
-    });
-    if (error) {
-      const error_messages = error.details.map((err) => err.message).join(", ");
-      return response_handler(res, 400, `Invalid input: ${error_messages}`);
-    }
+
 
     const updated_criteria = await Criteria.findByIdAndUpdate(id, req.body, {
       new: true,

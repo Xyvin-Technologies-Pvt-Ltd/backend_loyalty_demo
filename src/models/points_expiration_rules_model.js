@@ -11,6 +11,7 @@ const points_expiration_rules_schema = new mongoose.Schema(
     },
     tier_extensions: [
       {
+        _id:false,
         tier_id: { type: mongoose.Schema.Types.ObjectId, ref: "Tier" }, // Dynamic tiers
         additional_months: { type: Number, required: true, min: 0, default: 0 },
       },
@@ -70,6 +71,8 @@ points_expiration_rules_schema.statics.calculateExpiryDate = async function ( ti
 
   return new Date(new Date().setMonth(new Date().getMonth() + totalMonths));
 };
+
+
 
 const PointsExpirationRules = mongoose.model(
   "PointsExpirationRules",

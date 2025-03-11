@@ -17,7 +17,7 @@ router.get(
         description: "User viewed points expiration rules",
         targetModel: "PointsExpirationRules"
     }),
-    cacheMiddleware(60, cacheKeys.allPointsExpirationRules),
+    cacheMiddleware(3600, cacheKeys.allPointsExpirationRules),
     pointsExpirationController.getRules
 );
 
@@ -41,44 +41,6 @@ router.post(
     pointsExpirationController.createOrUpdateRules
 );
 
-// Get user's points with expiration information (requires VIEW_POINTS_HISTORY permission)
-router.get(
-    "/users/:user_id",
-    authorizePermission("VIEW_POINTS_HISTORY"),
-    expirationAudit.dataAccess("view_user_points_expiry", {
-        description: "Admin viewed user's points expiration information",
-        targetModel: "User",
-        targetId: req => req.params.user_id
-    }),
-    cacheMiddleware(60, cacheKeys.allPointsExpirationRulesByUser),
-    pointsExpirationController.getUserPointsWithExpiry
-);
 
-// Process expired points (requires MANAGE_POINTS permission)
-router.post(
-    "/process",
-    authorizePermission("MANAGE_POINTS"),
-    expirationAudit.captureResponse(),
-    expirationAudit.pointTransaction("process_expired_points", {
-        description: "Admin processed expired points",
-        details: req => req.body
-    }),
-    pointsExpirationController.processExpiredPoints
-);
-
-// Get points expiring soon for a user (requires VIEW_POINTS_HISTORY permission)
-router.get(
-    "/users/:user_id/expiring-soon",
-    authorizePermission("VIEW_POINTS_HISTORY"),
-    expirationAudit.dataAccess("view_points_expiring_soon", {
-        description: "Admin viewed user's points expiring soon",
-        targetModel: "User",
-        targetId: req => req.params.user_id,
-        details: req => ({
-            daysThreshold: req.query.days || 30
-        })
-    }),
-    pointsExpirationController.getPointsExpiringSoon
-);
 
 module.exports = router; 

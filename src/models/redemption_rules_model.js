@@ -12,31 +12,25 @@ const redemption_rules_schema = new mongoose.Schema(
             required: true,
             default: 1000
         },
-        tier_multipliers: {
-            silver: {
-                type: Number,
-                required: true,
-                default: 1
-            },
-            gold: {
-                type: Number,
-                required: true,
-                default: 1.5
-            },
-            platinum: {
-                type: Number,
-                required: true,
-                default: 2
+        tier_multipliers:[
+            {
+                _id:false,
+                tier_id: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "Tier"
+                },
+                multiplier: {
+                    type: Number,
+                    required: true,
+                    default: 1
+                }
             }
-        },
+        ],
         is_active: {
             type: Boolean,
             default: true
         },
-        created_by: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Admin"
-        },
+       
         updated_by: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Admin"

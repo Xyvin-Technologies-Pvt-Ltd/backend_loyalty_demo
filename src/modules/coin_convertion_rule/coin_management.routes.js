@@ -20,11 +20,13 @@ const coinManagementAudit = createAuditMiddleware("coin_management");
 
 router.use(authorizePermission("VIEW_COIN_MANAGEMENT"));
 
+
+//add and update coin conversion rule
 router.post(
   "/",
   coinManagementAudit.captureResponse(),
   coinManagementAudit.adminAction("create_coin_conversion_rule", {
-    description: "Admin created coin conversion rule",
+    description: "Admin created/updated coin conversion rule",
     targetModel: "CoinConversionRule",
     details: (req) => req.body,
   }),
@@ -43,19 +45,8 @@ router.get(
   getAllCoinConversionRules
 );
 
-router.put(
-  "/:id",
-  coinManagementAudit.captureResponse(),
-  coinManagementAudit.adminAction("update_coin_conversion_rule", {
-    description: "Admin updated coin conversion rule",
-    targetModel: "CoinConversionRule",
-    details: (req) => req.params,
-  }),
-  cacheInvalidationMiddleware(cacheKeys.allCoinConversionRules),
-  updateCoinConversionRule
-);
 
-router.put(
+router.get(
   "/reset",
   coinManagementAudit.captureResponse(),
   coinManagementAudit.adminAction("reset_coin_conversion_rule", {
