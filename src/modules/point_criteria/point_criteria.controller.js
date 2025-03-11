@@ -1,10 +1,10 @@
 const response_handler = require("../../helpers/response_handler");
 const Criteria = require("../../models/point_criteria_model");
-const validator = require("./point_criteria.validator");
+const pointsCriteriaValidationSchema = require("./point_criteria.validator");
 
 exports.create = async (req, res) => {
   try {
-    const { error } = validator.create_criteria.validate(req.body, {
+    const { error } = pointsCriteriaValidationSchema.validate(req.body, {  
       abortEarly: false,
     });
     if (error) {
@@ -21,6 +21,7 @@ exports.create = async (req, res) => {
       new_criteria
     );
   } catch (error) {
+      console.error(error);
     return response_handler(
       res,
       500,

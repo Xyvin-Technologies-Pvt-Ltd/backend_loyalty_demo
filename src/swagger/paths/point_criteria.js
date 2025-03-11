@@ -34,20 +34,20 @@
  *                 example: [{
  *                   paymentMethod: "Khedmah-site",
  *                   pointType: "percentage",
- *                   conditions: {
- *                     maxTransactions: {
- *                       weekly: 10,
- *                       monthly: 50
- *                     },   
- *                     transactionValueLimits: [
- *                       {
- *                         minValue: 100,
- *                         maxValue: 1000,
- *                         pointRate: 10
- *                       }
- *                     ]
- *                   }
+ *                   pointRate: 10
  *                 }]
+ *               conditions:    
+ *                 type: object
+ *                 example: {
+ *                   maxTransactions: {
+ *                     weekly: 10,
+ *                     monthly: 50
+ *                   },
+ *                   transactionValueLimits: {
+ *                     minValue: 100,
+ *                     maxValue: 1000
+ *                   }
+ *                 }
  *               isActive:
  *                 type: boolean
  *                 example: true
