@@ -4,22 +4,39 @@ const {
 } = require("./coin_management.validator");
 const response_handler = require("../../helpers/response_handler");
 
+
+//creation and updation of coin conversion rule
 exports.createCoinConversionRule = async (req, res) => {
   try {
-    const { pointsPerCoin, minimumPoints, tierBonuses } = req.body;
+    const { pointsPerCoin, minimumPoints } = req.body;
 
     const { error } = createCoinConversionRuleValidator.validate(req.body);
     if (error) {
       return response_handler(res, 400, error.message);
     }
 
-    const coinConversionRule = await CoinConversionRule.create({
-      pointsPerCoin,
-      minimumPoints,
-      tierBonuses,
-    });
+    //if the rule already exists then update it
+    const existingRule = await CoinConversionRule.getActiveRules();
 
-    return response_handler(res, 201, "Coin conversion rule created successfully", coinConversionRule);
+    if (existingRule) {
+      existingRule.pointsPerCoin = pointsPerCoin;
+      existingRule.minimumPoints = minimumPoints;
+      existingRule.updatedBy = req.admin_id;
+      await existingRule.save();
+      logger.info(`Coin conversion rule updated by admin ${req.admin_id}`);
+
+      return response_handler(res, 200, "Coin conversion rule updated successfully", existingRule);    }
+    else{
+      const newCoinConversionRule = new  CoinConversionRule({
+        pointsPerCoin,
+        minimumPoints,  
+        updatedBy: req.admin_id,
+      })
+      await newCoinConversionRule.save();
+      logger.info(`Coin conversion rule created by admin ${req.admin_id}`);
+      return response_handler(res, 201, "Coin conversion rule created successfully", newCoinConversionRule);
+    }
+
   } catch (error) {
     return response_handler(res, 500, error.message);
   }

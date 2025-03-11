@@ -23,7 +23,7 @@ exports.createTriggerServices = async (req, res) => {
 
 exports.getAllTriggerServices = async (req, res) => {
     try {
-        const trigger_services = await TriggerServices.find();
+        const trigger_services = await TriggerServices.find().populate("triggerEvent");
         return response_handler(res, 200, "Trigger services fetched successfully!", trigger_services);
     } catch (error) {
         return response_handler(res, 500, `Internal Server Error. ${error.message}`);
