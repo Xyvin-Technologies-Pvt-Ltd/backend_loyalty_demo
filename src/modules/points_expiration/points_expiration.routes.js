@@ -17,7 +17,7 @@ router.get(
         description: "User viewed points expiration rules",
         targetModel: "PointsExpirationRules"
     }),
-    cacheMiddleware(3600, cacheKeys.allPointsExpirationRules),
+    cacheMiddleware(60, cacheKeys.allPointsExpirationRules),
     pointsExpirationController.getRules
 );
 

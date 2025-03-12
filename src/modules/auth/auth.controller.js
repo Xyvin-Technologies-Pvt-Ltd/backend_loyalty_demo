@@ -74,7 +74,7 @@ exports.admin_login = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const user = await Admin.findById(req.admin._id);
+    const user = await Admin.findById(req.admin._id,'name email _id status role').populate('role');
     return response_handler(res, 200, "User details retrieved successfully", user);
   } catch (error) {
     return response_handler(

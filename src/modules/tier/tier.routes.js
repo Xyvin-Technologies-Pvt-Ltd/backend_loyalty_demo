@@ -36,7 +36,7 @@ router.get(
     description: "Admin viewed all tiers",
     targetModel: "Tier"
   }),
-  cacheMiddleware(3600, cacheKeys.allTiers),
+  cacheMiddleware(60, cacheKeys.allTiers),
   tier_controller.list
 );
 
