@@ -16,11 +16,11 @@ exports.getRules = async (req, res) => {
         const rules = await RedemptionRules.find({is_active: true})
         .populate({
             path: "tier_multipliers.tier_id",
-            select: "name -_id"  // Exclude _id, only include 'name'
+            select: "name _id"  
         })
         .populate({
             path: "updated_by",
-            select: "name email -_id"  // Exclude _id, include 'name' and 'email'
+            select: "name email _id"  
         });
         if (!rules) {
             return response_handler(res, 404, "No redemption rules found");

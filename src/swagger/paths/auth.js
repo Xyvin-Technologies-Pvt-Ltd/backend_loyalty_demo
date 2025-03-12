@@ -103,3 +103,33 @@
  *       500:
  *         description: Internal Server Error
  */
+
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Get user details
+ *     description: Get details of the currently authenticated user
+ *     tags:
+ *       - Auth
+ *     responses:
+ *       200:
+ *         description: User details retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   get:
+ *     summary: Logout the current user 
+ *     description: Logout the current user
+ *     tags:
+ *       - Auth
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *       500:
+ *         description: Internal Server Error
+ */

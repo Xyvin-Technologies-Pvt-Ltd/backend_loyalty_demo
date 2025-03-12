@@ -15,11 +15,11 @@ exports.getRules = async (req, res) => {
         const rules = await PointsExpirationRules.find({is_active: true})
         .populate({
             path: "tier_extensions.tier_id",
-            select: "name -_id"  // Exclude _id, only include 'name'
+            select: "name _id"  
         })
         .populate({
             path: "updated_by",
-            select: "name email -_id"  // Exclude _id, include 'name' and 'email'
+            select: "name email _id"  
         });
 
         if (!rules) {

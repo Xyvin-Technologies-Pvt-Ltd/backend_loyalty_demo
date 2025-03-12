@@ -72,6 +72,28 @@ exports.admin_login = async (req, res) => {
   }
 };
 
+exports.getMe = async (req, res) => {
+  try {
+    const user = await Admin.findById(req.admin._id);
+    return response_handler(res, 200, "User details retrieved successfully", user);
+  } catch (error) {
+    return response_handler(
+      res,
+      500,
+      `Internal Server Error. ${error.message}`
+    );
+  }
+};
+
+
+exports.logout = async (req, res) => {
+  try {
+    res.clearCookie("token");
+    return response_handler(res, 200, "Logout successful!");
+  } catch (error) {
+    return response_handler(res, 500, `Internal Server Error. ${error.message}`);
+  }
+};
 
 //for user only
 exports.register = async (req, res) => {

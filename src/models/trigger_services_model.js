@@ -10,10 +10,10 @@ const triggerServicesSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    triggerEvent: {
+    triggerEvent: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'TriggerEvent'
-    }
+    }]
 }, {
     timestamps: true
 }

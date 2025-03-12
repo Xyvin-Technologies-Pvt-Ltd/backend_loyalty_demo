@@ -54,4 +54,8 @@ router.post(
     auth_controller.register
 );
 
+router.get("/me", protect, auth_controller.getMe);
+
+router.get("/logout", auth_controller.logout);  
+
 module.exports = router;
