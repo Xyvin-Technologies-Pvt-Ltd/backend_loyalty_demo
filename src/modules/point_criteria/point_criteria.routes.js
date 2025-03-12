@@ -27,7 +27,7 @@ router.post(
       return null;
     }
   }),
-  cacheInvalidationMiddleware(cacheKeys.allPointCriteria),
+  cacheInvalidationMiddleware(cacheKeys.allPointCriteria, cacheKeys.pointCriteriaById),
   point_criteria_controller.create
 );
 
@@ -49,7 +49,7 @@ router.get(
     targetModel: "PointCriteria",
     targetId: req => req.params.id
   }),
-  cacheMiddleware(60, cacheKeys.allPointCriteria),
+  cacheMiddleware(60, cacheKeys.pointCriteriaById),
   point_criteria_controller.get_criteria
 );
 
@@ -68,7 +68,7 @@ router.put(
       return null;
     }
   }),
-  cacheInvalidationMiddleware(cacheKeys.allPointCriteria),
+  cacheInvalidationMiddleware(cacheKeys.allPointCriteria, cacheKeys.pointCriteriaById),
   point_criteria_controller.update_criteria
 );
 
@@ -80,7 +80,7 @@ router.delete(
     targetModel: "PointCriteria",
     targetId: req => req.params.id
   }),
-  cacheInvalidationMiddleware(cacheKeys.allPointCriteria),
+  cacheInvalidationMiddleware(cacheKeys.allPointCriteria, cacheKeys.pointCriteriaById),
   point_criteria_controller.delete_criteria
 );
 

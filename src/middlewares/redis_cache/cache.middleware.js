@@ -109,6 +109,9 @@ const cacheKeys = {
   //all point criteria
   allPointCriteria: () => "cache:point_criteria",
 
+  //point criteria by id
+  pointCriteriaById: (req) => `cache:point_criteria:${req.params.id}`,
+
   //redeem rules
   allRedemptionRules: () => "cache:redemption_rules",
   
