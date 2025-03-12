@@ -63,6 +63,12 @@ const transaction_schema = new mongoose.Schema(
       trim: true,
     },
 
+    app_type: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AppType",
+      default: null,
+    },
+
     transaction_date: {
       type: Date,
       default: Date.now,

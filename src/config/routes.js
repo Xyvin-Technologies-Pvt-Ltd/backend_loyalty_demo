@@ -101,6 +101,7 @@ function registerRoutes(app, basePath) {
 
   // Audit routes
   app.use(`${basePath}/audit`, auditRoutes);
+  app.use(`${basePath}/transactions`, transaction_routes);
 
   // Theme settings routes
   app.use(`${basePath}/theme-settings`, themeSettingsRoutes);

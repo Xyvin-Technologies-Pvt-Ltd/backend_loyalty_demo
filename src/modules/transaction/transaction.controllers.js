@@ -1,7 +1,7 @@
 const Transaction = require("../../models/transaction_model");
 const { v4: uuidv4 } = require("uuid");
 const { logger } = require("../../middlewares/logger");
-const { response_handler } = require("../../helpers/response_handler");
+const response_handler  = require("../../helpers/response_handler");
 const mongoose = require("mongoose");
 
 const createTransaction = async (req, res) => {
@@ -67,8 +67,9 @@ const getAllTransactions = async (req, res) => {
       limit = 10,
       customer_id,
       transaction_type,
-      source,
       status,
+      points_criteria,
+      payment_method,
       start_date,
       app_type,
       end_date,
@@ -81,8 +82,9 @@ const getAllTransactions = async (req, res) => {
 
     if (customer_id) filter.customer_id = customer_id;
     if (transaction_type) filter.transaction_type = transaction_type;
-    if (source) filter.source = source;
+    if (points_criteria) filter.points_criteria = points_criteria;
     if (status) filter.status = status;
+    if (payment_method) filter.payment_method = payment_method;
     if (app_type) filter.app_type = app_type;
 
     // Date range filter
@@ -105,8 +107,6 @@ const getAllTransactions = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit))
       .populate("customer_id", "name email phone")
-      .populate("trigger_event", "name description")
-      .populate("trigger_service", "title description")
       .populate("point_criteria")
       .populate("app_type", "name description");
 
@@ -139,8 +139,6 @@ const getTransactionById = async (req, res) => {
 
     const transaction = await Transaction.findById(id)
       .populate("customer_id", "name email phone")
-      .populate("trigger_event", "name description")
-      .populate("trigger_service", "title description")
       .populate("point_criteria")
       .populate("app_type", "name description");
 
