@@ -1,6 +1,6 @@
 const swaggerJSDoc = require("swagger-jsdoc");
-const swaggerUi = require("swagger-ui-express");
 const { PORT, API_VERSION } = process.env;
+
 
 const swagger_sdk_definition = {
   openapi: "3.0.0",
@@ -52,4 +52,4 @@ const sdk_swagger_options = {
   },
 };
 
-module.exports = { swaggerUi, sdk_swagger_spec, sdk_swagger_options };
+module.exports = {  sdk_swagger_spec, sdk_swagger_options };

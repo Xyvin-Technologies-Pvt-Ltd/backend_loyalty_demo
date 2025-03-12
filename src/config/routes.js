@@ -5,13 +5,13 @@
 
 const { logger } = require("../middlewares/logger");
 const response_handler = require("../helpers/response_handler");
+// Create two separate instances of swagger-ui-express
+const swaggerUi = require("swagger-ui-express");
+
+const { swagger_spec, swagger_options } = require("../swagger/swagger");
 const {
-  swaggerUi,
-  swagger_spec,
-  swagger_options,
-} = require("../swagger/swagger");
-const {
-    swaggerUi: sdkSwaggerUi, sdk_swagger_spec, sdk_swagger_options
+  sdk_swagger_spec,
+  sdk_swagger_options,
 } = require("../swagger/swagger_client");
 // Import route modules
 const auth_routes = require("../modules/auth/auth.routes");
@@ -35,6 +35,11 @@ const customer_routes = require("../modules/customer/customer.routes");
 const loyalty_points_routes = require("../modules/loyalty_points_core/loyalty_points.router");
 const coupon_brand_routes = require("../modules/coupon_brand/coupon_brand.routes");
 const coupon_category_routes = require("../modules/coupon_category/coupon_category.routes");
+// Helper function to create separate swagger setup handlers
+const useSchema =
+  (schema, options) =>
+  (...args) =>
+    swaggerUi.setup(schema, options)(...args);
 
 function registerRoutes(app, basePath) {
   // Define a route for the API root
@@ -47,7 +52,7 @@ function registerRoutes(app, basePath) {
     );
   });
 
-  // Swagger setup
+  // Main API Swagger setup with useSchema function
   app.use(
     `${basePath}/api-docs`,
     (req, res, next) => {
@@ -55,19 +60,22 @@ function registerRoutes(app, basePath) {
       next();
     },
     swaggerUi.serve,
-    swaggerUi.setup(swagger_spec, swagger_options)
+    useSchema(swagger_spec, swagger_options)
   );
 
-  // Swagger for SDK/Client APIs
+  // SDK API Swagger setup with useSchema function
   app.use(
     `${basePath}/sdk-docs`,
     (req, res, next) => {
-      logger.info("SDK Swagger UI accessed", { endpoint: `${basePath}/sdk-docs` });
-            next();   
+      logger.info("SDK Swagger UI accessed", {
+        endpoint: `${basePath}/sdk-docs`,
+      });
+      next();
     },
-    sdkSwaggerUi.serve,
-    sdkSwaggerUi.setup(sdk_swagger_spec, sdk_swagger_options)
+    swaggerUi.serve,
+    useSchema(sdk_swagger_spec, sdk_swagger_options)
   );
+
   // Register module routes
   app.use(`${basePath}/auth`, auth_routes);
   app.use(`${basePath}/logs`, log_routes);
