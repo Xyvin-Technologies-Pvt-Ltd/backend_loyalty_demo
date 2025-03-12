@@ -29,6 +29,9 @@
  *               appType:
  *                 type: string
  *                 example: "67cc562cf71f32d55006efb5"
+ *               description:   
+ *                 type: string
+ *                 example: "Points for long-term users"
  *               pointSystem:
  *                 type: array
  *                 example: [{

@@ -9,6 +9,7 @@ const pointsCriteriaValidationSchema = Joi.object({
   serviceType: objectId.required(),
 
   appType: objectId.required(),
+  description: Joi.string().optional(),
 
   pointSystem: Joi.array()
     .items(

@@ -20,6 +20,10 @@ const pointsCriteriaSchema = new mongoose.Schema(
       ref: "AppType",
       required: true,
     },
+    description: {
+      type: String,
+      default: null,
+    },
 
     pointSystem: [
       {
