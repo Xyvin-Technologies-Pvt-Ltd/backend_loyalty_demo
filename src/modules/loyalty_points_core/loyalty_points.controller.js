@@ -13,7 +13,7 @@ exports.redeem_loyalty_points = async (req, res) => {
   session.startTransaction();
 
   try {
-    const { customer_id, pointsToRedeem, metadata } = req.body;
+    const { customer_id, pointsToRedeem, metadata,app_type } = req.body;
 
     //create a transaction
     const transaction = await Transaction.create({
@@ -23,6 +23,7 @@ exports.redeem_loyalty_points = async (req, res) => {
       transaction_id: uuidv4(),
       status: "pending",
       metadata: metadata,
+      app_type: app_type,
     });
 
     // Step 1: Calculate Total Valid Points
@@ -235,6 +236,7 @@ exports.process_loyalty_event = async (req, res) => {
       payment_method: paymentMethod,
       status: "pending",
       metadata: metadata,
+      app_type: appType,
       reference_id: reference_id,
     });
 
