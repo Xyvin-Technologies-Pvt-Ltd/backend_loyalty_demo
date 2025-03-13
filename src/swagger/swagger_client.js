@@ -16,11 +16,11 @@ const swagger_sdk_definition = {
   },
   servers: [
     {
-      url: `https://api-loyalty.xyvin.com/api/${API_VERSION}/sdk`,
+      url: `https://api-loyalty.xyvin.com/api/${API_VERSION}/client`,
       description: "SDK Staging Server",
     },
     {
-      url: `http://localhost:${PORT}/api/${API_VERSION}/sdk`,
+      url: `http://localhost:${PORT}/api/${API_VERSION}/client`,
       description: "Local Development Server",
     },
   ],
@@ -32,9 +32,15 @@ const swagger_sdk_definition = {
         name: "sdk-api-key",
         description: "API Key required for SDK authentication",
       },
+      customer_id: {
+        type: "apiKey",
+        in: "header",
+        name: "customer_id",
+        description: "Customer ID required for SDK authentication",
+      },
     },
   },
-  security: [{ ApiKeyAuth: [] }],
+  security: [{ ApiKeyAuth: ['7f4d082c436b88976239f94e3f984aa965db89e0650377d8caf715222204df5b'] },{customer_id:['CUST123456']}],
 };
 
 const sdk_options = {

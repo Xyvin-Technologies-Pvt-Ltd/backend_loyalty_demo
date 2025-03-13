@@ -35,6 +35,13 @@ const customer_routes = require("../modules/customer/customer.routes");
 const loyalty_points_routes = require("../modules/loyalty_points_core/loyalty_points.router");
 const coupon_brand_routes = require("../modules/coupon_brand/coupon_brand.routes");
 const coupon_category_routes = require("../modules/coupon_category/coupon_category.routes");
+
+//clinet only routes
+const client_only_routes = require("../modules/client_only/index");
+
+
+
+
 // Helper function to create separate swagger setup handlers
 const useSchema =
   (schema, options) =>
@@ -105,6 +112,9 @@ function registerRoutes(app, basePath) {
 
   // Theme settings routes
   app.use(`${basePath}/theme-settings`, themeSettingsRoutes);
+
+  //client only routes
+  app.use(`${basePath}/client`, client_only_routes);
 }
 
 module.exports = registerRoutes;

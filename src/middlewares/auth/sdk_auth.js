@@ -19,7 +19,7 @@ const sdkAuth = (requiredPermissions = []) => {
             }
 
             // Check for access key in headers
-            const accessKey = req.headers["x-access-key"] || req.headers["access-key"];
+            const accessKey = req.headers["sdk-api-key"]|| req.headers["x-access-key"] || req.headers["access-key"] ;
             if (!accessKey) {
                 logger.warn("SDK API request without access key");
                 return response_handler(res, 401, "Access key is required for SDK API access");
@@ -33,9 +33,9 @@ const sdkAuth = (requiredPermissions = []) => {
             }
 
             // Check if the key is active
-            if (!keyData.active) {
+            if (keyData.status !== "active") {
                 logger.warn(`Attempt to use revoked SDK key: ${keyData.name}`);
-                return response_handler(res, 401, "This SDK key has been revoked");
+                return response_handler(res, 401, "This SDK key has been revoked/inactive");
             }
 
             // Check if the key has expired
@@ -103,29 +103,29 @@ const sdkPermission = (permission) => {
 const sdkUserAuth = async (req, res, next) => {
     try {
         // Check if client information is attached to the request
-        if (!req.sdkClient) {
+        if (!req.sdkKey) {
             return response_handler(res, 401, "SDK authentication required");
         }
 
         // Check for user token in headers
-        const userToken = req.headers["x-user-token"] || req.headers["user-token"];
-        if (!userToken) {
-            logger.warn(`SDK client ${req.sdkClient.name} attempted to access user data without user token`);
+        const customer_id = req.headers["x-user-token"] || req.headers["user-token"]||req.headers["customer_id"];
+        if (!customer_id) {
+            logger.warn(`SDK client ${req.sdkKey.name} attempted to access user data without user token`);
             return response_handler(res, 401, "User token is required for this operation");
         }
 
         // In a real implementation, you would validate the token
         // For now, we'll just check if the user exists by ID (assuming the token is the user ID)
-        const user = await Customer.findById(userToken);
+        const user = await Customer.findOne({customer_id:customer_id});
         if (!user) {
-            logger.warn(`SDK client ${req.sdkClient.name} attempted to access with invalid user token`);
+            logger.warn(`SDK client ${req.sdkKey.name} attempted to access with invalid user token`);
             return response_handler(res, 401, "Invalid user token");
         }
 
         // Attach the user to the request
-        req.sdkUser = user;
+        req.customer = user;
 
-        logger.info(`SDK user access granted for user: ${user._id} via client: ${req.sdkClient.name}`);
+        logger.info(`SDK user access granted for user: ${user._id} via client: ${req.sdkKey.name}`);
         next();
     } catch (error) {
         logger.error(`SDK user authentication error: ${error.message}`, { stack: error.stack });

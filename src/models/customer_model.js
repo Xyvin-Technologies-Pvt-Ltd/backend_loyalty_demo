@@ -16,7 +16,7 @@ const customer_schema = new mongoose.Schema(
     },
     referred_by: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Customer",
       default: null,
     },
     user_referer_count: {

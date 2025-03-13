@@ -17,11 +17,11 @@ const { auditConfig } = require("../../../config/audit");
  */
 const getUserInfo = (req) => {
     // Determine user type (regular user, admin, or SDK client)
-    const user = req.user || req.admin || req.sdkClient;
+    const user = req.customer || req.admin || req.sdkClient;
 
     if (!user) return { user: null, userModel: null, userName: null, userEmail: null };
 
-    const userModel = req.user ? "User" : (req.admin ? "Admin" : "SDKAccessKey");
+    const userModel = req.params.customer_id ? "Customer" : (req.admin ? "Admin" : "Customer");
     const userName = user.name || user.username || user.clientName || null;
     const userEmail = user.email || null;
 

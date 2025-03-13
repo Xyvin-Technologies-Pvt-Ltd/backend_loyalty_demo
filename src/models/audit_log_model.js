@@ -54,7 +54,7 @@ const auditLogSchema = new mongoose.Schema(
         },
         userModel: {
             type: String,
-            enum: ["User", "Admin"],
+            enum: ["Customer", "Admin"],
             default: "Admin",
         },
         userName: String,
@@ -76,24 +76,7 @@ const auditLogSchema = new mongoose.Schema(
         },
         targetModel: {
             type: String,
-            enum: [
-                "User",
-                "Admin",
-                "Transaction",
-                "SDKAccessKey",
-                "PointCriteria",
-                "AppType",
-                "RedemptionRule",
-                "PointsExpiration",
-                "Tier",
-                "ConversionRule",
-                "TriggerEvent",
-                "TriggerService",
-                "Conversion",
-                "RedemptionRule",
-                "PointsExpiration",
-                "CoinConversionRule",
-            ],
+           
         },
         targetName: String,
 

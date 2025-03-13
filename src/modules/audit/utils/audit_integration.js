@@ -14,12 +14,7 @@ const captureResponse = require('../middlewares/response_capture.middleware');
  */
 const createAuditMiddleware = (moduleName) => {
     return {
-        /**
-         * Create middleware for auditing data access
-         * @param {string} action - The action being performed
-         * @param {Object} options - Additional options
-         * @returns {Function} - Express middleware
-         */
+     
         dataAccess: (action, options = {}) => {
             return universalAudit({
                 category: 'data_access',
@@ -32,12 +27,8 @@ const createAuditMiddleware = (moduleName) => {
             });
         },
 
-        /**
-         * Create middleware for auditing data modifications
-         * @param {string} action - The action being performed
-         * @param {Object} options - Additional options
-         * @returns {Function} - Express middleware
-         */
+        
+         
         dataModification: (action, options = {}) => {
             return universalAudit({
                 category: 'data_modification',
@@ -52,12 +43,7 @@ const createAuditMiddleware = (moduleName) => {
             });
         },
 
-        /**
-         * Create middleware for auditing admin actions
-         * @param {string} action - The action being performed
-         * @param {Object} options - Additional options
-         * @returns {Function} - Express middleware
-         */
+    
         adminAction: (action, options = {}) => {
             return universalAudit({
                 category: 'admin_action',
@@ -70,12 +56,7 @@ const createAuditMiddleware = (moduleName) => {
             });
         },
 
-        /**
-         * Create middleware for auditing point transactions
-         * @param {string} action - The action being performed
-         * @param {Object} options - Additional options
-         * @returns {Function} - Express middleware
-         */
+        
         pointTransaction: (action, options = {}) => {
             return universalAudit({
                 category: 'point_transaction',
@@ -87,12 +68,7 @@ const createAuditMiddleware = (moduleName) => {
             });
         },
 
-        /**
-         * Create middleware for auditing authentication
-         * @param {string} action - The action being performed
-         * @param {Object} options - Additional options
-         * @returns {Function} - Express middleware
-         */
+        
         authentication: (action, options = {}) => {
             return universalAudit({
                 category: 'authentication',
@@ -102,12 +78,7 @@ const createAuditMiddleware = (moduleName) => {
             });
         },
 
-        /**
-         * Create middleware for auditing API calls
-         * @param {string} action - The action being performed
-         * @param {Object} options - Additional options
-         * @returns {Function} - Express middleware
-         */
+      
         api: (action, options = {}) => {
             return universalAudit({
                 category: 'api',
@@ -117,20 +88,11 @@ const createAuditMiddleware = (moduleName) => {
             });
         },
 
-        /**
-         * Middleware to capture response bodies for audit logging
-         * @param {Object} options - Configuration options
-         * @returns {Function} - Express middleware
-         */
+       
         captureResponse: (options = {}) => {
             return captureResponse(options);
         },
-        /**
-       * Create middleware for auditing SDK actions
-       * @param {string} action - The action being performed
-       * @param {Object} options - Additional options
-       * @returns {Function} - Express middleware
-       */
+      
         sdkAction: (action, options = {}) => {
             return universalAudit({
                 category: 'sdk_action',
