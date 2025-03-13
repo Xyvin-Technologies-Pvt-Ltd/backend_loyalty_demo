@@ -15,9 +15,7 @@ const SdkCustomerAudit = createAuditMiddleware("customer");
 
 //get customer profile
 router.get( "/:customer_id/profile", SdkCustomerAudit.captureResponse(),SdkCustomerAudit.sdkAction("get_customer_profile", {
-    description: "Customer retrieved customer profile",
-    userModel: "Customer",
-    user: (req) => req.params.customer_id,
+    description: "Customer retrieved customer profile", 
     targetModel: "Customer",
     details: (req) => req.params,
 }), customerController.getMyProfile);

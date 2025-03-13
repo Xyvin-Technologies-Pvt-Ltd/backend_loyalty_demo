@@ -45,7 +45,7 @@ router.get(
     description: "Admin viewed an app type",
     targetModel: "AppType",
   }),
-  cacheMiddleware(60, cacheKeys.appTypeById),
+  cacheMiddleware(3600, cacheKeys.appTypeById),
   getAppTypeById
 );
 router.put(
