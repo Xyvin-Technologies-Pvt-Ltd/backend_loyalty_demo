@@ -1,6 +1,7 @@
 const AuditService = require("../services/audit.service");
 const response_handler = require("../../../helpers/response_handler");
 const { logger } = require("../../../middlewares/logger");
+const AuditLog = require("../../../models/audit_log_model"); 
 
 /**
  * Get audit logs with filtering and pagination
@@ -44,7 +45,7 @@ exports.getLogs = async (req, res) => {
  */
 exports.getLogById = async (req, res) => {
     try {
-        const log = await AuditService.getLogById(req.params.id);
+        const log = await AuditLog.findById(req.params.id);
 
         if (!log) {
             return response_handler(res, 404, "Audit log not found");
