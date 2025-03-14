@@ -72,4 +72,11 @@ router.get(
     auditController.getUserLogs
 );
 
+// Get sdk-api logs
+router.get(
+    "/sdk-api-logs",
+    auditAdminAction("view_sdk_api_logs"),
+    auditController.getSdkApiLogs
+);
+
 module.exports = router; 

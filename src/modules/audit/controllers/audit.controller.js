@@ -285,3 +285,36 @@ exports.exportLogs = async (req, res) => {
         return response_handler(res, 500, `Internal Server Error: ${error.message}`);
     }
 }; 
+
+
+
+/**
+ * Get sdk-api logs
+ */
+exports.getSdkApiLogs = async (req, res) => {
+    try {
+        const filters = {
+            category: "sdk_action",
+            action: req.query.action,
+            startDate: req.query.startDate,
+            endDate: req.query.endDate,
+            status: req.query.status,
+        };
+
+        const options = {
+            page: parseInt(req.query.page) || 1,
+            limit: parseInt(req.query.limit) || 20,
+            sortBy: req.query.sortBy || "timestamp",
+            sortOrder: req.query.sortOrder || "desc",
+        };
+
+        const result = await AuditService.queryLogs(filters, options);
+
+        return response_handler(res, 200, "Sdk-api logs retrieved successfully", result);
+    } catch (error) {
+        logger.error(`Error retrieving sdk-api logs: ${error.message}`, {
+            stack: error.stack,
+        });
+        return response_handler(res, 500, `Internal Server Error: ${error.message}`);
+    }
+};
