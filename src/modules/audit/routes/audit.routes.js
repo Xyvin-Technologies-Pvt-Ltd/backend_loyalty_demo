@@ -79,4 +79,11 @@ router.get(
     auditController.getSdkApiLogs
 );
 
+//get authentication logs
+router.get(
+    "/authentication-logs",
+    auditAdminAction("view_authentication_logs"),
+    auditController.getAuthenticationLogs
+);
+
 module.exports = router; 

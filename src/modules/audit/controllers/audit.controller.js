@@ -319,3 +319,28 @@ exports.getSdkApiLogs = async (req, res) => {
         return response_handler(res, 500, `Internal Server Error: ${error.message}`);
     }
 };
+
+//get authentication logs
+exports.getAuthenticationLogs = async (req, res) => {
+    try {
+        const filters = {
+            category: "authentication",
+        };
+
+        const options = {
+            page: parseInt(req.query.page) || 1,
+            limit: parseInt(req.query.limit) || 20,
+            sortBy: req.query.sortBy || "timestamp",
+            sortOrder: req.query.sortOrder || "desc",
+        };
+
+        const result = await AuditService.queryLogs(filters, options);
+
+        return response_handler(res, 200, "Authentication logs retrieved successfully", result);
+    } catch (error) {
+        logger.error(`Error retrieving authentication logs: ${error.message}`, {
+            stack: error.stack,
+        });
+        return response_handler(res, 500, `Internal Server Error: ${error.message}`);
+    }
+};
