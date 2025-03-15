@@ -59,7 +59,7 @@ customer_schema.index({ customer_id: 1 });
 customer_schema.index({ email: 1 });
 customer_schema.index({ phone: 1 });
 customer_schema.index({ app_type: 1 });
-customer_schema.index({ referral_code: 1 });
+// customer_schema.index({ referral_code: 1 });
 
 
 module.exports = Customer;

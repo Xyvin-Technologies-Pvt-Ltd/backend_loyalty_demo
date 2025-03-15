@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /customers:
+ * /customer:
  *   post:
  *     summary: Create a new customer
  *     description: Creates a new customer in the system. Requires EDIT_CUSTOMERS permission.
@@ -217,7 +217,7 @@
 
 /**
  * @swagger
- * /customers/{id}:
+ * /customer/{id}:
  *   get:
  *     summary: Get a specific customer
  *     description: Retrieves a specific customer by ID. Requires VIEW_CUSTOMERS permission.
@@ -410,7 +410,7 @@
 
 /**
  * @swagger
- * /customers/{id}/dashboard:
+ * /customer/{id}/dashboard:
  *   get:
  *     summary: Get customer dashboard
  *     description: Retrieves a comprehensive dashboard for a specific customer, including points summary, tier progress, and recent transactions. Requires VIEW_CUSTOMERS permission.

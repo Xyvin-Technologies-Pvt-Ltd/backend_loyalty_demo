@@ -86,7 +86,7 @@ const transaction_schema = new mongoose.Schema(
 // Indexes for faster queries
 transaction_schema.index({ customer_id: 1, transaction_date: -1 });
 transaction_schema.index({ customer_id: 1, transaction_type: 1 });
-transaction_schema.index({ transaction_id: 1 }, { unique: true });
+// transaction_schema.index({ transaction_id: 1 }, { unique: true });
 transaction_schema.index({ reference_id: 1 });
 transaction_schema.index({ point_criteria: 1 });
 

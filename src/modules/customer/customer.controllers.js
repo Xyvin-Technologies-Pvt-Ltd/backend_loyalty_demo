@@ -3,7 +3,7 @@ const Transaction = require("../../models/transaction_model");
 const LoyaltyPoints = require("../../models/loyalty_points_model");
 const Tier = require("../../models/tier_model");
 const { logger } = require("../../middlewares/logger");
-const { response_handler } = require("../../helpers/response_handler");
+const response_handler  = require("../../helpers/response_handler"); 
 const mongoose = require("mongoose");
 
 /**
@@ -13,7 +13,7 @@ const mongoose = require("mongoose");
  */
 const createCustomer = async (req, res) => {
   try {
-    const { name, email, phone, app_type } = req.body;
+    const { name, email, phone, app_type ,device_token,device_type} = req.body;
 
     // Check if customer with email or phone already exists
     const existingCustomer = await Customer.findOne({
@@ -37,6 +37,9 @@ const createCustomer = async (req, res) => {
     // Generate a unique referral code
     const referral_code = generateReferralCode(name);
 
+    //find basic tier based on least point required
+    const basicTier = await Tier.findOne({ points_required: { $gt: 0 } }).sort({ points_required: 1 });
+
     // Create the customer
     const customer = new Customer({
       customer_id,
@@ -45,6 +48,9 @@ const createCustomer = async (req, res) => {
       phone,
       app_type,
       referral_code,
+      tier: basicTier._id,
+      device_token,
+      device_type,
     });
 
     await customer.save();

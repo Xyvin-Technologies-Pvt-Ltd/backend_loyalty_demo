@@ -529,6 +529,46 @@
  *         description: Internal Server Error
  */
 
-module.exports = {
-    // This file is automatically loaded by the Swagger configuration
-}; 
+/**
+ * @swagger
+ * /audit/get-sdk-api-logs:
+ *   get:
+ *     summary: Get sdk-api logs
+ *     tags: [Audit]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Audit statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     logs:
+ *                       type: array
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         total:
+ *                           type: number
+ *                         page:
+ *                           type: number
+ *                         limit:
+ *                           type: number
+ *                         pages:
+ *                           type: number
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Internal Server Error
+ */ 
