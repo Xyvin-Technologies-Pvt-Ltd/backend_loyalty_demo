@@ -13,7 +13,7 @@ const { v4: uuidv4 } = require('uuid');
  */
 exports.getRules = async (req, res) => {
     try {
-        const rules = await RedemptionRules.find({is_active: true})
+        const rules = await RedemptionRules.findOne({is_active: true})
         .populate({
             path: "tier_multipliers.tier_id",
             select: "name _id"  
