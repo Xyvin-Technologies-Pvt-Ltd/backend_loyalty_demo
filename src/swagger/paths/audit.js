@@ -572,3 +572,11 @@
  *       500:
  *         description: Internal Server Error
  */ 
+
+/**
+ * @swagger
+ * /audit/authentication-logs:
+ *   get:
+ *     summary: Get authentication logs
+ *     tags: [Audit]
+ */
