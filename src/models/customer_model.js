@@ -38,7 +38,7 @@ const customer_schema = new mongoose.Schema(
     device_type: {
       type: String,
       enum: ["android", "ios", "web"],
-      required: true,
+      // required: true,
     },
     notification_preferences: {
       email: { type: Boolean, default: true },

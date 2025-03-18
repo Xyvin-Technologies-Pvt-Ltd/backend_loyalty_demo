@@ -14,7 +14,7 @@ const {
   cacheMiddleware,
   cacheKeys,
 } = require("../../middlewares/redis_cache/cache.middleware");
-
+const { cacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
 // Create audit middleware for customers
 const customerAudit = createAuditMiddleware("customer");
 
@@ -27,7 +27,7 @@ router.get(
     description: "Admin viewed all customers",
     targetModel: "Customer",
   }),
-  cacheMiddleware(300, cacheKeys.allCustomers),
+  cacheMiddleware(60, cacheKeys.allCustomers),
   getAllCustomers
 );
 
@@ -39,7 +39,7 @@ router.get(
     description: "Admin viewed a customer",
     targetModel: "Customer",
   }),
-  cacheMiddleware(300, cacheKeys.customerById),
+  cacheMiddleware(60, cacheKeys.customerById),
   getCustomerById
 );
 
@@ -63,6 +63,7 @@ router.post(
     description: "Admin created a new customer",
     targetModel: "Customer",
   }),
+  cacheInvalidationMiddleware(cacheKeys.allCustomers, cacheKeys.customerById),
   createCustomer
 );
 
@@ -74,6 +75,7 @@ router.put(
     description: "Admin updated a customer",
     targetModel: "Customer",
   }),
+  cacheInvalidationMiddleware(cacheKeys.allCustomers, cacheKeys.customerById),
   updateCustomer
 );
 
@@ -86,6 +88,7 @@ router.delete(
     description: "Admin deleted a customer",
     targetModel: "Customer",
   }),
+  cacheInvalidationMiddleware(cacheKeys.allCustomers, cacheKeys.customerById),
   deleteCustomer
 );
 

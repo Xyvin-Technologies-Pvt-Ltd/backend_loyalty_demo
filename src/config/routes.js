@@ -35,7 +35,7 @@ const customer_routes = require("../modules/customer/customer.routes");
 const loyalty_points_routes = require("../modules/loyalty_points_core/loyalty_points.router");
 const coupon_brand_routes = require("../modules/coupon_brand/coupon_brand.routes");
 const coupon_category_routes = require("../modules/coupon_category/coupon_category.routes");
-
+const customer_support_routes = require("../modules/customer_support/support.routes");
 //clinet only routes
 const client_only_routes = require("../modules/client_only/index");
 
@@ -102,6 +102,7 @@ function registerRoutes(app, basePath) {
   app.use(`${basePath}/loyalty-points`, loyalty_points_routes);
   app.use(`${basePath}/coupon-brand`, coupon_brand_routes);
   app.use(`${basePath}/coupon-category`, coupon_category_routes);
+  app.use(`${basePath}/customer-support`, customer_support_routes);
   // SDK routes
   app.use(`${basePath}/sdk/access-keys`, sdkAccessKeyRoutes);
   app.use(`${basePath}/sdk/api`, sdkApiRoutes);
