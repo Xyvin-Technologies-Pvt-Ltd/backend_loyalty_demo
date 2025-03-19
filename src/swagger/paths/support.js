@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /support:
+ * /customer-support:
  *   post:
  *     summary: Create a new support ticket
  *     description: Creates a new customer support ticket. Requires MANAGE_SUPPORT permission.
@@ -225,7 +225,7 @@
 
 /**
  * @swagger
- * /support/stats:
+ * /customer-support/stats:
  *   get:
  *     summary: Get support ticket statistics
  *     description: Retrieves statistics about support tickets, including counts by status, category, and priority, as well as resolution time metrics. Requires MANAGE_SUPPORT permission.
@@ -326,7 +326,7 @@
 
 /**
  * @swagger
- * /support/{id}:
+ * /customer-support/{id}:
  *   get:
  *     summary: Get a specific support ticket
  *     description: Retrieves a specific support ticket by ID, including all messages. Requires MANAGE_SUPPORT permission.
@@ -519,7 +519,7 @@
 
 /**
  * @swagger
- * /support/{id}/status:
+ * /customer-support/{id}/status:
  *   patch:
  *     summary: Update a support ticket's status
  *     description: Updates the status of an existing support ticket. Requires MANAGE_SUPPORT permission.
@@ -593,7 +593,7 @@
 
 /**
  * @swagger
- * /support/{id}/messages:
+ * /customer-support/{id}/messages:
  *   post:
  *     summary: Add a message to a support ticket
  *     description: Adds a new message to an existing support ticket. Requires MANAGE_SUPPORT permission.
@@ -697,7 +697,7 @@
 
 /**
  * @swagger
- * /support/customer/{customerId}:
+ * /customer-support/customer/{customerId}:
  *   get:
  *     summary: Get support tickets for a specific customer
  *     description: Retrieves all support tickets for a specific customer with pagination and filtering. Requires MANAGE_SUPPORT permission.

@@ -106,7 +106,6 @@ const supportTicketSchema = new mongoose.Schema(
 );
 
 // Indexes for faster queries
-supportTicketSchema.index({ ticket_id: 1 }, { unique: true });
 supportTicketSchema.index({ customer: 1 });
 supportTicketSchema.index({ status: 1 });
 supportTicketSchema.index({ category: 1 });

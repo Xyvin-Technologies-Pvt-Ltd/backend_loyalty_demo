@@ -1,7 +1,7 @@
 const SupportTicket = require("../../models/support_ticket_model");
 const Customer = require("../../models/customer_model");
 const { logger } = require("../../middlewares/logger");
-const { response_handler } = require("../../helpers/response_handler");
+const  response_handler  = require("../../helpers/response_handler");
 
 /**
  * Create a new support ticket
