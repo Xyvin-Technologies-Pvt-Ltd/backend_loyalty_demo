@@ -1,5 +1,7 @@
-const SupportTicket = require("../../models/support_ticket_model");
 const Customer = require("../../models/customer_model");
+const Admin = require("../../models/admin_model");
+const SupportTicket = require("../../models/support_ticket_model");
+
 const { logger } = require("../../middlewares/logger");
 const  response_handler  = require("../../helpers/response_handler");
 
@@ -152,7 +154,10 @@ const getTicketById = async (req, res) => {
       .populate("customer", "name email phone")
       .populate("assigned_to", "name email")
       .populate("related_transaction")
-      .populate("messages.sender");
+      .populate({
+        path: "messages.sender",
+        select: "name email" // Select specific fields
+      })
 
     if (!ticket) {
       return response_handler(res, 404, "Support ticket not found");
@@ -174,6 +179,7 @@ const getTicketById = async (req, res) => {
     );
   }
 };
+
 
 /**
  * Update a support ticket
