@@ -8,6 +8,10 @@ const Criteria = require("../../models/point_criteria_model");
 const Transaction = require("../../models/transaction_model");
 
 //redeem loyalty points
+// This function is used to redeem loyalty points from the user's account
+// that is the user has earned points and wants to redeem them for a certain reward. 
+// This process happens when after he chooses a reward from merchant offer of Kidmah offer and is valid then redeem the points
+
 exports.redeem_loyalty_points = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -98,6 +102,8 @@ exports.redeem_loyalty_points = async (req, res) => {
   }
 };
 //process a loyalty point earning event from user based on trigger event, trigger service, app type , user tier, condition etc
+// By processing loyalty event, we mean that the user has earned loyalty points based on a certain event, service, app type, tier, condition etc  
+// This is the main function that will be used to process the loyalty event
 exports.process_loyalty_event = async (req, res) => {
   try {
     const {

@@ -24,6 +24,7 @@ const pointsCriteriaSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    //point-earning-system , not discount system
 
     pointSystem: [
       {
