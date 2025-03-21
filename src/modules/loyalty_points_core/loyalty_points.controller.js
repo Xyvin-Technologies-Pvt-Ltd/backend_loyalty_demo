@@ -17,7 +17,7 @@ exports.redeem_loyalty_points = async (req, res) => {
   session.startTransaction();
 
   try {
-    const { customer_id, pointsToRedeem, metadata,app_type } = req.body;
+    const { customer_id, pointsToRedeem, metadata, app_type } = req.body;
 
     //create a transaction
     const transaction = await Transaction.create({
@@ -86,7 +86,7 @@ exports.redeem_loyalty_points = async (req, res) => {
     //update the customer total points
     await Customer.findByIdAndUpdate(customer_id, {
       $inc: { total_points: -pointsToRedeem },
-    },{new:true});
+    }, { new: true });
 
     //update the transaction
     await Transaction.findByIdAndUpdate(transaction._id, {
@@ -114,6 +114,7 @@ exports.process_loyalty_event = async (req, res) => {
       customerId,
       transactionValue,
       metadata,
+      reference_id,
     } = req.body;
 
     // Find the customer
@@ -122,12 +123,12 @@ exports.process_loyalty_event = async (req, res) => {
       return response_handler(res, 400, "Customer not found");
     }
 
-    // Find the point criteria
-    const pointCriteria = await Criteria.findOne({
+    // Find the point criteria using our static method
+    const pointCriteria = await Criteria.findMatchingCriteria(
       eventType,
       serviceType,
-      appType,
-    });
+      appType
+    );
 
     if (!pointCriteria) {
       return response_handler(
@@ -136,107 +137,36 @@ exports.process_loyalty_event = async (req, res) => {
         "No point criteria found for this event"
       );
     }
-    //check if the point criteria is active
-    if (!pointCriteria.isActive) {
-      return response_handler(res, 400, "Point criteria is not active");
-    }
 
-    // Find which point system to use based on payment method
-    const pointSystem_paymentMethod = pointCriteria.pointSystem.find(
-      (point) => point.paymentMethod === paymentMethod
+    // Use our new optimized method to check eligibility - no need to fetch transactions first!
+    const eligibilityCheck = await pointCriteria.checkEligibilityOptimized(
+      paymentMethod,
+      transactionValue,
+      customerId
     );
-    if (!pointSystem_paymentMethod) {
+
+    if (!eligibilityCheck.eligible) {
       return response_handler(
         res,
         400,
-        "No point system found for this payment method"
+        eligibilityCheck.message,
+        { details: eligibilityCheck.details }
       );
     }
 
-    //check if the customer meets the condition based on his previous transaction
+    // Calculate points using our new method
+    const pointsToAward = eligibilityCheck.points;
 
-    // Define start dates for weekly and monthly checks
-    const currentDate = new Date();
-    const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - 7);
-    const startOfMonth = new Date(currentDate);
-    startOfMonth.setDate(1);
-
-    //check his previous transaction
-    const pastTransactions = await Transaction.findOne({
-      customerId,
-      point_criteria: pointCriteria._id,
-      createdAt: { $gte: startOfMonth },
-    });
-
-    // Count weekly and monthly transactions
-    const weeklyCount = pastTransactions.filter(
-      (tx) => tx.createdAt >= startOfWeek
-    ).length;
-    const monthlyCount = pastTransactions.length;
-    // Get transaction limits from point criteria
-    const maxWeekly = pointCriteria.conditions.maxTransactions.weekly;
-    const maxMonthly = pointCriteria.conditions.maxTransactions.monthly;
-
-    // Check if user exceeded limits
-    if (weeklyCount != null && weeklyCount >= maxWeekly) {
-      return response_handler(res, 400, "Weekly transaction limit exceeded");
-    }
-    if (monthlyCount != null && monthlyCount >= maxMonthly) {
-      return response_handler(res, 400, "Monthly transaction limit exceeded");
-    }
-
-    // Check if the transaction value is within the allowed limits
-    const minTransactionLimit =
-      pointSystem.conditions.transactionValueLimits.find(
-        (limit) => transactionValue >= limit.minValue
-      );
-
-    if (!minTransactionLimit) {
-      return response_handler(
-        res,
-        400,
-        "Transaction value does not meet the minimum required limits"
-      );
-    }
-    //calculate points
-    let pointsOfEvent;
-    const pointType = pointSystem_paymentMethod[0].pointType;
-    const pointRate = pointSystem_paymentMethod[0].pointRate;
-    //check max value for percentage
-    if (pointType === "percentage") {
-      const maxTransactionLimit =
-        pointCriteria.conditions.transactionValueLimits.maxValue;
-      let applicableValue = transactionValue;
-
-      // If transaction value exceeds max limit, apply maxValue's percentage
-      if (transactionValue > maxTransactionLimit) {
-        applicableValue = maxTransactionLimit;
-      }
-
-      // Calculate percentage points and round
-      let calculatedPoints = Math.round((applicableValue * pointRate) / 100);
-      pointsOfEvent = calculatedPoints;
-    } else {
-      pointsOfEvent = pointRate;
-    }
-
-    //find tier of customer
-    //check if the customer has a tier
-    if (!customer.tier) {
-      return response_handler(res, 400, "Customer has no tier");
-    }
-
-    /// Fetch expiry rules & calculate expiry date
+    // Fetch expiry rules & calculate expiry date
     const expiryDate = await PointsExpirationRules.calculateExpiryDate(
       customer.tier
     );
 
-    //Create a transaction first
+    // Create a transaction
     const transaction = await Transaction.create({
       customer_id: customerId,
       transaction_type: "earn",
-      points: pointsOfEvent,
+      points: pointsToAward,
       transaction_id: uuidv4(),
       point_criteria: pointCriteria._id,
       payment_method: paymentMethod,
@@ -249,26 +179,36 @@ exports.process_loyalty_event = async (req, res) => {
     // Add the points to the customer's loyalty points
     await LoyaltyPoints.create({
       customer_id: customerId,
-      points: pointsOfEvent,
+      points: pointsToAward,
       expiryDate: expiryDate,
       transaction_id: transaction._id,
     });
 
+    // Update customer's total points
     await Customer.findByIdAndUpdate(
       customerId,
       {
-        $inc: { total_points: pointsOfEvent },
+        $inc: { total_points: pointsToAward },
       },
       { new: true }
     );
 
-    //update the transaction
+    // Update the transaction status
     await Transaction.findByIdAndUpdate(transaction._id, {
       status: "success",
     });
 
-    return response_handler(res, 200, "Loyalty points processed successfully");
+    return response_handler(
+      res,
+      200,
+      "Loyalty points processed successfully",
+      {
+        pointsAwarded: pointsToAward,
+        calculationDetails: eligibilityCheck.details
+      }
+    );
   } catch (error) {
+    console.error("Process loyalty event error:", error);
     return response_handler(res, 500, error.message);
   }
 };
@@ -294,7 +234,7 @@ exports.adjust_point_by_admin = async (req, res) => {
 
     await Customer.findByIdAndUpdate(customer_id, {
       $inc: { total_points: points },
-    },{new:true});
+    }, { new: true });
 
     await Transaction.findByIdAndUpdate(transaction._id, {
       status: "success",

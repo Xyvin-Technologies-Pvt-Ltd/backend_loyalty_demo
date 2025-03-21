@@ -3,11 +3,11 @@ const Joi = require("joi");
 const kedmahOffersValidationSchema = Joi.object({
     title: Joi.string().required(),
     description: Joi.string().required(),
-    offerType: Joi.string().valid("DISCOUNT", "FREE_SERVICE", "BONUS_POINTS", "EXCLUSIVE_ACCESS").required(),
     posterImage: Joi.string().required(),
-    serviceCategory: Joi.string().required(),
     appType: Joi.string().required(),
+    serviceCategory: Joi.string().required(),
     eventType: Joi.string().allow(null),
+    offerType: Joi.string().valid("DISCOUNT", "FLAT_OFFER").required(),
 
     discountDetails: Joi.when('offerType', {
         is: 'DISCOUNT',
@@ -18,38 +18,34 @@ const kedmahOffersValidationSchema = Joi.object({
         otherwise: Joi.optional()
     }),
 
-    bonusPoints: Joi.when('offerType', {
-        is: 'BONUS_POINTS',
-        then: Joi.object({
-            value: Joi.number().required()
-        }).required(),
-        otherwise: Joi.optional()
-    }),
-
     validityPeriod: Joi.object({
         startDate: Joi.date().required(),
         endDate: Joi.date().greater(Joi.ref('startDate')).required()
     }).required(),
 
+    redeemablePointsCount: Joi.number().min(0).default(0),
+
     usagePolicy: Joi.object({
-        maxUsagePerUser: Joi.number().min(1).required(),
         frequency: Joi.string().valid("DAILY", "WEEKLY", "MONTHLY", "TOTAL").required(),
-        userLimit: Joi.number().allow(null)
+        maxUsagePerPeriod: Joi.number().min(1).required(),
+        maxTotalUsage: Joi.number().allow(null).default(null),
+        userLimit: Joi.number().allow(null).default(null)
     }).required(),
 
     eligibilityCriteria: Joi.object({
-        userTypes: Joi.array().items(Joi.string().valid("NEW", "EXISTING", "PREMIUM", "ALL")).required(),
+        userTypes: Joi.array().items(Joi.string().valid("NEW", "EXISTING", "PREMIUM", "ALL")).default(['ALL']),
+        tiers: Joi.array().items(Joi.string()).required(),
         minTransactionHistory: Joi.number().min(0).default(0),
         minPointsBalance: Joi.number().min(0).default(0)
-    }),
+    }).required(),
 
     conditions: Joi.object({
         minTransactionValue: Joi.number().min(0).default(0),
-        maxTransactionValue: Joi.number().allow(null),
+        maxTransactionValue: Joi.number().allow(null).default(null),
         applicablePaymentMethods: Joi.array().items(
             Joi.string().valid("Khedmah-site", "KhedmahPay-Wallet", "ALL")
         ).default(["ALL"])
-    }),
+    }).default({}),
 
     termsAndConditions: Joi.array().items(Joi.string()),
     redemptionInstructions: Joi.string().required(),
