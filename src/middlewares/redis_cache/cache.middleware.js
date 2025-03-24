@@ -134,7 +134,17 @@ const cacheKeys = {
   allTriggerServices: () => "cache:trigger_services",
 
   //trigger service by id
-  triggerServiceById: (req) => `cache:trigger_service:${req.params.id}`,
+  triggerServicesById: (req) => `cache:trigger_service:${req.params.id}`,
+
+  //all trigger services by event id
+  allTriggerServicesByEventId: (req) => `cache:trigger_services:${req.params.event_id}`,
+
+  //trigger service by event id
+  triggerServiceByEventId: (req) => `cache:trigger_service:${req.params.event_id}`,
+
+  //all trigger services by event id
+  allTriggerServicesByEventId: (req) => `cache:trigger_services:${req.params.event_id}`,
+
 
   //trigger service by event id
   triggerServiceByEventId: (req) => `cache:trigger_service:${req.params.event_id}`,

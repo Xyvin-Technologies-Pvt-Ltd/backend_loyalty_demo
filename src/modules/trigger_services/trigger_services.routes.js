@@ -37,7 +37,7 @@ router.get('/:id', triggerServicesAudit.adminAction("get_trigger_services_by_id"
     targetModel: "TriggerServices",
     details: req => req.params
 }),
-    cacheMiddleware(60, cacheKeys.triggerServicesById),
+    cacheMiddleware(60, cacheKeys.triggerServicesById ) ,
     getTriggerServicesById
 );
 
@@ -65,7 +65,7 @@ router.get('/trigger-event/:eventId', triggerServicesAudit.adminAction("get_trig
     targetModel: "TriggerServices",
     details: req => req.params
 }),
-    cacheMiddleware(360, cacheKeys.triggerServiceByEventId),
+    cacheMiddleware(60, cacheKeys.triggerServiceByEventId),
     getTriggerServicesByEventId
 );
 
