@@ -239,7 +239,7 @@
 
 /**
  * @swagger
- * /trigger-services/event/{eventId}:
+ * /trigger-services/trigger-event/{eventId}: 
  *   get:
  *     summary: Get trigger services by event ID
  *     description: Retrieves a list of trigger services filtered by event ID.
