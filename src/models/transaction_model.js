@@ -92,4 +92,4 @@ transaction_schema.index({ point_criteria: 1 });
 
 const Transaction = mongoose.model("Transaction", transaction_schema);
 
-module.exports = Transaction;
+module.exports = Transaction; 

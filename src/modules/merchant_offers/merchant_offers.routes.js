@@ -5,7 +5,6 @@ const { authorizePermission } = require('../../middlewares/auth/auth');
 const { createAuditMiddleware } = require('../audit');
 const { cacheInvalidationMiddleware } = require('../../middlewares/redis_cache/cache_invalidation.middleware');
 const { cacheMiddleware, cacheKeys } = require('../../middlewares/redis_cache/cache.middleware');
-const validateRequest = require('../../middlewares/validateRequest');
 const validators = require('./merchant_offers.validators');
 
 // Create audit middleware for the merchant_offers module
@@ -14,7 +13,6 @@ const couponAudit = createAuditMiddleware('merchant_offers');
 // Merchant routes for coupon management
 router.post('/pre-generated',
     authorizePermission('MANAGE_COUPONS'),
-    validateRequest(validators.createPreGeneratedCoupons),
     couponAudit.captureResponse(),
     couponAudit.adminAction('create_coupon', {
         description: 'Admin created pre-generated coupons',
@@ -33,7 +31,6 @@ router.post('/pre-generated',
 
 router.post('/dynamic',
     authorizePermission('MANAGE_COUPONS'),
-    validateRequest(validators.generateDynamicCoupon),
     couponAudit.captureResponse(),
     couponAudit.adminAction('create_dynamic_coupon', {
         description: 'Admin created a dynamic coupon',
@@ -52,7 +49,6 @@ router.post('/dynamic',
 
 router.post('/one-time-link',
     authorizePermission('MANAGE_COUPONS'),
-    validateRequest(validators.createOneTimeLink),
     couponAudit.captureResponse(),
     couponAudit.adminAction('create_one_time_link', {
         description: 'Admin created a one-time link coupon',
@@ -71,7 +67,6 @@ router.post('/one-time-link',
 
 router.post('/validate',
     authorizePermission('MANAGE_COUPONS', 'USE_COUPONS'),
-    validateRequest(validators.validateCoupon),
     couponAudit.captureResponse(),
     couponAudit.adminAction('validate_coupon', {
         description: 'User validated a coupon',
@@ -90,7 +85,6 @@ router.post('/validate',
 
 router.post('/check-eligibility',
     authorizePermission('MANAGE_COUPONS', 'USE_COUPONS'),
-    validateRequest(validators.checkEligibility),
     couponAudit.adminAction('check_coupon_eligibility', {
         description: 'User checked eligibility for a coupon',
         targetModel: 'CouponCode',

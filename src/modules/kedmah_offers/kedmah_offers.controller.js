@@ -1,8 +1,9 @@
 const response_handler = require("../../helpers/response_handler");
 const KedmahOffers = require("../../models/kedmah_offers_model");
-const User = require("../../models/user_model"); // Assuming you have a user model
+const Customer = require("../../models/customer_model"); // Assuming you have a user model
 const { kedmahOffersValidationSchema, validateOfferEligibility } = require("./kedmah_offers.validator");
-const Transaction = require("../../models/transaction.model");
+const Transaction = require("../../models/transaction_model");
+const { logger } = require("../../middlewares/logger");
 
 exports.create = async (req, res) => {
     try {
@@ -23,7 +24,7 @@ exports.create = async (req, res) => {
             new_offer
         );
     } catch (error) {
-        console.error(error);
+        logger.error(`Error creating kedmah offer: ${error.message}`);
         return response_handler(
             res,
             500,
@@ -62,7 +63,7 @@ exports.list = async (req, res) => {
             offers
         );
     } catch (error) {
-        console.error(error);
+        logger.error(`Error fetching kedmah offers: ${error.message}`);
         return response_handler(
             res,
             500,
@@ -91,7 +92,7 @@ exports.get_offer = async (req, res) => {
             offer
         );
     } catch (error) {
-        console.error(error);
+        logger.error(`Error fetching kedmah offer: ${error.message}`);
         return response_handler(
             res,
             500,
@@ -128,7 +129,7 @@ exports.update_offer = async (req, res) => {
             updated_offer
         );
     } catch (error) {
-        console.error(error);
+        logger.error(`Error updating kedmah offer: ${error.message}`);
         return response_handler(
             res,
             500,
@@ -153,7 +154,7 @@ exports.delete_offer = async (req, res) => {
             deleted_offer
         );
     } catch (error) {
-        console.error(error);
+        logger.error(`Error deleting kedmah offer: ${error.message}`);
         return response_handler(
             res,
             500,
@@ -174,7 +175,7 @@ exports.check_user_eligibility = async (req, res) => {
             return response_handler(res, 404, "Offer not found");
         }
 
-        const user = await User.findById(userId);
+        const user = await Customer.findById(userId);
         if (!user) {
             return response_handler(res, 404, "User not found");
         }
@@ -223,7 +224,7 @@ exports.check_user_eligibility = async (req, res) => {
 
 exports.redeem_offer = async (req, res) => {
     try {
-        const { offerId, userId, transactionId, transactionValue, paymentMethod } = req.body;
+        const { offerId, customerId, transactionId, transactionValue, paymentMethod } = req.body;
 
         // Find the offer and user
         const offer = await KedmahOffers.findById(offerId);
@@ -231,13 +232,13 @@ exports.redeem_offer = async (req, res) => {
             return response_handler(res, 404, "Offer not found");
         }
 
-        const user = await User.findById(userId);
-        if (!user) {
-            return response_handler(res, 404, "User not found");
+        const customer = await Customer.findById(customerId);
+        if (!customer) {
+            return response_handler(res, 404, "Customer not found");
         }
 
         // First check eligibility
-        const eligibilityCheck = await offer.checkEligibility(user, transactionValue, paymentMethod);
+        const eligibilityCheck = await offer.checkEligibility(customer, transactionValue, paymentMethod);
 
         // If not eligible, return the reason
         if (!eligibilityCheck.eligible) {
@@ -251,7 +252,7 @@ exports.redeem_offer = async (req, res) => {
 
         //Transaction registration
         const transaction = await Transaction.create({
-            userId,
+            customerId,
             transactionValue,
             paymentMethod,
             offerId: offer._id,
@@ -259,7 +260,7 @@ exports.redeem_offer = async (req, res) => {
         });
         // Record the redemption
         offer.usageHistory.push({
-            userId,
+            customerId,
             usedAt: new Date(),
             transactionId
         });
@@ -297,17 +298,17 @@ exports.redeem_offer = async (req, res) => {
 
 exports.getUserOffers = async (req, res) => {
     try {
-        const { userId } = req.params;
+        const { customerId } = req.params;
         const { appType } = req.query;
 
         // Find the user to check tier
-        const user = await User.findById(userId);
-        if (!user) {
-            return response_handler(res, 404, "User not found");
+        const customer = await Customer.findById(customerId);
+        if (!customer) {
+            return response_handler(res, 404, "Customer not found");
         }
 
         // Get user tiers
-        const userTiers = user.tiers || [];
+        const customerTiers = customer.tiers || [];
 
         // Build query for eligible offers
         const query = {
@@ -333,18 +334,18 @@ exports.getUserOffers = async (req, res) => {
         for (const offer of allOffers) {
             // Check if user tier is eligible
             const tierEligible = offer.eligibilityCriteria.tiers.some(
-                tier => userTiers.includes(tier.toString())
+                tier => customerTiers.includes(tier.toString())
             );
 
             // Check user type eligibility
             const typeEligible = offer.eligibilityCriteria.userTypes.includes('ALL') ||
-                offer.eligibilityCriteria.userTypes.includes(user.userType);
+                offer.eligibilityCriteria.userTypes.includes(customer.userType);
 
             // Check points balance
-            const pointsEligible = user.pointsBalance >= offer.eligibilityCriteria.minPointsBalance;
+            const pointsEligible = customer.pointsBalance >= offer.eligibilityCriteria.minPointsBalance;
 
             // Check transaction history
-            const transactionEligible = user.transactionCount >= offer.eligibilityCriteria.minTransactionHistory;
+            const transactionEligible = customer.transactionCount >= offer.eligibilityCriteria.minTransactionHistory;
 
             if (tierEligible && typeEligible && pointsEligible && transactionEligible) {
                 eligibleOffers.push(offer);

@@ -155,9 +155,9 @@ const couponCodeSchema = new mongoose.Schema({
 
     // Usage tracking
     usageHistory: [{
-        userId: {
+        customerId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
+            ref: 'Customer'
         },
         usedAt: {
             type: Date,
@@ -178,10 +178,10 @@ const couponCodeSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Helper method to check if a user can use the coupon
-couponCodeSchema.methods.canUserUseCoupon = async function (userId) {
+couponCodeSchema.methods.canUserUseCoupon = async function (customerId) {
     const now = new Date();
     const userUsageHistory = this.usageHistory.filter(usage =>
-        usage.userId.toString() === userId.toString()
+        usage.customerId.toString() === customerId.toString()
     );
 
     // Check max total usage per user
@@ -232,7 +232,7 @@ couponCodeSchema.methods.canUserUseCoupon = async function (userId) {
 };
 
 // Helper to check eligibility based on various criteria
-couponCodeSchema.methods.checkEligibility = async function (user, transactionValue, paymentMethod) {
+couponCodeSchema.methods.checkEligibility = async function (customer, transactionValue, paymentMethod) {
     const now = new Date();
 
     // Check if coupon is active and valid
@@ -252,17 +252,17 @@ couponCodeSchema.methods.checkEligibility = async function (user, transactionVal
 
     // Check app type eligibility
     if (this.conditions.appType && this.conditions.appType.length > 0) {
-        const userAppTypes = user.appTypes.map(appType => appType.toString());
+        const customerAppTypes = customer.appTypes.map(appType => appType.toString());
         const eligibleAppTypes = this.conditions.appType.map(appType => appType.toString());
 
-        if (!eligibleAppTypes.some(appTypeId => userAppTypes.includes(appTypeId))) {
+        if (!eligibleAppTypes.some(appTypeId => customerAppTypes.includes(appTypeId))) {
             return {
                 eligible: false,
                 reason: 'App type not eligible for this coupon'
             };
         }
     }
-    
+        
 
     // Check transaction value
     if (transactionValue < this.conditions.minTransactionValue) {
@@ -320,7 +320,7 @@ couponCodeSchema.methods.checkEligibility = async function (user, transactionVal
     }
 
     // Check usage limits
-    const usageCheck = await this.canUserUseCoupon(user._id);
+    const usageCheck = await this.canUserUseCoupon(customer._id);
     if (!usageCheck.canUse) {
         return {
             eligible: false,

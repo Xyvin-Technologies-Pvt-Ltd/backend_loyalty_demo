@@ -150,9 +150,9 @@ const kedmahOffersSchema = new mongoose.Schema(
 
         // Usage tracking
         usageHistory: [{
-            userId: {
+            customerId: {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: "User"
+                ref: "Customer"
             },
             usedAt: {
                 type: Date,
@@ -168,10 +168,10 @@ const kedmahOffersSchema = new mongoose.Schema(
 );
 
 // Helper method to check if a user can use the offer
-kedmahOffersSchema.methods.canUserUseCoupon = async function (userId) {
+kedmahOffersSchema.methods.canUserUseCoupon = async function (customerId) {
     const now = new Date();
     const userUsageHistory = this.usageHistory.filter(usage =>
-        usage.userId.toString() === userId.toString()
+        usage.customerId.toString() === customerId.toString()
     );
 
     // Check max total usage per user
@@ -219,7 +219,7 @@ kedmahOffersSchema.methods.canUserUseCoupon = async function (userId) {
 };
 
 // Helper to check eligibility based on various criteria
-kedmahOffersSchema.methods.checkEligibility = async function (user, transactionValue, paymentMethod) {
+kedmahOffersSchema.methods.checkEligibility = async function (customer, transactionValue, paymentMethod) {
     const now = new Date();
 
     // Check if offer is active and valid
@@ -239,10 +239,10 @@ kedmahOffersSchema.methods.checkEligibility = async function (user, transactionV
 
     // Check app type eligibility
     if (this.conditions.appType && this.conditions.appType.length > 0) {
-        const userAppTypes = user.appTypes.map(appType => appType.toString());
+        const customerAppTypes = customer.appTypes.map(appType => appType.toString());
         const eligibleAppTypes = this.conditions.appType.map(appType => appType.toString());
 
-        if (!eligibleAppTypes.some(appTypeId => userAppTypes.includes(appTypeId))) {
+        if (!eligibleAppTypes.some(appTypeId => customerAppTypes.includes(appTypeId))) {
             return {
                 eligible: false,
                 reason: 'App type not eligible for this offer'
@@ -278,7 +278,7 @@ kedmahOffersSchema.methods.checkEligibility = async function (user, transactionV
 
     // Check user type eligibility
     if (!this.eligibilityCriteria.userTypes.includes('ALL') &&
-        !this.eligibilityCriteria.userTypes.includes(user.userType)) {
+        !this.eligibilityCriteria.userTypes.includes(customer.userType)) {
         return {
             eligible: false,
             reason: 'User type not eligible for this offer'
@@ -287,10 +287,10 @@ kedmahOffersSchema.methods.checkEligibility = async function (user, transactionV
 
     // Check tier eligibility
     if (this.eligibilityCriteria.tiers && this.eligibilityCriteria.tiers.length > 0) {
-        const userTierIds = user.tiers.map(tier => tier.toString());
+        const customerTierIds = customer.tiers.map(tier => tier.toString());
         const eligibleTierIds = this.eligibilityCriteria.tiers.map(tier => tier.toString());
 
-        if (!eligibleTierIds.some(tierId => userTierIds.includes(tierId))) {
+        if (!eligibleTierIds.some(tierId => customerTierIds.includes(tierId))) {
             return {
                 eligible: false,
                 reason: 'User tier not eligible for this offer'
@@ -299,7 +299,7 @@ kedmahOffersSchema.methods.checkEligibility = async function (user, transactionV
     }
 
     // Check points balance
-    if (user.pointsBalance < this.eligibilityCriteria.minPointsBalance) {
+    if (customer.pointsBalance < this.eligibilityCriteria.minPointsBalance) {
         return {
             eligible: false,
             reason: `Minimum points balance of ${this.eligibilityCriteria.minPointsBalance} required`
@@ -307,7 +307,7 @@ kedmahOffersSchema.methods.checkEligibility = async function (user, transactionV
     }
 
     // Check transaction history
-    if (user.transactionCount < this.eligibilityCriteria.minTransactionHistory) {
+    if (customer.transactionCount < this.eligibilityCriteria.minTransactionHistory) {
         return {
             eligible: false,
             reason: `Minimum transaction history of ${this.eligibilityCriteria.minTransactionHistory} required`
@@ -315,7 +315,7 @@ kedmahOffersSchema.methods.checkEligibility = async function (user, transactionV
     }
 
     // Check usage limits
-    const usageCheck = await this.canUserUseCoupon(user._id);
+    const usageCheck = await this.canUserUseCoupon(customer._id);
     if (!usageCheck.canUse) {
         return {
             eligible: false,

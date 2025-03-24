@@ -5,7 +5,6 @@ const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
 const { cacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
 const { cacheMiddleware, cacheKeys } = require("../../middlewares/redis_cache/cache.middleware");
-const validateRequest = require("../../middlewares/validateRequest");
 const { kedmahOffersValidationSchema, validateOfferEligibility } = require("./kedmah_offers.validator");
 
 // Create audit middleware for the kedmah_offers module
@@ -15,7 +14,6 @@ const kedmahOffersAudit = createAuditMiddleware("kedmah_offers");
 router.post(
     "/",
     authorizePermission("MANAGE_KEDMAH_OFFERS"),
-    validateRequest(kedmahOffersValidationSchema),
     kedmahOffersAudit.captureResponse(),
     kedmahOffersAudit.adminAction("create_kedmah_offer", {
         description: "Admin created a new Kedmah loyalty offer",
@@ -58,7 +56,6 @@ router.get(
 router.put(
     "/:id",
     authorizePermission("MANAGE_KEDMAH_OFFERS"),
-    validateRequest(kedmahOffersValidationSchema),
     kedmahOffersAudit.captureResponse(),
     kedmahOffersAudit.adminAction("update_kedmah_offer", {
         description: "Admin updated a Kedmah loyalty offer",
@@ -93,7 +90,6 @@ router.delete(
 router.post(
     "/check-eligibility",
     authorizePermission("USE_KEDMAH_OFFERS"),
-    validateRequest(validateOfferEligibility),
     kedmahOffersAudit.adminAction("check_kedmah_offer_eligibility", {
         description: "User checked eligibility for a Kedmah loyalty offer",
         targetModel: "KedmahOffers",
@@ -108,7 +104,6 @@ router.post(
 router.post(
     "/redeem",
     authorizePermission("USE_KEDMAH_OFFERS"),
-    validateRequest(validateOfferEligibility),
     kedmahOffersAudit.captureResponse(),
     kedmahOffersAudit.adminAction("redeem_kedmah_offer", {
         description: "User redeemed a Kedmah loyalty offer",
@@ -129,12 +124,12 @@ router.post(
 // Get user offers by user id means the offers that the user is eligible without transaction value and payment method
 
 router.get(
-    "/user/:userId",
+    "/customer/:customerId",
     authorizePermission("VIEW_KEDMAH_OFFERS", "USE_KEDMAH_OFFERS"),
     kedmahOffersAudit.adminAction("view_user_eligible_offers", {
         description: "User viewed their eligible Kedmah loyalty offers",
         targetModel: "KedmahOffers",
-        targetId: req => req.params.userId
+        targetId: req => req.params.customerId
     }),
     cacheMiddleware(60, cacheKeys.userEligibleOffers),
     kedmah_offers_controller.getUserOffers

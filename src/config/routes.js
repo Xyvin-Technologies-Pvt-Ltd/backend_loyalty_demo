@@ -39,7 +39,9 @@ const customer_support_routes = require("../modules/customer_support/support.rou
 //clinet only routes
 const client_only_routes = require("../modules/client_only/index");
 
-
+//Offers routes
+const merchant_offers_routes = require("../modules/merchant_offers/merchant_offers.routes");
+const kedmah_offers_routes = require("../modules/kedmah_offers/kedmah_offers.routes");
 
 
 // Helper function to create separate swagger setup handlers
@@ -106,6 +108,10 @@ function registerRoutes(app, basePath) {
   // SDK routes
   app.use(`${basePath}/sdk/access-keys`, sdkAccessKeyRoutes);
   app.use(`${basePath}/sdk/api`, sdkApiRoutes);
+
+  //Offers routes
+  app.use(`${basePath}/merchant-offers`, merchant_offers_routes);
+  app.use(`${basePath}/kedmah-offers`, kedmah_offers_routes);
 
   // Audit routes
   app.use(`${basePath}/audit`, auditRoutes);

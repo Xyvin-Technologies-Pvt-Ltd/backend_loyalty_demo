@@ -1,8 +1,8 @@
 const response_handler = require("../../helpers/response_handler");
 const CouponCode = require("../../models/merchant_offers.model");
-const User = require("../../models/user_model"); // Assuming you have a user model
-const validators = require("./merchant_offers.validators");
-const Transaction = require("../../models/transaction.model");
+const Customer = require("../../models/customer_model");     // Assuming you have a user model
+const Transaction = require("../../models/transaction_model");
+const { logger } = require("../../middlewares/logger"); 
 
 exports.createPreGeneratedCoupons = async (req, res) => {
     try {
@@ -34,7 +34,7 @@ exports.createPreGeneratedCoupons = async (req, res) => {
         }));
 
         const newCoupons = await CouponCode.insertMany(couponDocs);
-
+        logger.info(`New coupons created: ${newCoupons.length}`);
         return response_handler(
             res,
             201,
@@ -42,7 +42,7 @@ exports.createPreGeneratedCoupons = async (req, res) => {
             newCoupons
         );
     } catch (error) {
-        console.error(error);
+        logger.error(`Error creating pre-generated coupons: ${error.message}`);
         return response_handler(
             res,
             500,
@@ -168,7 +168,7 @@ exports.validateCoupon = async (req, res) => {
         }
 
         // Find user
-        const user = await User.findById(userId);
+        const user = await Customer.findById(userId);
         if (!user) {
             return response_handler(
                 res,
@@ -231,11 +231,11 @@ exports.validateCoupon = async (req, res) => {
 
 exports.checkEligibility = async (req, res) => {
     try {
-        const { couponId, userId, transactionValue, paymentMethod } = req.body;
+        const { couponId, customerId, transactionValue, paymentMethod } = req.body;
 
         // Find the coupon and user
         const coupon = await CouponCode.findById(couponId);
-        const user = await User.findById(userId);
+        const customer = await Customer.findById(customerId);
 
         if (!coupon) {
             return response_handler(
@@ -245,7 +245,7 @@ exports.checkEligibility = async (req, res) => {
             );
         }
 
-        if (!user) {
+        if (!customer) {
             return response_handler(
                 res,
                 404,
@@ -254,9 +254,9 @@ exports.checkEligibility = async (req, res) => {
         }
 
         // Check eligibility
-        const eligibilityCheck = await coupon.checkEligibility(user, transactionValue, paymentMethod);
+        const eligibilityCheck = await coupon.checkEligibility(customer, transactionValue, paymentMethod);
 
-        if (!eligibilityCheck.eligible) {
+        if (!eligibilityCheck.eligible) {       
             return response_handler(
                 res,
                 400,
