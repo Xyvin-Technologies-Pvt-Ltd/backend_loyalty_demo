@@ -1,0 +1,161 @@
+const SubAdmin = require('../../models/sub_admin.model');
+const Role = require('../../models/role_model');
+const response_handler = require('../../helpers/response_handler');
+const jwt = require('jsonwebtoken');
+
+// Create new sub-admin
+const createSubAdmin = async (req, res) => {
+    try {
+        const { firstName, lastName, email, phoneNumber, password, roleId, accessScope, assignedRegions } = req.body;
+
+        // Check if role exists
+        const role = await Role.findById(roleId);
+        if (!role) {
+            return response_handler(res, 404, 'Role not found');
+        }
+
+        // Check if email already exists
+        const existingAdmin = await SubAdmin.findOne({ email });
+        if (existingAdmin) {
+            return response_handler(res, 400, 'Email already registered');
+        }
+
+        const subAdmin = new SubAdmin({
+            firstName,
+            lastName,
+            email,
+            phoneNumber,
+            password,
+            roleId,
+            accessScope,
+            assignedRegions
+        });
+
+        await subAdmin.save();
+        await subAdmin.logActivity('CREATE', 'Sub-admin account created');
+
+        return response_handler(res, 201, 'Sub-admin created successfully', {
+            id: subAdmin._id,
+            email: subAdmin.email
+        });
+    } catch (error) {
+        console.error('Error creating sub-admin:', error);
+        return response_handler(res, 500, 'Error creating sub-admin');
+    }
+};
+
+// Get all sub-admins
+const getAllSubAdmins = async (req, res) => {
+    try {
+        const subAdmins = await SubAdmin.find()
+            .select('-password -passwordResetToken -passwordResetExpires')
+            .populate('roleId', 'name description permissions');
+
+        return response_handler(res, 200, 'Sub-admins retrieved successfully', subAdmins);
+    } catch (error) {
+        console.error('Error fetching sub-admins:', error);
+        return response_handler(res, 500, 'Error fetching sub-admins');
+    }
+};
+
+// Get sub-admin by ID
+const getSubAdminById = async (req, res) => {
+    try {
+        const subAdmin = await SubAdmin.findById(req.params.id)
+            .select('-password -passwordResetToken -passwordResetExpires')
+            .populate('roleId', 'name description permissions');
+
+        if (!subAdmin) {
+            return response_handler(res, 404, 'Sub-admin not found');
+        }
+
+        return response_handler(res, 200, 'Sub-admin retrieved successfully', subAdmin);
+    } catch (error) {
+        console.error('Error fetching sub-admin:', error);
+        return response_handler(res, 500, 'Error fetching sub-admin');
+    }
+};
+
+// Update sub-admin
+const updateSubAdmin = async (req, res) => {
+    try {
+        const { firstName, lastName, phoneNumber, roleId, accessScope, assignedRegions, isActive } = req.body;
+        const subAdmin = await SubAdmin.findById(req.params.id);
+
+        if (!subAdmin) {
+            return response_handler(res, 404, 'Sub-admin not found');
+        }
+
+        // Update fields
+        if (firstName) subAdmin.firstName = firstName;
+        if (lastName) subAdmin.lastName = lastName;
+        if (phoneNumber) subAdmin.phoneNumber = phoneNumber;
+        if (roleId) subAdmin.roleId = roleId;
+        if (accessScope) subAdmin.accessScope = accessScope;
+        if (assignedRegions) subAdmin.assignedRegions = assignedRegions;
+        if (typeof isActive === 'boolean') subAdmin.isActive = isActive;
+
+        await subAdmin.save();
+        await subAdmin.logActivity('UPDATE', 'Sub-admin details updated');
+
+        return response_handler(res, 200, 'Sub-admin updated successfully');
+    } catch (error) {
+        console.error('Error updating sub-admin:', error);
+        return response_handler(res, 500, 'Error updating sub-admin');
+    }
+};
+
+// Delete sub-admin
+const deleteSubAdmin = async (req, res) => {
+    try {
+        const subAdmin = await SubAdmin.findById(req.params.id);
+
+        if (!subAdmin) {
+            return response_handler(res, 404, 'Sub-admin not found');
+        }
+
+        await subAdmin.logActivity('DELETE', 'Sub-admin account deleted');
+        await subAdmin.remove();
+
+        return response_handler(res, 200, 'Sub-admin deleted successfully');
+    } catch (error) {
+        console.error('Error deleting sub-admin:', error);
+        return response_handler(res, 500, 'Error deleting sub-admin');
+    }
+};
+
+// Reset password
+const resetPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const subAdmin = await SubAdmin.findOne({ email });
+
+        if (!subAdmin) {
+            return response_handler(res, 404, 'Sub-admin not found');
+        }
+
+        // Generate reset token
+        const resetToken = jwt.sign({ id: subAdmin._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        subAdmin.passwordResetToken = resetToken;
+        subAdmin.passwordResetExpires = Date.now() + 3600000; // 1 hour
+
+        await subAdmin.save();
+        await subAdmin.logActivity('PASSWORD_RESET', 'Password reset requested');
+
+        // TODO: Send reset email
+
+        return response_handler(res, 200, 'Password reset instructions sent to email');
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        return response_handler(res, 500, 'Error resetting password');
+    }
+};
+
+module.exports = {
+    createSubAdmin,
+    getAllSubAdmins,
+    getSubAdminById,
+    updateSubAdmin,
+    deleteSubAdmin,
+    resetPassword
+}; 

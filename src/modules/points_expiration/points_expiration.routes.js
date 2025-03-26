@@ -54,6 +54,17 @@ router.get(
     pointsExpirationController.getRuleById
 );
 
+//get by appid
+router.get(
+    "/app/:appId",
+    authorizePermission(),
+    expirationAudit.dataAccess("view_rule", {
+        description: "User viewed points expiration rule",
+        targetModel: "PointsExpirationRules"
+    }),
+    pointsExpirationController.getRuleByAppId
+);
+
 //edit rule
 router.put(
     "/:id",

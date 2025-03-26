@@ -147,4 +147,17 @@ router.get(
   redemption_rules_controller.getRedemptionHistory
 );
 
+//get by appid
+router.get(
+  "/app/:appId",
+  authorizePermission(),
+  redemptionAudit.dataAccess("view_rule", {
+    description: "User viewed redemption rule",
+    targetModel: "RedemptionRules",
+    targetId: (req) => req.params.appId,
+  }),
+  redemption_rules_controller.getRuleByAppId
+);
+
+
 module.exports = router;

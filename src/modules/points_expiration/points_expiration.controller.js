@@ -144,3 +144,18 @@ exports.deleteRule = async (req, res) => {
         return response_handler(res, 500, `Internal Server Error: ${error.message}`);
     }
 };
+
+//get by appid
+exports.getRuleByAppId = async (req, res) => {
+    try {
+        const { appId } = req.params;
+        const rule = await PointsExpirationRules.findOne({ appType: appId });
+        if (!rule) {
+            return response_handler(res, 404, "Points expiration rule not found");
+        }
+        return response_handler(res, 200, "Points expiration rule retrieved successfully", rule);
+    } catch (error) {
+        logger.error(`Error retrieving points expiration rule: ${error.message}`, { stack: error.stack });
+        return response_handler(res, 500, `Internal Server Error: ${error.message}`);
+    }
+};

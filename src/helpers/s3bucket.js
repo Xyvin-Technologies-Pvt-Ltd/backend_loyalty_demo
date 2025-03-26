@@ -1,47 +1,51 @@
-//s3bucket
-const AWS = require("aws-sdk");
-const multer = require("multer");
-const multerS3 = require("multer-s3");
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
+const fs = require("fs");
+const path = require("path");
 
-
-//configure aws
-const s3 = new AWS.S3({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION
-});
-
-//upload file to s3
-const upload = multer({
-    storage: multerS3({
-        s3: s3,
-        bucket: process.env.AWS_BUCKET_NAME,
-        acl: 'public-read',
-        metadata: (req, file, cb) => {
-            cb(null, { fieldName: file.fieldname });
-        },
-        key: (req, file, cb) => {
-            // Generate unique filename with original extension
-            const fileExt = path.extname(file.originalname);
-            const fileName = `${uuidv4()}${fileExt}`;
-            cb(null, fileName);
-        }
-    }),
-    fileFilter: (req, file, cb) => {
-        // Validate file types
-        const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        if (allowedMimes.includes(file.mimetype)) {
-            cb(null, true);
-        } else {
-            cb(new Error('Invalid file type. Only JPEG, PNG, GIF and WEBP are allowed.'), false);
-        }
-    },
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
+const s3 = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
     }
 });
 
-//export upload
-module.exports = upload;
+// Upload file to S3
+const uploadToS3 = async (file) => {
+    const fileStream = fs.createReadStream(file.path);
+        const uploadParams = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `uploads/${Date.now()}_${path.basename(file.originalname)}`,
+        Body: fileStream,
+        ContentType: file.mimetype,
+    };
+
+    try {
+        const command = new PutObjectCommand(uploadParams);
+        await s3.send(command);
+        return `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${uploadParams.Key}`;
+    } catch (err) {
+        console.error("S3 Upload Error:", err);
+        throw err;
+    }
+};
+
+// Delete file from S3
+const deleteFromS3 = async (fileUrl) => {
+    try {
+        const key = fileUrl.split("/").slice(-2).join("/"); // Extract Key from URL
+
+        const command = new DeleteObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: key
+        });
+
+        await s3.send(command);
+        return true;
+    } catch (err) {
+        console.error("S3 Delete Error:", err);
+        throw err;
+    }
+};
+
+module.exports = { uploadToS3, deleteFromS3 };

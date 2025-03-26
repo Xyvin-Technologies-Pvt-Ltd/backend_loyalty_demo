@@ -74,4 +74,4 @@ const swagger_options = {
 
 const swagger_spec = swaggerJSDoc(options);
 
-module.exports = {  swagger_spec, swagger_options };
+module.exports = { swagger_spec, swagger_options };

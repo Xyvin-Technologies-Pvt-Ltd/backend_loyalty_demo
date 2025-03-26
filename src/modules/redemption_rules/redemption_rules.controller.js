@@ -343,3 +343,20 @@ exports.updateRedemptionStatus = async (req, res) => {
         return response_handler(res, 500, `Internal Server Error: ${error.message}`);
     }
 }; 
+
+//get by appid
+exports.getRuleByAppId = async (req, res) => {
+    try {
+        const { appId } = req.params;
+        const rule = await RedemptionRules.findOne({ appType: appId });
+
+        if (!rule) {
+            return response_handler(res, 404, "Redemption rule not found");
+        }
+
+        return response_handler(res, 200, "Redemption rule retrieved successfully", rule);
+    } catch (error) {
+        logger.error(`Error retrieving redemption rule: ${error.message}`, { stack: error.stack });
+        return response_handler(res, 500, `Internal Server Error: ${error.message}`);
+    }
+};

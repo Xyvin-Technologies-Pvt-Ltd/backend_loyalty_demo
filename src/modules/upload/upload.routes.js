@@ -1,27 +1,28 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { authorizePermission } = require('../../middlewares/auth/auth');
-const upload = require('../../helpers/s3bucket');
-const { uploadImage, updateImage, deleteImage } = require('./upload.controller');
+const { authorizePermission } = require("../../middlewares/auth/auth");
+const multer = require("multer");
+const { uploadImage, updateImage, deleteImage } = require("./upload.controller");
 
-// Single file upload route
-router.post('/image',
-    authorizePermission('UPLOAD_IMAGES'),
-    upload.single('image'),
+const upload = multer({ dest: "uploads/" }); // Temporary storage
+
+
+router.use(authorizePermission("UPLOAD_IMAGES"));
+// Upload image
+router.post("/image",
+    upload.single("image"),
     uploadImage
 );
 
-// Update image route (deletes old image and uploads new one)
-router.put('/image',
-    authorizePermission('UPLOAD_IMAGES'),
-    upload.single('image'),
+// Update image
+router.put("/image",
+    upload.single("image"),
     updateImage
 );
 
-// Delete image route
-router.delete('/image',
-    authorizePermission('UPLOAD_IMAGES'),
+// Delete image
+router.delete("/image",
     deleteImage
 );
 
-module.exports = router; 
+module.exports = router;
