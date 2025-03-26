@@ -20,6 +20,7 @@
   "homepage": "https://github.com/hello-world-ttj/loyalty-backend#readme",
   "description": "",
   "dependencies": {
+    "aws-sdk": "^2.1692.0",
     "bcrypt": "^5.1.1",
     "bullmq": "^4.12.4",
     "cli-color": "^2.0.4",
@@ -36,6 +37,8 @@
     "loyalty-backend": "file:",
     "moment-timezone": "^0.5.47",
     "mongoose": "^8.10.1",
+    "multer": "^1.4.5-lts.2",
+    "multer-s3": "^3.0.1",
     "nodemon": "^3.1.9",
     "prom-client": "^14.2.0",
     "swagger-jsdoc": "^6.2.8",

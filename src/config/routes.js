@@ -43,6 +43,8 @@ const client_only_routes = require("../modules/client_only/index");
 const merchant_offers_routes = require("../modules/merchant_offers/merchant_offers.routes");
 const kedmah_offers_routes = require("../modules/kedmah_offers/kedmah_offers.routes");
 
+//upload routes
+const upload_routes = require("../modules/upload/upload.routes");
 
 // Helper function to create separate swagger setup handlers
 const useSchema =
@@ -120,6 +122,10 @@ function registerRoutes(app, basePath) {
 
   // Theme settings routes
   app.use(`${basePath}/theme-settings`, themeSettingsRoutes);
+
+
+  //upload routes
+  app.use(`${basePath}/upload`, upload_routes);
 
   //client only routes
   app.use(`${basePath}/client`, client_only_routes);
