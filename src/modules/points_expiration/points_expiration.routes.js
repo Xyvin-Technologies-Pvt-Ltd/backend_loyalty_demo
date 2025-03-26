@@ -18,10 +18,10 @@ router.get(
         targetModel: "PointsExpirationRules"
     }),
     cacheMiddleware(60, cacheKeys.allPointsExpirationRules),
-    pointsExpirationController.getRules
+    pointsExpirationController.getAllRules
 );
 
-// Create or update points expiration rules (requires MANAGE_POINTS permission)
+// Create expiration rules (requires MANAGE_POINTS permission)
 router.post(
     "/",
     authorizePermission("MANAGE_POINTS"),
@@ -38,9 +38,45 @@ router.post(
         }
     }),
     cacheInvalidationMiddleware(cacheKeys.allPointsExpirationRules),
-    pointsExpirationController.createOrUpdateRules
+    pointsExpirationController.createRules
 );
 
 
+//getby id
+router.get(
+    "/:id",
+    authorizePermission(),
+    expirationAudit.dataAccess("view_rule", {
+        description: "User viewed points expiration rule",
+        targetModel: "PointsExpirationRules"
+    }),
+    cacheMiddleware(60, cacheKeys.pointsExpirationRulesById),
+    pointsExpirationController.getRuleById
+);
 
+//edit rule
+router.put(
+    "/:id",
+    authorizePermission(),
+    expirationAudit.captureResponse(),
+    expirationAudit.dataModification("update_rule", {
+        description: "Admin updated points expiration rule",
+        targetModel: "PointsExpirationRules",
+        details: req => req.body
+    }),
+    cacheInvalidationMiddleware(cacheKeys.allPointsExpirationRules, cacheKeys.pointsExpirationRulesById),
+    pointsExpirationController.editRule
+);
+
+//delete rule
+router.delete(
+    "/:id",
+    authorizePermission(),
+    expirationAudit.dataModification("delete_rule", {
+        description: "Admin deleted points expiration rule",
+        targetModel: "PointsExpirationRules"
+    }),
+    cacheInvalidationMiddleware(cacheKeys.allPointsExpirationRules, cacheKeys.pointsExpirationRulesById),
+    pointsExpirationController.deleteRule
+);
 module.exports = router; 

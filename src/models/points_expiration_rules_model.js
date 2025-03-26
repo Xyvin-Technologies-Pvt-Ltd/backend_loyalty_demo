@@ -16,6 +16,8 @@ const points_expiration_rules_schema = new mongoose.Schema(
         additional_months: { type: Number, required: true, min: 0, default: 0 },
       },
     ],
+    appType: { type: mongoose.Schema.Types.ObjectId, ref: "AppType" },
+
     expiry_notifications: {
       first_reminder: {
         type: Number,

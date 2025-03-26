@@ -2,11 +2,7 @@ const mongoose = require('mongoose');
 
 const couponCodeSchema = new mongoose.Schema({
     // Basic identification
-    code: {
-        type: String,
-        required: true,
-        unique: true,
-    },
+
     title: {
         type: String,
         required: true
@@ -39,15 +35,18 @@ const couponCodeSchema = new mongoose.Schema({
         enum: ['PRE_GENERATED', 'DYNAMIC', 'ONE_TIME_LINK'],
         required: true
     },
+    code: {
+        type: String,
+        required: function() {
+            return this.type === 'PRE_GENERATED' || this.type === 'DYNAMIC';
+        }
+    },
     status: {
         type: String,
         enum: ['UNUSED', 'CLAIMED', 'REDEEMED', 'EXPIRED'],
         default: 'UNUSED'
     },
-    isActive: {
-        type: Boolean,
-        default: true
-    },
+ 
 
     // Validity period
     validityPeriod: {
@@ -71,7 +70,7 @@ const couponCodeSchema = new mongoose.Schema({
         value: {
             type: Number,
             required: true
-        }
+        },
     },
 
     // Points integration
@@ -91,10 +90,7 @@ const couponCodeSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Tier'
         }],
-        minPointsBalance: {
-            type: Number,
-            default: 0
-        },
+    
         minTransactionHistory: {
             type: Number,
             default: 0
@@ -123,7 +119,7 @@ const couponCodeSchema = new mongoose.Schema({
     },
 
     // Purchase requirements
-    conditions: {
+    conditions: [{
         appType: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: "AppType",
@@ -139,10 +135,10 @@ const couponCodeSchema = new mongoose.Schema({
         },
         applicablePaymentMethods: [{
             type: String,
-            enum: ["Khedmah-site", "KhedmahPay-Wallet", "ALL"],
+            enum: ["Khedmah-Pay", "Khedmah-Wallet", "ALL"],
             default: "ALL"
         }]
-    },
+    }],
 
     // Terms and conditions
     termsAndConditions: [{

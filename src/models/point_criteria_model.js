@@ -30,7 +30,7 @@ const pointsCriteriaSchema = new mongoose.Schema(
       {
         paymentMethod: {
           type: String,
-          enum: ["Khedmah-site", "KhedmahPay-Wallet"], // Separate logic for Khedmah & KhedmahPay
+          enum: ["Khedmah-Pay", "Khedmah-Wallet"], // Separate logic for Khedmah & KhedmahPay
           required: true,
         },
         pointType: {

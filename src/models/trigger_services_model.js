@@ -6,6 +6,10 @@ const triggerServicesSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    icon: {
+        type: String,
+        required: true
+    },
     description: {
         type: String,
         required: true

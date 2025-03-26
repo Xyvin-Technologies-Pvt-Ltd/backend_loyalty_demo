@@ -19,6 +19,10 @@ exports.getRules = async (req, res) => {
             select: "name _id"  
         })
         .populate({
+            path: "appType",
+            select: "name _id"  
+        })
+        .populate({
             path: "updated_by",
             select: "name email _id"  
         });
@@ -36,7 +40,7 @@ exports.getRules = async (req, res) => {
 /**
  * Create or update redemption rules
  */
-exports.createOrUpdateRules = async (req, res) => {
+exports.createRules = async (req, res) => {
     try {
         // Validate request body
         const { error } = redemptionRulesSchema.validate(req.body, {
@@ -51,26 +55,13 @@ exports.createOrUpdateRules = async (req, res) => {
         // Get admin ID from request (assuming it's set by auth middleware)
         const admin_id = req.admin ? req.admin._id : null;
 
-        // Check if rules already exist
-        let rules = await RedemptionRules.getActiveRules();
-
-        if (rules) {
-            // Update existing rules
-            rules.minimum_points_required = req.body.minimum_points_required;
-            rules.maximum_points_per_day = req.body.maximum_points_per_day;
-            rules.tier_multipliers = req.body.tier_multipliers;
-            rules.updated_by = admin_id;
-
-            await rules.save();
-            logger.info(`Redemption rules updated by admin ${admin_id}`);
-
-            return response_handler(res, 200, "Redemption rules updated successfully", rules);
-        } else {
+      
             // Create new rules
             const new_rules = new RedemptionRules({
                 minimum_points_required: req.body.minimum_points_required,
-                maximum_points_per_day: req.body.maximum_points_per_day,
+                maximum_points_per_day: req.body.maximum_points_per_day,    
                 tier_multipliers: req.body.tier_multipliers,
+                appType: req.body.appType,
                 created_by: admin_id,
                 updated_by: admin_id
             });
@@ -79,13 +70,77 @@ exports.createOrUpdateRules = async (req, res) => {
             logger.info(`New redemption rules created by admin ${admin_id}`);
 
             return response_handler(res, 201, "Redemption rules created successfully", new_rules);
-        }
+        
     } catch (error) {
         logger.error(`Error creating/updating redemption rules: ${error.message}`, { stack: error.stack });
         return response_handler(res, 500, `Internal Server Error: ${error.message}`);
     }
 };
 
+
+//getby id
+exports.getRuleById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const rule = await RedemptionRules.findById(id).populate({
+            path: "tier_multipliers.tier_id",
+            select: "name _id"  
+        })
+        .populate({
+            path: "appType",
+            select: "name _id"  
+        })
+        .populate({
+            path: "updated_by",
+            select: "name email _id"  
+        });
+        if (!rule) {
+            return response_handler(res, 404, "Redemption rule not found");
+        }
+
+        return response_handler(res, 200, "Redemption rule retrieved successfully", rule);
+    } catch (error) {
+        logger.error(`Error retrieving redemption rule: ${error.message}`, { stack: error.stack });
+        return response_handler(res, 500, `Internal Server Error: ${error.message}`);
+    }
+};  
+
+
+//edit rule
+exports.editRule = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const rule = await RedemptionRules.findById(id);
+        if (!rule) {
+            return response_handler(res, 404, "Redemption rule not found");
+        }
+        const admin_id = req.admin ? req.admin._id : null;
+        rule.minimum_points_required = req.body.minimum_points_required;
+        rule.maximum_points_per_day = req.body.maximum_points_per_day;
+        rule.tier_multipliers = req.body.tier_multipliers;
+        rule.updated_by = admin_id;
+        await rule.save();
+        return response_handler(res, 200, "Redemption rule updated successfully", rule);
+    } catch (error) {
+        logger.error(`Error updating redemption rule: ${error.message}`, { stack: error.stack });
+        return response_handler(res, 500, `Internal Server Error: ${error.message}`);
+    }
+};
+
+//delete rule
+exports.deleteRule = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const rule = await RedemptionRules.findById(id);
+        if (!rule) {
+            return response_handler(res, 404, "Redemption rule not found");
+        }
+        await rule.deleteOne();
+        return response_handler(res, 200, "Redemption rule deleted successfully");
+    } catch (error) {
+        logger.error(`Error deleting redemption rule: ${error.message}`, { stack: error.stack });
+    }
+}
 /**
  * Validate if a user can redeem points
  */

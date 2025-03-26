@@ -10,11 +10,15 @@ const mongoose = require("mongoose");
 /**
  * Get the current active points expiration rules
  */
-exports.getRules = async (req, res) => {
+exports.getAllRules = async (req, res) => {
     try {
         const rules = await PointsExpirationRules.find({is_active: true})
         .populate({
             path: "tier_extensions.tier_id",
+            select: "name _id"  
+        })
+        .populate({
+            path: "appType",
             select: "name _id"  
         })
         .populate({
@@ -36,7 +40,7 @@ exports.getRules = async (req, res) => {
 /**
  * Create or update points expiration rules
  */
-exports.createOrUpdateRules = async (req, res) => {
+exports.createRules = async (req, res) => {
     try {
         // Validate request body
         const { error } = pointsExpirationRulesValidation.validate(req.body, {
@@ -51,22 +55,8 @@ exports.createOrUpdateRules = async (req, res) => {
         // Get admin ID from request (assuming it's set by auth middleware)
         const admin_id = req.admin ? req.admin._id : null;
 
-        // Check if rules already exist
-        let rules = await PointsExpirationRules.getActiveRules();
-
-        if (rules) {
-            // Update existing rules
-            rules.default_expiry_period = req.body.default_expiry_period;
-            rules.tier_extensions = req.body.tier_extensions;
-            rules.expiry_notifications = req.body.expiry_notifications;
-            rules.grace_period = req.body.grace_period;
-            rules.updated_by = admin_id;
-
-            await rules.save();
-            logger.info(`Points expiration rules updated by admin ${admin_id}`);
-
-            return response_handler(res, 200, "Points expiration rules updated successfully", rules);
-        } else {
+      
+       
             // Create new rules
             const new_rules = new PointsExpirationRules({
                 default_expiry_period: req.body.default_expiry_period,
@@ -80,7 +70,7 @@ exports.createOrUpdateRules = async (req, res) => {
             logger.info(`New points expiration rules created by admin ${admin_id}`);
 
             return response_handler(res, 201, "Points expiration rules created successfully", new_rules);
-        }
+        
     } catch (error) {
         logger.error(`Error creating/updating points expiration rules: ${error.message}`, { stack: error.stack });
         return response_handler(res, 500, `Internal Server Error: ${error.message}`);
@@ -88,3 +78,69 @@ exports.createOrUpdateRules = async (req, res) => {
 };
 
          
+//getby id
+exports.getRuleById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const rule = await PointsExpirationRules.findById(id)
+        .populate({
+            path: "tier_extensions.tier_id",
+            select: "name _id"  
+        })
+        .populate({
+            path: "appType",
+            select: "name _id"  
+        })
+        .populate({
+            path: "updated_by",
+            select: "name email _id"  
+        });
+        if (!rule) {
+            return response_handler(res, 404, "Points expiration rule not found");
+        }
+        return response_handler(res, 200, "Points expiration rule retrieved successfully", rule);
+    } catch (error) {
+        logger.error(`Error retrieving points expiration rule: ${error.message}`, { stack: error.stack });
+        return response_handler(res, 500, `Internal Server Error: ${error.message}`);
+    }
+};
+
+
+//edit rule
+exports.editRule = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const rule = await PointsExpirationRules.findById(id);
+        if (!rule) {
+            return response_handler(res, 404, "Points expiration rule not found");
+        }
+        const admin_id = req.admin ? req.admin._id : null;
+        rule.default_expiry_period = req.body.default_expiry_period;
+        rule.tier_extensions = req.body.tier_extensions;    
+        rule.expiry_notifications = req.body.expiry_notifications;
+        rule.grace_period = req.body.grace_period;
+        rule.updated_by = admin_id;
+        await rule.save();
+        return response_handler(res, 200, "Points expiration rule updated successfully", rule);
+    } catch (error) {
+        logger.error(`Error updating points expiration rule: ${error.message}`, { stack: error.stack });
+        return response_handler(res, 500, `Internal Server Error: ${error.message}`);
+    }
+};
+
+
+//delete rule
+exports.deleteRule = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const rule = await PointsExpirationRules.findById(id);
+        if (!rule) {
+            return response_handler(res, 404, "Points expiration rule not found");
+        }
+        await rule.deleteOne();
+        return response_handler(res, 200, "Points expiration rule deleted successfully");
+    } catch (error) {
+        logger.error(`Error deleting points expiration rule: ${error.message}`, { stack: error.stack });
+        return response_handler(res, 500, `Internal Server Error: ${error.message}`);
+    }
+};

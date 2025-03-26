@@ -44,8 +44,52 @@ router.post(
     },
   }),
   cacheInvalidationMiddleware(cacheKeys.allRedemptionRules),
-  redemption_rules_controller.createOrUpdateRules
+  redemption_rules_controller.createRules
 );
+
+
+//getby id
+router.get(
+  "/:id",
+  authorizePermission(),
+  redemptionAudit.dataAccess("view_rule", {
+    description: "User viewed redemption rule",
+    targetModel: "RedemptionRules",
+    targetId: (req) => req.params.id,
+  }),
+  cacheMiddleware(60, cacheKeys.redemptionRulesById),
+  redemption_rules_controller.getRuleById
+);
+
+// edit rule
+router.put(
+  "/:id",
+  authorizePermission(),
+  redemptionAudit.captureResponse(),
+  redemptionAudit.dataModification("update_rule", {
+    description: "Admin updated redemption rule",
+    targetModel: "RedemptionRules",
+    targetId: (req) => req.params.id,
+    details: (req) => req.body,
+  }),
+  cacheInvalidationMiddleware(cacheKeys.allRedemptionRules, cacheKeys.redemptionRulesById),
+  redemption_rules_controller.editRule
+);
+
+//delete rule
+router.delete(
+  "/:id",
+  authorizePermission(),
+  redemptionAudit.dataModification("delete_rule", {
+    description: "Admin deleted redemption rule",
+    targetModel: "RedemptionRules",
+    targetId: (req) => req.params.id,
+  }),
+  cacheInvalidationMiddleware(cacheKeys.allRedemptionRules, cacheKeys.redemptionRulesById),
+  redemption_rules_controller.deleteRule
+);
+
+
 
 // Update redemption status
 

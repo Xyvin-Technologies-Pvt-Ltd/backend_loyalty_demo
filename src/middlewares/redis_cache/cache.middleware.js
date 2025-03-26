@@ -103,6 +103,9 @@ const cacheKeys = {
   //all points expiration rules
   allPointsExpirationRules: () => "cache:points_expiration_rules",
 
+  //points expiration rules by id
+  pointsExpirationRulesById: (req) => `cache:points_expiration_rules:${req.params.id}`,
+
   //points expiration rules by user id
   allPointsExpirationRulesByUser: (req) => `cache:points_expiration_rules:${req.params.user_id}`,
 
@@ -114,6 +117,9 @@ const cacheKeys = {
 
   //redeem rules
   allRedemptionRules: () => "cache:redemption_rules",
+  
+  //redemption rules by id
+  redemptionRulesById: (req) => `cache:redemption_rules:${req.params.id}`,
   
   //redemption history by user id
   redemptionHistoryByUser: (req) => `cache:redemption_history:${req.params.user_id}`,

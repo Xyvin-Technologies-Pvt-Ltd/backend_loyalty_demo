@@ -26,6 +26,8 @@ const redemption_rules_schema = new mongoose.Schema(
                 }
             }
         ],
+        appType: { type: mongoose.Schema.Types.ObjectId, ref: "AppType" },
+
         is_active: {
             type: Boolean,
             default: true
