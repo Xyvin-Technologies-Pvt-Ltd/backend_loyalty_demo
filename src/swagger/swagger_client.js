@@ -40,12 +40,15 @@ const swagger_sdk_definition = {
       },
     },
   },
-  security: [{ ApiKeyAuth: ['7f4d082c436b88976239f94e3f984aa965db89e0650377d8caf715222204df5b'] },{customer_id:['CUST123456']}],
+  security: [{ ApiKeyAuth: ['7f4d082c436b88976239f94e3f984aa965db89e0650377d8caf715222204df5b'] }, { customer_id: ['CUST123456'] }],
 };
 
 const sdk_options = {
   swaggerDefinition: swagger_sdk_definition,
-  apis: ["./src/swagger/sdk_paths/*.js"], // SDK-specific API definitions
+  apis: [
+    "./src/swagger/sdk_paths/*.yaml",  // Include all YAML files
+    "./src/swagger/sdk_paths/*.js"     // Include all JS files
+  ],
 };
 
 const sdk_swagger_spec = swaggerJSDoc(sdk_options);
@@ -58,4 +61,4 @@ const sdk_swagger_options = {
   },
 };
 
-module.exports = {  sdk_swagger_spec, sdk_swagger_options };
+module.exports = { sdk_swagger_spec, sdk_swagger_options };

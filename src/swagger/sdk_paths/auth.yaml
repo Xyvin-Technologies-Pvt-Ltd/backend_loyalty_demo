@@ -1,0 +1,304 @@
+openapi: 3.0.0
+info:
+  title: SDK Authentication API
+  description: |
+    # Overview
+    This API provides endpoints for customer authentication in the loyalty system.
+    
+    # Authentication
+    All endpoints require SDK authentication. Include your API key in the request header:
+    ```
+    Authorization: Bearer your-api-key
+    ```
+    
+    # Rate Limiting
+    - 5 registration attempts per minute per IP
+    - 20 registration attempts per hour per IP
+    
+    # Error Handling
+    All endpoints follow a consistent error response format:
+    ```json
+    {
+      "status": false,
+      "message": "Error description",
+      "error": {
+        "code": "ERROR_CODE",
+        "details": {}
+      }
+    }
+    ```
+  version: 1.0.0
+tags:
+  - name: SDK Authentication
+    description: SDK APIs for customer authentication
+
+paths:
+  /customer/register:
+    post:
+      summary: Register a new customer
+      description: |
+        # Description
+        Register a new customer in the loyalty system.
+        
+        # Features
+        - Basic profile creation
+        - Referral system integration
+        - Tier assignment
+        - Device tracking
+        - Notification preferences
+        
+        # Validation Rules
+        - Email must be unique
+        - Phone number must be unique
+        - Customer ID must be unique
+        - Required fields must be provided
+        - Device type must be one of: android, ios, web
+        
+        # Referral System
+        - If referral code is provided, points are awarded based on active referral rules
+        - Referrer is tracked for future rewards
+        
+        # Example Usage
+        ```javascript
+        POST /customer/register
+        {
+          "name": "John Doe",
+          "email": "john@example.com",
+          "phone": "+1234567890",
+          "customer_id": "CUST-001",
+          "device_type": "android",
+          "device_token": "device-token-123",
+          "referral_code": "REF-123",
+          "app_type": ["Khedmah Delivery"],
+          "notification_preferences": {
+            "email": true,
+            "sms": true,
+            "push": true
+          }
+        }
+        ```
+      tags:
+        - SDK Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - phone
+                - customer_id
+                - password
+              properties:
+                name:
+                  type: string
+                  description: "Full name of the customer"
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  description: "Unique email address"
+                  example: "john@example.com"
+                phone:
+                  type: string
+                  description: "Unique phone number"
+                  example: "+1234567890"
+                customer_id:
+                  type: string
+                  description: "Unique customer identifier"
+                  example: "CUST-001"
+                device_type:
+                  type: string
+                  enum: [android, ios, web]
+                  description: "Type of device used for registration"
+                  example: "android"
+                device_token:
+                  type: string
+                  description: "Device token for push notifications"
+                  example: "device-token-123"
+                referral_code:
+                  type: string
+                  description: "Optional referral code from another customer"
+                  example: "REF-123"
+                app_type:
+                  type: string
+                  description: "App type ID"  
+                  example: "Khedmah Delivery"
+                notification_preferences:
+                  type: object
+                  description: "Notification preferences"
+                  properties:
+                    email:
+                      type: boolean
+                      description: "Email notification preference"
+                      example: true
+                    sms:
+                      type: boolean
+                      description: "SMS notification preference"
+                      example: true
+                    push:
+                      type: boolean
+                      description: "Push notification preference"
+                      example: true
+      responses:
+        200:
+          description: |
+            Customer registered successfully.
+            Response includes customer details (excluding sensitive information).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Customer registered successfully"
+                  data:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        description: "MongoDB document ID"
+                        example: "Khedmah Delivery"
+                      customer_id:
+                        type: string
+                        description: "Unique customer identifier"
+                        example: "CUST-001"
+                      name:
+                        type: string
+                        description: "Customer's full name"
+                        example: "John Doe"
+                      email:
+                        type: string
+                        description: "Customer's email"
+                        example: "john@example.com"
+                      phone:
+                        type: string
+                        description: "Customer's phone number"
+                        example: "+1234567890"
+                      tier:
+                        type: string
+                        description: "Current tier ID"
+                        example: "507f1f77bcf86cd799439012"
+                      referral_code:
+                        type: string
+                        description: "Customer's unique referral code"
+                        example: "REF-456"
+                      referred_by:
+                        type: string
+                        description: "ID of the customer who referred this customer"
+                        example: "507f1f77bcf86cd799439013"
+                      user_referer_count:
+                        type: number
+                        description: "Number of successful referrals"
+                        example: 0
+                      status:
+                        type: boolean
+                        description: "Customer account status"
+                        example: true
+                      app_type:
+                        type: array
+                        description: "Array of app type IDs"
+                        items:
+                          type: string
+                        example: ["Khedmah Delivery"]
+                      device_token:
+                        type: array
+                        description: "Array of device tokens"
+                        items:
+                          type: string
+                        example: ["device-token-123"]
+                      device_type:
+                        type: string
+                        enum: [android, ios, web]
+                        description: "Type of device"
+                        example: "android"
+                      notification_preferences:
+                        type: object
+                        description: "Notification preferences"
+                        properties:
+                          email:
+                            type: boolean
+                            example: true
+                          sms:
+                            type: boolean
+                            example: true
+                          push:
+                            type: boolean
+                            example: true
+                      total_points:
+                        type: number
+                        description: "Total points balance"
+                        example: 100
+                      last_active:
+                        type: string
+                        format: date-time
+                        description: "Last active timestamp"
+                        example: "2024-03-15T10:30:00Z"
+        400:
+          description: |
+            Bad Request
+            Possible reasons:
+            - Missing required fields
+            - Invalid email format
+            - Invalid phone format
+            - Password too short
+            - Invalid device type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Required fields are missing"
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: "INVALID_INPUT"
+                      details:
+                        type: object
+                        example: { "email": "Invalid email format" }
+        401:
+          description: "Unauthorized - Invalid or missing API key"
+        403:
+          description: "Forbidden - Registration not allowed"
+        409:
+          description: |
+            Conflict
+            Possible reasons:
+            - Email already registered
+            - Phone number already registered
+            - Customer ID already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Email already registered"
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: "DUPLICATE_ENTRY"
+                      details:
+                        type: object
+                        example: { "email": "Email already exists" }
+        500:
+          description: "Internal Server Error" 

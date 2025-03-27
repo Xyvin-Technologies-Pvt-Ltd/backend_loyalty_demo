@@ -29,25 +29,6 @@ router.get("/:customer_id/transactions", SdkCustomerAudit.captureResponse(),SdkC
     details: (req) => req.params,
 }), customerController.getMyTransactions);
 
-//get customer points
-router.get("/:customer_id/points" , SdkCustomerAudit.captureResponse(),SdkCustomerAudit.sdkAction("get_customer_points", {
-    description: "Customer retrieved customer points",
-    targetModel: "Customer",
-    details: (req) => req.params,
-}), customerController.getMyPoints);
 
-//get customer notification preferences
-router.get("/:customer_id/notification-preferences", SdkCustomerAudit.captureResponse(),SdkCustomerAudit.sdkAction("get_customer_notification_preferences", {
-    description: "Customer retrieved customer notification preferences",
-    targetModel: "Customer",
-    details: (req) => req.params,
-}), customerController.getMyNotificationPreferences);
-
-//update customer notification preferences
-router.put("/:customer_id/notification-preferences", SdkCustomerAudit.captureResponse(),SdkCustomerAudit.sdkAction("update_customer_notification_preferences", {
-    description: "Customer updated customer notification preferences",
-    targetModel: "Customer",
-    details: (req) => req.params,
-}), customerController.updateMyNotificationPreferences);
 
 module.exports = router;

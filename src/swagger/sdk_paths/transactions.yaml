@@ -1,0 +1,681 @@
+openapi: 3.0.0
+info:
+  title: SDK Transactions API
+  description: |
+    # Overview
+    This API provides endpoints for managing customer transactions in the loyalty system. It allows customers to:
+    - View their transaction history with filtering and pagination
+    - Get detailed information about specific transactions
+    - Access transaction summaries and statistics
+    
+    # Authentication
+    All endpoints require SDK authentication. Include your API key in the request header:
+    ```
+    Authorization: Bearer your-api-key
+    ```
+    
+    # Rate Limiting
+    - 100 requests per minute per API key
+    - 1000 requests per hour per API key
+    
+    # Error Handling
+    All endpoints follow a consistent error response format:
+    ```json
+    {
+      "status": false,
+      "message": "Error description",
+      "error": {
+        "code": "ERROR_CODE",
+        "details": {}
+      }
+    }
+    ```
+  version: 1.0.0
+tags:
+  - name: SDK Transactions
+    description: SDK APIs for transaction operations
+
+paths:
+  /customer/{customer_id}/transactions:
+    get:
+      summary: Get customer transactions
+      description: |
+        # Description
+        Retrieves a paginated list of transactions for a specific customer with various filtering options.
+        
+        # Features
+        - Pagination support
+        - Multiple filter options
+        - Transaction summary included
+        - Sorted by transaction date (newest first)
+        
+        # Filtering Options
+        - Transaction Type: Filter by earn/redeem/adjust/expire
+        - Status: Filter by transaction status
+        - Date Range: Filter transactions within a specific date range
+        
+        # Response Includes
+        - Paginated transaction list
+        - Pagination metadata
+        - Transaction summary by type
+        
+        # Example Usage
+        ```javascript
+        // Get first page of transactions
+        GET /customer/123/transactions
+        
+        // Get transactions with filters
+        GET /customer/123/transactions?page=1&limit=20&transaction_type=earn&status=completed
+        
+        // Get transactions within date range
+        GET /customer/123/transactions?start_date=2024-01-01T00:00:00Z&end_date=2024-03-31T23:59:59Z
+        ```
+      tags:
+        - SDK Transactions
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: |
+            Unique identifier of the customer.
+            Format: MongoDB ObjectId
+            Example: "507f1f77bcf86cd799439011"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: |
+            Page number for pagination.
+            Starts from 1.
+            Default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+          description: |
+            Number of items per page.
+            Range: 1-100
+            Default: 10
+        - name: transaction_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [earn, redeem, adjust, expire]
+          description: |
+            Filter transactions by type:
+            - earn: Points earned from activities
+            - redeem: Points redeemed for rewards
+            - adjust: Manual point adjustments
+            - expire: Expired points
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, completed, rejected, cancelled, failed, expired]
+          description: |
+            Filter transactions by status:
+            - pending: Transaction is being processed
+            - completed: Transaction successfully completed
+            - rejected: Transaction was rejected
+            - cancelled: Transaction was cancelled
+            - failed: Transaction failed
+            - expired: Transaction expired
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: |
+            Filter transactions from this date.
+            Format: ISO 8601 datetime
+            Example: "2024-01-01T00:00:00Z"
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: |
+            Filter transactions until this date.
+            Format: ISO 8601 datetime
+            Example: "2024-03-31T23:59:59Z"
+      responses:
+        200:
+          description: |
+            Successfully retrieved transactions.
+            Response includes paginated transaction list and summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Transactions retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      transactions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              description: "MongoDB document ID"
+                              example: "507f1f77bcf86cd799439011"
+                            transaction_id:
+                              type: string
+                              description: "Unique transaction identifier"
+                              example: "TRX-2024-001"
+                            transaction_type:
+                              type: string
+                              enum: [earn, redeem, adjust, expire]
+                              description: "Type of transaction"
+                              example: "earn"
+                            points:
+                              type: number
+                              description: "Number of points involved"
+                              example: 100
+                            status:
+                              type: string
+                              enum: [pending, completed, rejected, cancelled, failed, expired]
+                              description: "Current status of the transaction"
+                              example: "completed"
+                            transaction_date:
+                              type: string
+                              format: date-time
+                              description: "When the transaction occurred"
+                              example: "2024-03-15T10:30:00Z"
+                            payment_method:
+                              type: string
+                              enum: [Khedmah-site, KhedmahPay-Wallet]
+                              description: "Payment method used"
+                              example: "KhedmahPay-Wallet"
+                            point_criteria:
+                              type: object
+                              description: "Criteria that triggered this transaction"
+                              properties:
+                                _id:
+                                  type: string
+                                  example: "507f1f77bcf86cd799439012"
+                                name:
+                                  type: string
+                                  example: "First Purchase Bonus"
+                                description:
+                                  type: string
+                                  example: "Earn points on first purchase"
+                                points:
+                                  type: number
+                                  example: 50
+                            app_type:
+                              type: object
+                              description: "Application type where transaction occurred"
+                              properties:
+                                _id:
+                                  type: string
+                                  example: "507f1f77bcf86cd799439013"
+                                name:
+                                  type: string
+                                  example: "Mobile App"
+                            note:
+                              type: string
+                              description: "Additional transaction notes"
+                              example: "Welcome bonus points"
+                            metadata:
+                              type: object
+                              description: "Additional transaction metadata"
+                              example: { "order_id": "ORD-001", "store_id": "STORE-001" }
+                      pagination:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            description: "Total number of transactions"
+                            example: 150
+                          page:
+                            type: integer
+                            description: "Current page number"
+                            example: 1
+                          limit:
+                            type: integer
+                            description: "Items per page"
+                            example: 10
+                          total_pages:
+                            type: integer
+                            description: "Total number of pages"
+                            example: 15
+                      summary:
+                        type: object
+                        description: "Summary of transactions by type"
+                        properties:
+                          earn:
+                            type: object
+                            properties:
+                              total_points:
+                                type: number
+                                description: "Total points earned"
+                                example: 1000
+                              count:
+                                type: integer
+                                description: "Number of earn transactions"
+                                example: 5
+                          redeem:
+                            type: object
+                            properties:
+                              total_points:
+                                type: number
+                                description: "Total points redeemed"
+                                example: 500
+                              count:
+                                type: integer
+                                description: "Number of redeem transactions"
+                                example: 3
+                          adjust:
+                            type: object
+                            properties:
+                              total_points:
+                                type: number
+                                description: "Total points adjusted"
+                                example: 100
+                              count:
+                                type: integer
+                                description: "Number of adjust transactions"
+                                example: 1
+                          expire:
+                            type: object
+                            properties:
+                              total_points:
+                                type: number
+                                description: "Total points expired"
+                                example: 50
+                              count:
+                                type: integer
+                                description: "Number of expire transactions"
+                                example: 1
+        400:
+          description: |
+            Bad Request
+            Possible reasons:
+            - Invalid date format
+            - Invalid pagination parameters
+            - Invalid filter values
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Invalid request parameters"
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: "INVALID_PARAMETERS"
+                      details:
+                        type: object
+                        example: { "start_date": "Invalid date format" }
+        401:
+          description: "Unauthorized - Invalid or missing API key"
+        403:
+          description: "Forbidden - Insufficient permissions"
+        404:
+          description: "Customer not found"
+        500:
+          description: "Internal Server Error"
+
+  /customer/transactions/{transaction_id}:
+    get:
+      summary: Get transaction details
+      description: |
+        # Description
+        Retrieves detailed information about a specific transaction.
+        
+        # Features
+        - Detailed transaction information
+        - Optional customer validation
+        - Populated references (point criteria, app type)
+        
+        # Example Usage
+        ```javascript
+        // Get transaction details
+        GET /customer/transactions/34sds434434
+        
+        // Get transaction with customer validation
+        GET /customer/transactions/34sds434434?customer_id=123
+        ```
+      tags:
+        - SDK Transactions
+      parameters:
+        - name: transaction_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: |
+            Unique transaction identifier.
+            Example: "TRX-2024-001"
+        - name: customer_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: |
+            Optional customer ID for additional validation.
+            If provided, ensures the transaction belongs to the customer.
+      responses:
+        200:
+          description: |
+            Successfully retrieved transaction details.
+            Response includes complete transaction information.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Transaction retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        description: "MongoDB document ID"
+                        example: "507f1f77bcf86cd799439011"
+                      transaction_id:
+                        type: string
+                        description: "Unique transaction identifier"
+                        example: "TRX-2024-001"
+                      transaction_type:
+                        type: string
+                        enum: [earn, redeem, adjust, expire]
+                        description: "Type of transaction"
+                        example: "earn"
+                      points:
+                        type: number
+                        description: "Number of points involved"
+                        example: 100
+                      status:
+                        type: string
+                        enum: [pending, completed, rejected, cancelled, failed, expired]
+                        description: "Current status of the transaction"
+                        example: "completed"
+                      transaction_date:
+                        type: string
+                        format: date-time
+                        description: "When the transaction occurred"
+                        example: "2024-03-15T10:30:00Z"
+                      payment_method:
+                        type: string
+                        enum: [Khedmah-site, KhedmahPay-Wallet]
+                        description: "Payment method used"
+                        example: "KhedmahPay-Wallet"
+                      point_criteria:
+                        type: object
+                        description: "Criteria that triggered this transaction"
+                        properties:
+                          _id:
+                            type: string
+                            example: "507f1f77bcf86cd799439012"
+                          name:
+                            type: string
+                            example: "First Purchase Bonus"
+                          description:
+                            type: string
+                            example: "Earn points on first purchase"
+                          points:
+                            type: number
+                            example: 50
+                      app_type:
+                        type: object
+                        description: "Application type where transaction occurred"
+                        properties:
+                          _id:
+                            type: string
+                            example: "507f1f77bcf86cd799439013"
+                          name:
+                            type: string
+                            example: "Mobile App"
+                      note:
+                        type: string
+                        description: "Additional transaction notes"
+                        example: "Welcome bonus points"
+                      metadata:
+                        type: object
+                        description: "Additional transaction metadata"
+                        example: { "order_id": "ORD-001", "store_id": "STORE-001" }
+        400:
+          description: "Bad Request - Invalid transaction ID format"
+        401:
+          description: "Unauthorized - Invalid or missing API key"
+        403:
+          description: "Forbidden - Transaction does not belong to customer"
+        404:
+          description: "Transaction not found"
+        500:
+          description: "Internal Server Error"
+
+  /customer/{customer_id}/transactions/summary:
+    get:
+      summary: Get transaction summary
+      description: |
+        # Description
+        Retrieves a comprehensive summary of customer's transactions with various statistics.
+        
+        # Features
+        - Summary by transaction type
+        - Summary by transaction status
+        - Total points statistics
+        - Date range filtering
+        
+        # Statistics Included
+        - Points earned/redeemed/adjusted/expired
+        - Transaction counts by type
+        - Average points per transaction type
+        - Status distribution
+        
+        # Example Usage
+        ```javascript
+        // Get overall summary
+        GET /customer/123/transactions/summary
+        
+        // Get summary for date range
+        GET /customer/123/transactions/summary?start_date=2024-01-01T00:00:00Z&end_date=2024-03-31T23:59:59Z
+        ```
+      tags:
+        - SDK Transactions
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: |
+            Unique identifier of the customer.
+            Format: MongoDB ObjectId
+            Example: "507f1f77bcf86cd799439011"
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: |
+            Filter summary from this date.
+            Format: ISO 8601 datetime
+            Example: "2024-01-01T00:00:00Z"
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: |
+            Filter summary until this date.
+            Format: ISO 8601 datetime
+            Example: "2024-03-31T23:59:59Z"
+      responses:
+        200:
+          description: |
+            Successfully retrieved transaction summary.
+            Response includes comprehensive statistics.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Transaction summary retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      summary_by_type:
+                        type: object
+                        description: "Summary grouped by transaction type"
+                        properties:
+                          earn:
+                            type: object
+                            properties:
+                              total_points:
+                                type: number
+                                description: "Total points earned"
+                                example: 1000
+                              count:
+                                type: integer
+                                description: "Number of earn transactions"
+                                example: 5
+                              avg_points:
+                                type: number
+                                description: "Average points per earn transaction"
+                                example: 200
+                          redeem:
+                            type: object
+                            properties:
+                              total_points:
+                                type: number
+                                description: "Total points redeemed"
+                                example: 500
+                              count:
+                                type: integer
+                                description: "Number of redeem transactions"
+                                example: 3
+                              avg_points:
+                                type: number
+                                description: "Average points per redeem transaction"
+                                example: 166.67
+                          adjust:
+                            type: object
+                            properties:
+                              total_points:
+                                type: number
+                                description: "Total points adjusted"
+                                example: 100
+                              count:
+                                type: integer
+                                description: "Number of adjust transactions"
+                                example: 1
+                              avg_points:
+                                type: number
+                                description: "Average points per adjust transaction"
+                                example: 100
+                          expire:
+                            type: object
+                            properties:
+                              total_points:
+                                type: number
+                                description: "Total points expired"
+                                example: 50
+                              count:
+                                type: integer
+                                description: "Number of expire transactions"
+                                example: 1
+                              avg_points:
+                                type: number
+                                description: "Average points per expire transaction"
+                                example: 50
+                      summary_by_status:
+                        type: object
+                        description: "Count of transactions by status"
+                        properties:
+                          pending:
+                            type: integer
+                            description: "Number of pending transactions"
+                            example: 2
+                          completed:
+                            type: integer
+                            description: "Number of completed transactions"
+                            example: 8
+                          rejected:
+                            type: integer
+                            description: "Number of rejected transactions"
+                            example: 0
+                          cancelled:
+                            type: integer
+                            description: "Number of cancelled transactions"
+                            example: 0
+                          failed:
+                            type: integer
+                            description: "Number of failed transactions"
+                            example: 0
+                          expired:
+                            type: integer
+                            description: "Number of expired transactions"
+                            example: 1
+                      total_points:
+                        type: object
+                        description: "Total points statistics"
+                        properties:
+                          total_earned:
+                            type: number
+                            description: "Total points earned"
+                            example: 1000
+                          total_redeemed:
+                            type: number
+                            description: "Total points redeemed"
+                            example: 500
+                          total_expired:
+                            type: number
+                            description: "Total points expired"
+                            example: 50
+                          total_adjusted:
+                            type: number
+                            description: "Total points adjusted"
+                            example: 100
+        400:
+          description: "Bad Request - Invalid date format"
+        401:
+          description: "Unauthorized - Invalid or missing API key"
+        403:
+          description: "Forbidden - Insufficient permissions"
+        404:
+          description: "Customer not found"
+        500:
+          description: "Internal Server Error" 

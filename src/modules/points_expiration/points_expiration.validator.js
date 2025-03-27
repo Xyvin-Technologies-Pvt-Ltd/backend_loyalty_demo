@@ -8,6 +8,10 @@ const pointsExpirationRulesValidation = Joi.object({
     .default(12)
     .description("Default expiry period in months"),
 
+  app_type: Joi.string().required()
+    .description("App type")
+    .example("Khedmah Delivery"),
+
   tier_extensions: Joi.array().items(
     Joi.object({
       tier_id: Joi.string()
