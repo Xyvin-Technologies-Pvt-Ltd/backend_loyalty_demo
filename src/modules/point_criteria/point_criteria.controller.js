@@ -1,6 +1,8 @@
 const response_handler = require("../../helpers/response_handler");
 const Criteria = require("../../models/point_criteria_model");
 const pointsCriteriaValidationSchema = require("./point_criteria.validator");
+const TriggerEvent = require("../../models/trigger_event_model");
+const TriggerServices = require("../../models/trigger_services_model");
 
 exports.create = async (req, res) => {
   try {
@@ -11,6 +13,22 @@ exports.create = async (req, res) => {
       const error_messages = error.details.map((err) => err.message).join(", ");
       return response_handler(res, 400, `Invalid input: ${error_messages}`);
     }
+
+    //find event name and service name from eventType and serviceType
+    const event = await TriggerEvent.findById(req.body.eventType);
+    const service = await TriggerServices.findById(req.body.serviceType);
+
+
+    let uniqueCode = generateUniqueCode(event.name, service.title);
+   
+
+    //check if unique_code already exists
+    const existingCriteria = await Criteria.findOne({ unique_code: uniqueCode });
+    if (existingCriteria) {
+      uniqueCode = generateUniqueCode(event.name, service.title);
+    }
+
+    req.body.unique_code = uniqueCode;
 
     const new_criteria = await Criteria.create(req.body);
 
@@ -114,3 +132,20 @@ exports.delete_criteria = async (req, res) => {
     );
   }
 };
+
+
+const generateUniqueCode = (eventName, serviceTypeName) => {
+  const sanitizedEvent = eventName.replace(/\s+/g, '').toUpperCase().slice(0, 3); // First 3 letters of event name
+  const sanitizedService = serviceTypeName.replace(/\s+/g, '').toUpperCase().slice(0, 3); // First 3 letters of service type
+  const randomDigits = Math.floor(100 + Math.random() * 900); // Generate a 3-digit number
+
+  return `${sanitizedEvent}-${sanitizedService}-${randomDigits}`;
+};
+
+
+
+
+
+
+
+

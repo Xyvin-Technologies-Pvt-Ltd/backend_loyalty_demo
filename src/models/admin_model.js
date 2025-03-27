@@ -38,6 +38,10 @@ const admin_schema = new mongoose.Schema({
     lastLogin: {
         type: Date
     },
+    isSuperAdmin: {
+        type: Boolean,
+        default: false
+    },
 
 
 

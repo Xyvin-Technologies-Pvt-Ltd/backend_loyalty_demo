@@ -1,0 +1,517 @@
+openapi: 3.0.0
+info:
+  title: SDK Point Criteria API
+  description: |
+    # Overview
+    This API provides endpoints for processing loyalty events and calculating points based on customer activities.
+    It allows clients to:
+    - Process loyalty events and calculate points
+    - Get point calculation details without processing
+    - View supported payment methods
+    
+    # Authentication
+    All endpoints require SDK authentication. Include your API key in the request header:
+    ```
+    Authorization: Bearer your-api-key
+    ```
+    
+    # Rate Limiting
+    - 100 requests per minute per API key
+    - 1000 requests per hour per API key
+    
+    # Error Handling
+    All endpoints follow a consistent error response format:
+    ```json
+    {
+      "status": false,
+      "message": "Error description",
+      "error": {
+        "code": "ERROR_CODE",
+        "details": {}
+      }
+    }
+    ```
+  version: 1.0.0
+tags:
+  - name: SDK Point Criteria
+    description: SDK APIs for processing loyalty events and point calculation
+
+paths:
+  /point-criteria/process:
+    post:
+      summary: Process loyalty event and calculate points
+      description: |
+        # Description
+        Processes a loyalty event and calculates points based on matching point criteria.
+        
+        # Features
+        - Point criteria matching
+        - Eligibility checking
+        - Transaction creation
+        - Points expiry calculation
+        - Customer points update
+        
+        # Example Usage
+        ```javascript
+        POST /point-criteria/process
+        {
+          "unique_code": "PURCHASE_2024",
+          "transaction_value": 100,
+          "payment_method": "Khedmah-Pay",
+          "app_type": "mobile",
+          "reference_id": "ORDER_123",
+          "metadata": {
+            "order_id": "ORDER_123",
+            "merchant_id": "MERCHANT_456"
+          }
+        }
+        ```
+      tags:
+        - SDK Point Criteria
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - unique_code
+                - transaction_value
+                - payment_method
+                - app_type
+              properties:
+                unique_code:
+                  type: string
+                  description: "Unique code for point criteria matching"
+                  example: "PURCHASE_2024"
+                transaction_value:
+                  type: number
+                  description: "Transaction value"
+                  example: 100
+                payment_method:
+                  type: string
+                  enum: [Khedmah-Pay, Khedmah-Wallet]
+                  description: "Payment method"
+                  example: "Khedmah-Pay"
+                app_type:
+                  type: string
+                  description: "Application type"
+                  example: "mobile"
+                reference_id:
+                  type: string
+                  description: "External reference ID"
+                  example: "ORDER_123"
+                metadata:
+                  type: object
+                  description: "Additional metadata"
+                  example: {
+                    "order_id": "ORDER_123",
+                    "merchant_id": "MERCHANT_456"
+                  }
+      responses:
+        200:
+          description: "Loyalty points processed successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Loyalty points processed successfully"
+                  data:
+                    type: object
+                    properties:
+                      pointsAwarded:
+                        type: number
+                        example: 10
+                      calculationDetails:
+                        type: object
+                        properties:
+                          pointType:
+                            type: string
+                            example: "percentage"
+                          pointRate:
+                            type: number
+                            example: 10
+                          transactionValue:
+                            type: number
+                            example: 100
+        400:
+          description: "Missing required fields or eligibility check failed"
+        404:
+          description: "No matching point criteria found"
+        401:
+          description: "Unauthorized"
+
+  /point-criteria/calculate-details:
+    get:
+      summary: Get point calculation details
+      description: |
+        # Description
+        Retrieves point calculation details without processing the event.
+        
+        # Features
+        - Point criteria matching
+        - Eligibility checking
+        - Detailed calculation information
+        - Transaction limits
+        
+        # Query Parameters
+        - unique_code: Unique code for point criteria matching
+        - transaction_value: Transaction value
+        - payment_method: Payment method
+        - app_type: Application type
+        
+        # Example Usage
+        ```javascript
+        GET /point-criteria/calculate-details?unique_code=PURCHASE_2024&transaction_value=100&payment_method=Khedmah-Pay&app_type=mobile
+        ```
+      tags:
+        - SDK Point Criteria
+      parameters:
+        - name: unique_code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Unique code for point criteria matching"
+          example: "PURCHASE_2024"
+        - name: transaction_value
+          in: query
+          required: true
+          schema:
+            type: number
+          description: "Transaction value"
+          example: 100
+        - name: payment_method
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [Khedmah-Pay, Khedmah-Wallet]
+          description: "Payment method"
+          example: "Khedmah-Pay"
+        - name: app_type
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Application type"
+          example: "mobile"
+      responses:
+        200:
+          description: "Point calculation details retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Point calculation details retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      point_criteria:
+                        type: object
+                        properties:
+                          _id:
+                            type: string
+                            example: "507f1f77bcf86cd799439015"
+                          unique_code:
+                            type: string
+                            example: "PURCHASE_2024"
+                          description:
+                            type: string
+                            example: "Points for purchases"
+                          event_type:
+                            type: string
+                            example: "Purchase"
+                          service_type:
+                            type: string
+                            example: "Retail"
+                          app_type:
+                            type: string
+                            example: "Mobile"
+                      eligibility:
+                        type: object
+                        properties:
+                          eligible:
+                            type: boolean
+                            example: true
+                          message:
+                            type: string
+                            example: "Transaction eligible for points"
+                          details:
+                            type: object
+                            properties:
+                              transactionLimits:
+                                type: object
+                                properties:
+                                  weeklyCount:
+                                    type: number
+                                    example: 5
+                                  monthlyCount:
+                                    type: number
+                                    example: 20
+                                  weeklyLimit:
+                                    type: number
+                                    example: 10
+                                  monthlyLimit:
+                                    type: number
+                                    example: 50
+                      calculation:
+                        type: object
+                        properties:
+                          success:
+                            type: boolean
+                            example: true
+                          message:
+                            type: string
+                            example: "Points calculated successfully"
+                          points:
+                            type: number
+                            example: 10
+                          calculationDetails:
+                            type: object
+                            properties:
+                              pointType:
+                                type: string
+                                example: "percentage"
+                              pointRate:
+                                type: number
+                                example: 10
+                              transactionValue:
+                                type: number
+                                example: 100
+        400:
+          description: "Missing required fields"
+        404:
+          description: "No matching point criteria found"
+        401:
+          description: "Unauthorized"
+
+  /point-criteria/payment-methods:
+    get:
+      summary: Get supported payment methods
+      description: |
+        # Description
+        Retrieves list of payment methods supported for point calculation.
+        
+        # Features
+        - List of supported payment methods
+        - Active payment methods only
+        
+        # Example Usage
+        ```javascript
+        GET /point-criteria/payment-methods
+        ```
+      tags:
+        - SDK Point Criteria
+      responses:
+        200:
+          description: "Supported payment methods retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Supported payment methods retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      payment_methods:
+                        type: array
+                        items:
+                          type: string
+                          enum: [Khedmah-Pay, Khedmah-Wallet]
+                        example: ["Khedmah-Pay", "Khedmah-Wallet"]
+        401:
+          description: "Unauthorized"
+
+  /point-criteria/check-eligibility:
+    get:
+      summary: Check customer eligibility based on usage history
+      description: |
+        # Description
+        Checks if a customer is eligible for points based on their usage history and current transaction.
+        
+        # Features
+        - Point criteria matching
+        - Usage history analysis
+        - Transaction limits checking
+        - Eligibility verification
+        - Potential points calculation
+        
+        # Query Parameters
+        - unique_code: Unique code for point criteria matching
+        - transaction_value: Transaction value
+        - payment_method: Payment method
+        - app_type: Application type
+        
+        # Example Usage
+        ```javascript
+        GET /point-criteria/check-eligibility?unique_code=PURCHASE_2024&transaction_value=100&payment_method=Khedmah-Pay&app_type=mobile
+        ```
+      tags:
+        - SDK Point Criteria
+      parameters:
+        - name: unique_code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Unique code for point criteria matching"
+          example: "PURCHASE_2024"
+        - name: transaction_value
+          in: query
+          required: true
+          schema:
+            type: number
+          description: "Transaction value"
+          example: 100
+        - name: payment_method
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [Khedmah-Pay, Khedmah-Wallet]
+          description: "Payment method"
+          example: "Khedmah-Pay"
+        - name: app_type
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Application type"
+          example: "mobile"
+      responses:
+        200:
+          description: "Customer eligibility checked successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Customer eligibility checked successfully"
+                  data:
+                    type: object
+                    properties:
+                      point_criteria:
+                        type: object
+                        properties:
+                          _id:
+                            type: string
+                            example: "507f1f77bcf86cd799439015"
+                          unique_code:
+                            type: string
+                            example: "PURCHASE_2024"
+                          description:
+                            type: string
+                            example: "Points for purchases"
+                          event_type:
+                            type: string
+                            example: "Purchase"
+                          service_type:
+                            type: string
+                            example: "Retail"
+                          app_type:
+                            type: string
+                            example: "Mobile"
+                      usage_history:
+                        type: object
+                        properties:
+                          weekly_transactions:
+                            type: number
+                            example: 5
+                            description: "Number of transactions in the last 7 days"
+                          monthly_transactions:
+                            type: number
+                            example: 20
+                            description: "Number of transactions in the current month"
+                          total_points_earned:
+                            type: number
+                            example: 500
+                            description: "Total points earned for this criteria"
+                          weekly_limit:
+                            type: number
+                            example: 10
+                            description: "Weekly transaction limit"
+                          monthly_limit:
+                            type: number
+                            example: 50
+                            description: "Monthly transaction limit"
+                      eligibility:
+                        type: object
+                        properties:
+                          eligible:
+                            type: boolean
+                            example: true
+                          message:
+                            type: string
+                            example: "Transaction eligible for points"
+                          details:
+                            type: object
+                            properties:
+                              transactionLimits:
+                                type: object
+                                properties:
+                                  weeklyCount:
+                                    type: number
+                                    example: 5
+                                  monthlyCount:
+                                    type: number
+                                    example: 20
+                                  weeklyLimit:
+                                    type: number
+                                    example: 10
+                                  monthlyLimit:
+                                    type: number
+                                    example: 50
+                      calculation:
+                        type: object
+                        properties:
+                          success:
+                            type: boolean
+                            example: true
+                          message:
+                            type: string
+                            example: "Points calculated successfully"
+                          points:
+                            type: number
+                            example: 10
+                          calculationDetails:
+                            type: object
+                            properties:
+                              pointType:
+                                type: string
+                                example: "percentage"
+                              pointRate:
+                                type: number
+                                example: 10
+                              transactionValue:
+                                type: number
+                                example: 100
+        400:
+          description: "Missing required fields"
+        404:
+          description: "No matching point criteria found"
+        401:
+          description: "Unauthorized" 

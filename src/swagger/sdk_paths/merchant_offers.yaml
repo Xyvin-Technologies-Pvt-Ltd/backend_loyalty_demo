@@ -1,0 +1,592 @@
+openapi: 3.0.0
+info:
+  title: SDK Merchant Offers API
+  description: |
+    # Overview
+    This API provides endpoints for managing merchant offers in the system. It allows customers to:
+    - View available merchant offers
+    - Get offer details
+    - Check offer eligibility
+    - View claimed offers
+    
+    # Authentication
+    All endpoints require SDK authentication. Include your API key in the request header:
+    ```
+    Authorization: Bearer your-api-key
+    ```
+    
+    # Rate Limiting
+    - 100 requests per minute per API key
+    - 1000 requests per hour per API key
+    
+    # Error Handling
+    All endpoints follow a consistent error response format:
+    ```json
+    {
+      "status": false,
+      "message": "Error description",
+      "error": {
+        "code": "ERROR_CODE",
+        "details": {}
+      }
+    }
+    ```
+  version: 1.0.0
+tags:
+  - name: SDK Merchant Offers
+    description: SDK APIs for merchant offers operations
+
+paths:
+  /merchant-offers/available:
+    get:
+      summary: Get available merchant offers
+      description: |
+        # Description
+        Retrieves available merchant offers with pagination and filtering options.
+        
+        # Features
+        - Pagination support
+        - Merchant filtering
+        - Category filtering
+        - Date range filtering
+        - Eligibility checking
+        - Sorted by expiry date
+        
+        # Query Parameters
+        - page: Page number (default: 1)
+        - limit: Items per page (default: 10)
+        - merchant_id: Filter by merchant
+        - category_id: Filter by category
+        - start_date: Filter by start date
+        - end_date: Filter by end date
+        
+        # Example Usage
+        ```javascript
+        // Get all available offers
+        GET /merchant-offers/available
+        
+        // Get offers with filters
+        GET /merchant-offers/available?merchant_id=123&category_id=456&start_date=2024-01-01&end_date=2024-03-20&page=1&limit=20
+        ```
+      tags:
+        - SDK Merchant Offers
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: "Page number for pagination"
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: "Number of items per page"
+          example: 10
+        - name: merchant_id
+          in: query
+          schema:
+            type: string
+          description: "Filter by merchant ID"
+          example: "507f1f77bcf86cd799439011"
+        - name: category_id
+          in: query
+          schema:
+            type: string
+          description: "Filter by category ID"
+          example: "507f1f77bcf86cd799439012"
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: "Filter by start date (YYYY-MM-DD)"
+          example: "2024-01-01"
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: "Filter by end date (YYYY-MM-DD)"
+          example: "2024-03-20"
+      responses:
+        200:
+          description: "Available offers retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Available offers retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      offers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              example: "507f1f77bcf86cd799439011"
+                            title:
+                              type: string
+                              example: "Summer Sale"
+                            description:
+                              type: string
+                              example: "Get 20% off on all items"
+                            posterImage:
+                              type: string
+                              example: "https://example.com/images/summer-sale.jpg"
+                            merchantId:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  example: "Example Store"
+                                logo:
+                                  type: string
+                                  example: "https://example.com/images/store-logo.jpg"
+                            couponCategoryId:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  example: "Discounts"
+                            type:
+                              type: string
+                              example: "PRE_GENERATED"
+                            code:
+                              type: string
+                              example: "SUMMER20"
+                            status:
+                              type: string
+                              example: "UNUSED"
+                            validityPeriod:
+                              type: object
+                              properties:
+                                startDate:
+                                  type: string
+                                  format: date-time
+                                  example: "2024-06-01T00:00:00Z"
+                                endDate:
+                                  type: string
+                                  format: date-time
+                                  example: "2024-08-31T23:59:59Z"
+                            discountDetails:
+                              type: object
+                              properties:
+                                type:
+                                  type: string
+                                  example: "PERCENTAGE"
+                                value:
+                                  type: number
+                                  example: 20
+                            redeemablePointsCount:
+                              type: number
+                              example: 100
+                            eligibility:
+                              type: object
+                              properties:
+                                eligible:
+                                  type: boolean
+                                  example: true
+                                reason:
+                                  type: string
+                                  example: "Eligible for this offer"
+                      pagination:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            example: 50
+                          page:
+                            type: integer
+                            example: 1
+                          limit:
+                            type: integer
+                            example: 10
+                          total_pages:
+                            type: integer
+                            example: 5
+        401:
+          description: "Unauthorized"
+
+  /merchant-offers/{offer_id}:
+    get:
+      summary: Get specific offer details
+      description: |
+        # Description
+        Retrieves detailed information about a specific merchant offer.
+        
+        # Features
+        - Complete offer information
+        - Optional eligibility check
+        - Merchant details
+        - Category information
+        
+        # Query Parameters
+        - transaction_value: Optional transaction value for eligibility check
+        - payment_method: Optional payment method for eligibility check
+        
+        # Example Usage
+        ```javascript
+        // Get offer details
+        GET /merchant-offers/507f1f77bcf86cd799439011
+        
+        // Get offer with eligibility check
+        GET /merchant-offers/507f1f77bcf86cd799439011?transaction_value=100&payment_method=KhedmahPay-Wallet
+        ```
+      tags:
+        - SDK Merchant Offers
+      parameters:
+        - name: offer_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Unique offer identifier"
+          example: "507f1f77bcf86cd799439011"
+        - name: transaction_value
+          in: query
+          schema:
+            type: number
+          description: "Transaction value for eligibility check"
+          example: 100
+        - name: payment_method
+          in: query
+          schema:
+            type: string
+            enum: [Khedmah-Pay, Khedmah-Wallet]
+          description: "Payment method for eligibility check"
+          example: "KhedmahPay-Wallet"
+      responses:
+        200:
+          description: "Offer details retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Offer details retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        example: "507f1f77bcf86cd799439011"
+                      title:
+                        type: string
+                        example: "Summer Sale"
+                      description:
+                        type: string
+                        example: "Get 20% off on all items"
+                      posterImage:
+                        type: string
+                        example: "https://example.com/images/summer-sale.jpg"
+                      merchantId:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            example: "Example Store"
+                          logo:
+                            type: string
+                            example: "https://example.com/images/store-logo.jpg"
+                      couponCategoryId:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            example: "Discounts"
+                      type:
+                        type: string
+                        example: "PRE_GENERATED"
+                      code:
+                        type: string
+                        example: "SUMMER20"
+                      status:
+                        type: string
+                        example: "UNUSED"
+                      validityPeriod:
+                        type: object
+                        properties:
+                          startDate:
+                            type: string
+                            format: date-time
+                            example: "2024-06-01T00:00:00Z"
+                          endDate:
+                            type: string
+                            format: date-time
+                            example: "2024-08-31T23:59:59Z"
+                      discountDetails:
+                        type: object
+                        properties:
+                          type:
+                            type: string
+                            example: "PERCENTAGE"
+                          value:
+                            type: number
+                            example: 20
+                      redeemablePointsCount:
+                        type: number
+                        example: 100
+                      eligibility:
+                        type: object
+                        properties:
+                          eligible:
+                            type: boolean
+                            example: true
+                          reason:
+                            type: string
+                            example: "Eligible for this offer"
+        404:
+          description: "Offer not found"
+        401:
+          description: "Unauthorized"
+
+  /merchant-offers/{offer_id}/check-eligibility:
+    post:
+      summary: Check offer eligibility
+      description: |
+        # Description
+        Checks if the authenticated customer is eligible for a specific offer.
+        
+        # Features
+        - Comprehensive eligibility check
+        - Transaction value validation
+        - Payment method validation
+        - Usage limit checking
+        
+        # Example Usage
+        ```javascript
+        POST /merchant-offers/507f1f77bcf86cd799439011/check-eligibility
+        {
+          "transaction_value": 100,
+          "payment_method": "KhedmahPay-Wallet"
+        }
+        ```
+      tags:
+        - SDK Merchant Offers
+      parameters:
+        - name: offer_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Unique offer identifier"
+          example: "507f1f77bcf86cd799439011"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - transaction_value
+                - payment_method
+              properties:
+                transaction_value:
+                  type: number
+                  description: "Transaction value for eligibility check"
+                  example: 100
+                payment_method:
+                  type: string
+                  enum: [Khedmah-Pay, Khedmah-Wallet]
+                  description: "Payment method for eligibility check"
+                  example: "KhedmahPay-Wallet"
+      responses:
+        200:
+          description: "Offer eligibility checked successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Offer eligibility checked successfully"
+                  data:
+                    type: object
+                    properties:
+                      offer_id:
+                        type: string
+                        example: "507f1f77bcf86cd799439011"
+                      eligibility:
+                        type: object
+                        properties:
+                          eligible:
+                            type: boolean
+                            example: true
+                          reason:
+                            type: string
+                            example: "Eligible for this offer"
+        400:
+          description: "Missing required fields"
+        404:
+          description: "Offer not found"
+        401:
+          description: "Unauthorized"
+
+  /merchant-offers/claimed/list:
+    get:
+      summary: Get user's claimed offers
+      description: |
+        # Description
+        Retrieves the list of offers claimed by the authenticated customer.
+        
+        # Features
+        - Pagination support
+        - Status filtering
+        - Sorted by claim date (newest first)
+        
+        # Query Parameters
+        - page: Page number (default: 1)
+        - limit: Items per page (default: 10)
+        - status: Filter by offer status (UNUSED, CLAIMED, REDEEMED, EXPIRED)
+        
+        # Example Usage
+        ```javascript
+        // Get all claimed offers
+        GET /merchant-offers/claimed/list
+        
+        // Get claimed offers with filters
+        GET /merchant-offers/claimed/list?status=CLAIMED&page=1&limit=20
+        ```
+      tags:
+        - SDK Merchant Offers
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: "Page number for pagination"
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: "Number of items per page"
+          example: 10
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [UNUSED, CLAIMED, REDEEMED, EXPIRED]
+          description: "Filter by offer status"
+          example: "CLAIMED"
+      responses:
+        200:
+          description: "Claimed offers retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Claimed offers retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      offers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              example: "507f1f77bcf86cd799439011"
+                            title:
+                              type: string
+                              example: "Summer Sale"
+                            description:
+                              type: string
+                              example: "Get 20% off on all items"
+                            posterImage:
+                              type: string
+                              example: "https://example.com/images/summer-sale.jpg"
+                            merchantId:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  example: "Example Store"
+                                logo:
+                                  type: string
+                                  example: "https://example.com/images/store-logo.jpg"
+                            couponCategoryId:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  example: "Discounts"
+                            type:
+                              type: string
+                              example: "PRE_GENERATED"
+                            code:
+                              type: string
+                              example: "SUMMER20"
+                            status:
+                              type: string
+                              example: "CLAIMED"
+                            validityPeriod:
+                              type: object
+                              properties:
+                                startDate:
+                                  type: string
+                                  format: date-time
+                                  example: "2024-06-01T00:00:00Z"
+                                endDate:
+                                  type: string
+                                  format: date-time
+                                  example: "2024-08-31T23:59:59Z"
+                            discountDetails:
+                              type: object
+                              properties:
+                                type:
+                                  type: string
+                                  example: "PERCENTAGE"
+                                value:
+                                  type: number
+                                  example: 20
+                            redeemablePointsCount:
+                              type: number
+                              example: 100
+                      pagination:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            example: 50
+                          page:
+                            type: integer
+                            example: 1
+                          limit:
+                            type: integer
+                            example: 10
+                          total_pages:
+                            type: integer
+                            example: 5
+        401:
+          description: "Unauthorized" 

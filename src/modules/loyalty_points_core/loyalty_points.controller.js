@@ -107,14 +107,13 @@ exports.redeem_loyalty_points = async (req, res) => {
 exports.process_loyalty_event = async (req, res) => {
   try {
     const {
-      eventType,
-      serviceType,
-      appType,
+      unique_code,
       paymentMethod,
       customerId,
       transactionValue,
       metadata,
       reference_id,
+      app_type
     } = req.body;
 
     // Find the customer
@@ -125,10 +124,7 @@ exports.process_loyalty_event = async (req, res) => {
 
     // Find the point criteria using our static method
     const pointCriteria = await Criteria.findMatchingCriteria(
-      eventType,
-      serviceType,
-      appType
-    );
+      unique_code    );
 
     if (!pointCriteria) {
       return response_handler(
@@ -172,7 +168,7 @@ exports.process_loyalty_event = async (req, res) => {
       payment_method: paymentMethod,
       status: "pending",
       metadata: metadata,
-      app_type: appType,
+      app_type: app_type,
       reference_id: reference_id,
     });
 

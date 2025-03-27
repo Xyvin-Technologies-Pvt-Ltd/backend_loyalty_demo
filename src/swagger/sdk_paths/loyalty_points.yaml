@@ -1,0 +1,381 @@
+openapi: 3.0.0
+info:
+  title: SDK Loyalty Points API
+  description: |
+    # Overview
+    This API provides endpoints for managing customer loyalty points in the system. It allows customers to:
+    - View their points history
+    - Get points summary and statistics
+    - Track points expiry
+    - View detailed points information
+    
+    # Authentication
+    All endpoints require SDK authentication. Include your API key in the request header:
+    ```
+    Authorization: Bearer your-api-key
+    ```
+    
+    # Rate Limiting
+    - 100 requests per minute per API key
+    - 1000 requests per hour per API key
+    
+    # Error Handling
+    All endpoints follow a consistent error response format:
+    ```json
+    {
+      "status": false,
+      "message": "Error description",
+      "error": {
+        "code": "ERROR_CODE",
+        "details": {}
+      }
+    }
+    ```
+  version: 1.0.0
+tags:
+  - name: SDK Loyalty Points
+    description: SDK APIs for customer loyalty points operations
+
+paths:
+  /loyalty-points/history:
+    get:
+      summary: Get points history for the authenticated customer
+      description: |
+        # Description
+        Retrieves the points history for the authenticated customer with pagination and filtering options.
+        
+        # Features
+        - Pagination support
+        - Status filtering (active/expired)
+        - Date range filtering
+        - Sorted by earned date (newest first)
+        - Includes transaction details
+        
+        # Query Parameters
+        - page: Page number (default: 1)
+        - limit: Items per page (default: 10)
+        - status: Filter by points status (active/expired)
+        - start_date: Filter by start date
+        - end_date: Filter by end date
+        
+        # Example Usage
+        ```javascript
+        // Get all points history
+        GET /loyalty-points/history
+        
+        // Get points history with filters
+        GET /loyalty-points/history?status=active&start_date=2024-01-01&end_date=2024-03-20&page=1&limit=20
+        ```
+      tags:
+        - SDK Loyalty Points
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: "Page number for pagination"
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: "Number of items per page"
+          example: 10
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, expired]
+          description: "Filter by points status"
+          example: "active"
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: "Filter by start date (YYYY-MM-DD)"
+          example: "2024-01-01"
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: "Filter by end date (YYYY-MM-DD)"
+          example: "2024-03-20"
+      responses:
+        200:
+          description: "Points history retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Points history retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      points_history:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              example: "507f1f77bcf86cd799439011"
+                            points:
+                              type: number
+                              example: 100
+                            status:
+                              type: string
+                              example: "active"
+                            expiryDate:
+                              type: string
+                              format: date-time
+                              example: "2024-12-31T23:59:59Z"
+                            earnedAt:
+                              type: string
+                              format: date-time
+                              example: "2024-03-20T10:00:00Z"
+                            transaction_id:
+                              type: object
+                              properties:
+                                transaction_type:
+                                  type: string
+                                  example: "earn"
+                                transaction_date:
+                                  type: string
+                                  format: date-time
+                                  example: "2024-03-20T10:00:00Z"
+                                points:
+                                  type: number
+                                  example: 100
+                      pagination:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            example: 50
+                          page:
+                            type: integer
+                            example: 1
+                          limit:
+                            type: integer
+                            example: 10
+                          total_pages:
+                            type: integer
+                            example: 5
+        401:
+          description: "Unauthorized"
+
+  /loyalty-points/summary:
+    get:
+      summary: Get points summary for the authenticated customer
+      description: |
+        # Description
+        Retrieves a comprehensive summary of points for the authenticated customer.
+        
+        # Features
+        - Summary by points status
+        - Summary by transaction type
+        - Points expiry summary by month
+        - Total points breakdown
+        - Date range filtering
+        
+        # Query Parameters
+        - start_date: Filter by start date (YYYY-MM-DD)
+        - end_date: Filter by end date (YYYY-MM-DD)
+        
+        # Example Usage
+        ```javascript
+        // Get all-time summary
+        GET /loyalty-points/summary
+        
+        // Get summary for date range
+        GET /loyalty-points/summary?start_date=2024-01-01&end_date=2024-03-20
+        ```
+      tags:
+        - SDK Loyalty Points
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: "Filter by start date (YYYY-MM-DD)"
+          example: "2024-01-01"
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: "Filter by end date (YYYY-MM-DD)"
+          example: "2024-03-20"
+      responses:
+        200:
+          description: "Points summary retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Points summary retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      summary_by_status:
+                        type: object
+                        properties:
+                          active:
+                            type: object
+                            properties:
+                              total_points:
+                                type: number
+                                example: 1000
+                              count:
+                                type: integer
+                                example: 10
+                          expired:
+                            type: object
+                            properties:
+                              total_points:
+                                type: number
+                                example: 500
+                              count:
+                                type: integer
+                                example: 5
+                      summary_by_transaction_type:
+                        type: object
+                        properties:
+                          earn:
+                            type: object
+                            properties:
+                              total_points:
+                                type: number
+                                example: 1000
+                              count:
+                                type: integer
+                                example: 10
+                          redeem:
+                            type: object
+                            properties:
+                              total_points:
+                                type: number
+                                example: 500
+                              count:
+                                type: integer
+                                example: 5
+                      expiry_summary:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              example: "2024-03"
+                            total_points:
+                              type: number
+                              example: 1000
+                            count:
+                              type: integer
+                              example: 10
+                      total_points:
+                        type: object
+                        properties:
+                          total_active:
+                            type: number
+                            example: 1000
+                          total_expired:
+                            type: number
+                            example: 500
+        401:
+          description: "Unauthorized"
+
+  /loyalty-points/{points_id}:
+    get:
+      summary: Get specific points details
+      description: |
+        # Description
+        Retrieves detailed information about specific loyalty points.
+        
+        # Features
+        - Complete points information
+        - Transaction details
+        - Expiry information
+        
+        # Example Usage
+        ```javascript
+        GET /loyalty-points/507f1f77bcf86cd799439011
+        ```
+      tags:
+        - SDK Loyalty Points
+      parameters:
+        - name: points_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Unique points identifier"
+          example: "507f1f77bcf86cd799439011"
+      responses:
+        200:
+          description: "Points details retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Points details retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        example: "507f1f77bcf86cd799439011"
+                      points:
+                        type: number
+                        example: 100
+                      status:
+                        type: string
+                        example: "active"
+                      expiryDate:
+                        type: string
+                        format: date-time
+                        example: "2024-12-31T23:59:59Z"
+                      earnedAt:
+                        type: string
+                        format: date-time
+                        example: "2024-03-20T10:00:00Z"
+                      transaction_id:
+                        type: object
+                        properties:
+                          transaction_type:
+                            type: string
+                            example: "earn"
+                          transaction_date:
+                            type: string
+                            format: date-time
+                            example: "2024-03-20T10:00:00Z"
+                          points:
+                            type: number
+                            example: 100
+        404:
+          description: "Points details not found"
+        401:
+          description: "Unauthorized" 

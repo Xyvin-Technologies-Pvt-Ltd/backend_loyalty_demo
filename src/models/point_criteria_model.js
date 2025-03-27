@@ -8,6 +8,11 @@ const pointsCriteriaSchema = new mongoose.Schema(
       ref: "TriggerEvent",
       required: true,
     },
+    unique_code: {
+      type: String,
+      unique: true,
+      required: true,
+    },
 
     serviceType: {
       type: mongoose.Schema.Types.ObjectId,
@@ -30,7 +35,6 @@ const pointsCriteriaSchema = new mongoose.Schema(
       {
         paymentMethod: {
           type: String,
-          enum: ["Khedmah-Pay", "Khedmah-Wallet"], // Separate logic for Khedmah & KhedmahPay
           required: true,
         },
         pointType: {
@@ -391,12 +395,10 @@ pointsCriteriaSchema.methods.checkEligibilityOptimized = async function (payment
 };
 
 
-pointsCriteriaSchema.statics.findMatchingCriteria = async function (eventTypeId, serviceTypeId, appTypeId) {
+pointsCriteriaSchema.statics.findMatchingCriteria = async function (unique_code) {
   try {
     const criteria = await this.findOne({
-      eventType: eventTypeId,
-      serviceType: serviceTypeId,
-      appType: appTypeId,
+      unique_code: unique_code,
       isActive: true
     });
 

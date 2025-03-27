@@ -4,7 +4,6 @@ const { logger } = require("../../../middlewares/logger");
 
 exports.getMyTransactions = async (req, res) => {
     try {
-        const { customer_id } = req.params;
         const {
             page = 1,
             limit = 10,
@@ -14,8 +13,8 @@ exports.getMyTransactions = async (req, res) => {
             status
         } = req.query;
 
-        // Build query
-        const query = { customer_id };
+        // Build query with authenticated user's ID
+        const query = { customer_id: req.user._id };
 
         // Add filters if provided
         if (transaction_type) {
@@ -85,14 +84,11 @@ exports.getMyTransactions = async (req, res) => {
 exports.getTransactionById = async (req, res) => {
     try {
         const { transaction_id } = req.params;
-        const { customer_id } = req.query;
 
-        const query = { transaction_id };
-        if (customer_id) {
-            query.customer_id = customer_id;
-        }
-
-        const transaction = await Transaction.findOne(query)
+        const transaction = await Transaction.findOne({
+            transaction_id,
+            customer_id: req.user._id
+        })
             .populate("point_criteria", "name description points")
             .populate("app_type", "name");
 
@@ -109,11 +105,12 @@ exports.getTransactionById = async (req, res) => {
 
 exports.getTransactionSummary = async (req, res) => {
     try {
-        const { customer_id } = req.params;
         const { start_date, end_date } = req.query;
 
         // Build date query if provided
-        const dateQuery = {};
+        const dateQuery = {
+            customer_id: req.user._id
+        };
         if (start_date || end_date) {
             dateQuery.transaction_date = {};
             if (start_date) {
@@ -128,7 +125,7 @@ exports.getTransactionSummary = async (req, res) => {
         const summaryByType = await Transaction.aggregate([
             {
                 $match: {
-                    customer_id: mongoose.Types.ObjectId(customer_id),
+                    customer_id: req.user._id,
                     ...dateQuery
                 }
             },
@@ -146,7 +143,7 @@ exports.getTransactionSummary = async (req, res) => {
         const summaryByStatus = await Transaction.aggregate([
             {
                 $match: {
-                    customer_id: mongoose.Types.ObjectId(customer_id),
+                    customer_id: req.user._id,
                     ...dateQuery
                 }
             },
@@ -162,7 +159,7 @@ exports.getTransactionSummary = async (req, res) => {
         const totalPoints = await Transaction.aggregate([
             {
                 $match: {
-                    customer_id: mongoose.Types.ObjectId(customer_id),
+                    customer_id: req.user._id,
                     ...dateQuery
                 }
             },

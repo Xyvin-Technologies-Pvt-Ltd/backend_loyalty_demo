@@ -14,6 +14,10 @@ const customer_schema = new mongoose.Schema(
       type: String,
       unique: true,
     },
+    coins: {
+      type: Number,
+      default: 0,
+    },
     referred_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Customer",

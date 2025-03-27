@@ -47,7 +47,7 @@ const createSubAdmin = async (req, res) => {
 // Get all sub-admins
 const getAllSubAdmins = async (req, res) => {
     try {
-        const subAdmins = await SubAdmin.find()
+        const subAdmins = await SubAdmin.find({ isSuperAdmin: false })
             .select('-password -passwordResetToken -passwordResetExpires')
             .populate('roleId', 'name description permissions');
 
