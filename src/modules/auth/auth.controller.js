@@ -74,7 +74,7 @@ exports.admin_login = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const user = await Admin.findById(req.admin._id,'name email _id status role').populate('role');
+    const user = await Admin.findById(req.admin._id, 'name email _id status role').populate('role');
     return response_handler(res, 200, "User details retrieved successfully", user);
   } catch (error) {
     return response_handler(
@@ -131,7 +131,7 @@ exports.register = async (req, res) => {
         await refer_user.save();
         req.body.referred_by = refer_user._id;
       }
-        const new_user = await Customer.create(req.body);
+      const new_user = await Customer.create(req.body);
       const jwt_token = generate_token(new_user._id);
       return response_handler(res, 200, "Login successful!", jwt_token);
     }

@@ -1,9 +1,8 @@
 const Customer = require("../../models/customer_model");
-const Admin = require("../../models/admin_model");
 const SupportTicket = require("../../models/support_ticket_model");
 
 const { logger } = require("../../middlewares/logger");
-const  response_handler  = require("../../helpers/response_handler");
+const response_handler = require("../../helpers/response_handler");
 
 /**
  * Create a new support ticket
@@ -471,18 +470,18 @@ const getTicketStats = async (req, res) => {
     const resolutionTimeStats =
       resolutionTimeData.length > 0
         ? {
-            average_hours:
-              Math.round(resolutionTimeData[0].avg_resolution_time * 10) / 10,
-            min_hours:
-              Math.round(resolutionTimeData[0].min_resolution_time * 10) / 10,
-            max_hours:
-              Math.round(resolutionTimeData[0].max_resolution_time * 10) / 10,
-          }
+          average_hours:
+            Math.round(resolutionTimeData[0].avg_resolution_time * 10) / 10,
+          min_hours:
+            Math.round(resolutionTimeData[0].min_resolution_time * 10) / 10,
+          max_hours:
+            Math.round(resolutionTimeData[0].max_resolution_time * 10) / 10,
+        }
         : {
-            average_hours: 0,
-            min_hours: 0,
-            max_hours: 0,
-          };
+          average_hours: 0,
+          min_hours: 0,
+          max_hours: 0,
+        };
 
     return response_handler(
       res,

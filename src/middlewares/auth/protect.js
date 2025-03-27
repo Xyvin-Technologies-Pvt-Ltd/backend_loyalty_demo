@@ -25,9 +25,9 @@ const protect = async (req, res, next) => {
       console.log(req.admin_id);
       const admin = await Admin.findById(req.admin_id);
       if (!admin) {
-          return response_handler(res, 401, "Admin not found.");
-        }
-       
+        return response_handler(res, 401, "Admin not found.");
+      }
+
       req.admin = admin;
       next();
     } catch (error) {
@@ -42,4 +42,4 @@ const protect = async (req, res, next) => {
   });
 };
 
-module.exports = {protect};
+module.exports = { protect };

@@ -1,4 +1,4 @@
-const SubAdmin = require('../../models/sub_admin.model');
+const SubAdmin = require('../../models/admin_model');
 const Role = require('../../models/role_model');
 const response_handler = require('../../helpers/response_handler');
 const jwt = require('jsonwebtoken');

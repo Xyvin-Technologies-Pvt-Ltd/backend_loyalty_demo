@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { authorizePermission } = require('../../middlewares/auth/auth');
 const { createAuditMiddleware } = require('../audit');
-const validateRequest = require('../../middlewares/validateRequest');
 const validators = require('./sub_admin.validators');
 const {
     createSubAdmin,
@@ -19,7 +18,6 @@ const subAdminAudit = createAuditMiddleware('sub_admin');
 // Create new sub-admin
 router.post('/',
     authorizePermission('MANAGE_SUB_ADMINS'),
-    validateRequest(validators.createSubAdmin),
     subAdminAudit.captureResponse(),
     subAdminAudit.adminAction('create_sub_admin', {
         description: 'Admin created a new sub-admin',
@@ -53,7 +51,6 @@ router.get('/:id',
 // Update sub-admin
 router.put('/:id',
     authorizePermission('MANAGE_SUB_ADMINS'),
-    validateRequest(validators.updateSubAdmin),
     subAdminAudit.captureResponse(),
     subAdminAudit.adminAction('update_sub_admin', {
         description: 'Admin updated a sub-admin',
@@ -79,7 +76,6 @@ router.delete('/:id',
 // Reset password
 router.post('/reset-password',
     authorizePermission('MANAGE_SUB_ADMINS'),
-    validateRequest(validators.resetPassword),
     subAdminAudit.captureResponse(),
     subAdminAudit.adminAction('reset_sub_admin_password', {
         description: 'Admin reset sub-admin password',
