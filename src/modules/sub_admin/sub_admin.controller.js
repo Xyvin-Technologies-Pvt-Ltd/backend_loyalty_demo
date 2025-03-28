@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 // Create new sub-admin
 const createSubAdmin = async (req, res) => {
     try {
-        const { firstName, lastName, email, phoneNumber, password, roleId, accessScope, assignedRegions } = req.body;
+        const { name,email, phoneNumber, password, roleId,  } = req.body;
 
         // Check if role exists
         const role = await Role.findById(roleId);
@@ -21,14 +21,12 @@ const createSubAdmin = async (req, res) => {
         }
 
         const subAdmin = new SubAdmin({
-            firstName,
-            lastName,
+            name,
             email,
             phoneNumber,
             password,
             roleId,
-            accessScope,
-            assignedRegions
+            
         });
 
         await subAdmin.save();
@@ -79,7 +77,7 @@ const getSubAdminById = async (req, res) => {
 // Update sub-admin
 const updateSubAdmin = async (req, res) => {
     try {
-        const { firstName, lastName, phoneNumber, roleId, accessScope, assignedRegions, isActive } = req.body;
+        const { name, email, phoneNumber, roleId, isActive } = req.body;
         const subAdmin = await SubAdmin.findById(req.params.id);
 
         if (!subAdmin) {
@@ -87,12 +85,10 @@ const updateSubAdmin = async (req, res) => {
         }
 
         // Update fields
-        if (firstName) subAdmin.firstName = firstName;
-        if (lastName) subAdmin.lastName = lastName;
+        if (name) subAdmin.name = name;
+        if (email) subAdmin.email = email;
         if (phoneNumber) subAdmin.phoneNumber = phoneNumber;
         if (roleId) subAdmin.roleId = roleId;
-        if (accessScope) subAdmin.accessScope = accessScope;
-        if (assignedRegions) subAdmin.assignedRegions = assignedRegions;
         if (typeof isActive === 'boolean') subAdmin.isActive = isActive;
 
         await subAdmin.save();
