@@ -59,7 +59,7 @@ exports.getMyTransactions = async (req, res) => {
             }
         ]);
 
-        return response_handler.success(res, "Transactions retrieved successfully", {
+        return response_handler(res, 200, "Transactions retrieved successfully", {
             transactions,
             pagination: {
                 total,
@@ -77,7 +77,7 @@ exports.getMyTransactions = async (req, res) => {
         });
     } catch (error) {
         logger.error(`Error fetching transactions: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 };
 
@@ -93,13 +93,13 @@ exports.getTransactionById = async (req, res) => {
             .populate("app_type", "name");
 
         if (!transaction) {
-            return response_handler.error(res, "Transaction not found", 404);
+            return response_handler(res, 404, "Transaction not found", null);
         }
 
-        return response_handler.success(res, "Transaction retrieved successfully", transaction);
+        return response_handler(res, 200, "Transaction retrieved successfully", transaction);
     } catch (error) {
         logger.error(`Error fetching transaction: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 };
 
@@ -174,7 +174,7 @@ exports.getTransactionSummary = async (req, res) => {
             }
         ]);
 
-        return response_handler.success(res, "Transaction summary retrieved successfully", {
+        return response_handler(res, 200, "Transaction summary retrieved successfully", {
             summary_by_type: summaryByType.reduce((acc, curr) => {
                 acc[curr._id] = {
                     total_points: curr.total_points,
@@ -196,6 +196,6 @@ exports.getTransactionSummary = async (req, res) => {
         });
     } catch (error) {
         logger.error(`Error fetching transaction summary: ${error.message}`);
-        return response_handler.error(res, error);
+            return response_handler(res, 500, error.message, null);
     }
 }; 

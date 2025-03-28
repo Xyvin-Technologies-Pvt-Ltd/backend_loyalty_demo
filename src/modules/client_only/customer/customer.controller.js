@@ -9,11 +9,11 @@ exports.getMyProfile = async (req, res) => {
       .populate("tier")
     .populate("referred_by");
   if (!customer) {
-    return response_handler(res,404, "Customer not found");
+    return response_handler(res,404, "Customer not found", null);
     }
     return response_handler(res, 200, "Customer found", customer);
   } catch (error) {
-    return response_handler(res, 500, error.message);
+    return response_handler(res, 500, error.message, null);
   }
 };
 
@@ -34,7 +34,7 @@ exports.getMyTransactions = async (req, res) => {
     // because transacrion has only our monogodb id
     return response_handler(res, 200, "Transactions found", transactions);
   } catch (error) {
-    return response_handler(res, 500, error.message);
+    return response_handler(res, 500, error.message, null);
   }
 };
 
@@ -43,12 +43,12 @@ exports.getMyPoints = async (req, res) => {
     const { customer_id } = req.params; // this is client customer id
     const customer = await Customer.findOne({ customer_id });
     if (!customer) {
-      return response_handler(res, 404, "Customer not found");
+      return response_handler(res, 404, "Customer not found", null);
     }
     const points = customer.points;
     return response_handler(res, 200, "Points found", points);
   } catch (error) {
-    return response_handler(res, 500, error.message);
+    return response_handler(res, 500, error.message, null);
   }
 };
 
@@ -57,12 +57,12 @@ exports.getMyNotificationPreferences = async (req, res) => {
     const { customer_id } = req.params; // this is client customer id
     const customer = await Customer.findOne({ customer_id });
     if (!customer) {
-      return response_handler(res, 404, "Customer not found");
+      return response_handler(res, 404, "Customer not found", null);
     }
     const notificationPreferences = customer.notification_preferences;
     return response_handler(res, 200, "Notification preferences found", notificationPreferences);
   } catch (error) {
-    return response_handler(res, 500, error.message);
+    return response_handler(res, 500, error.message, null);
   }
 };
 
@@ -72,12 +72,12 @@ exports.updateMyNotificationPreferences = async (req, res) => {
     const { notification_preferences } = req.body;
     const customer = await Customer.findOne({ customer_id });
     if (!customer) {
-      return response_handler(res, 404, "Customer not found");
+      return response_handler(res, 404, "Customer not found", null);
     }
     customer.notification_preferences = notification_preferences;
     await customer.save();
     return response_handler(res, 200, "Notification preferences updated", customer);
   } catch (error) {
-    return response_handler(res, 500, error.message);
+    return response_handler(res, 500, error.message, null);
   }
 };

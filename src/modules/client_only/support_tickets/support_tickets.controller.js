@@ -1,5 +1,5 @@
 const SupportTicket = require("../../../models/support_ticket_model");
-const { createError } = require("../../../utils/error_handler");
+const response_handler = require("../../../helpers/response_handler");
 
 const supportTicketsController = {
     // Create a new support ticket
@@ -21,13 +21,9 @@ const supportTicketsController = {
                 priority: "medium",
             });
 
-            res.status(201).json({
-                status: true,
-                message: "Support ticket created successfully",
-                data: ticket,
-            });
+            response_handler(res, 201,"Support ticket created successfully", ticket);
         } catch (error) {
-            createError(error, res);
+            response_handler(res, 500, error.message, null);
         }
     },
 
@@ -49,10 +45,7 @@ const supportTicketsController = {
 
             const total = await SupportTicket.countDocuments(query);
 
-            res.status(200).json({
-                status: true,
-                message: "Support tickets fetched successfully",
-                data: {
+            response_handler(res, 200, "Support tickets fetched successfully", {
                     tickets,
                     pagination: {
                         total,
@@ -60,10 +53,9 @@ const supportTicketsController = {
                         limit: parseInt(limit),
                         totalPages: Math.ceil(total / limit),
                     },
-                },
-            });
+                });
         } catch (error) {
-            createError(error, res);
+            response_handler(res, 500, error.message, null);
         }
     },
 
@@ -85,13 +77,9 @@ const supportTicketsController = {
                 });
             }
 
-            res.status(200).json({
-                status: true,
-                message: "Support ticket fetched successfully",
-                data: ticket,
-            });
+            response_handler(res, 200, "Support ticket fetched successfully", ticket);
         } catch (error) {
-            createError(error, res);
+            response_handler(res, 500, error.message, null);
         }
     },
 
@@ -115,10 +103,7 @@ const supportTicketsController = {
             }
 
             if (ticket.status === "closed") {
-                return res.status(400).json({
-                    status: false,
-                    message: "Cannot add message to closed ticket",
-                });
+                return response_handler(res, 400, "Cannot add message to closed ticket", null);
             }
 
             ticket.messages.push({
@@ -129,13 +114,9 @@ const supportTicketsController = {
 
             await ticket.save();
 
-            res.status(200).json({
-                status: true,
-                message: "Message added successfully",
-                data: ticket,
-            });
+            response_handler(res, 200, "Message added successfully", ticket);
         } catch (error) {
-            createError(error, res);
+            response_handler(res, 500, error.message, null);
         }
     },
 
@@ -151,30 +132,20 @@ const supportTicketsController = {
             });
 
             if (!ticket) {
-                return res.status(404).json({
-                    status: false,
-                    message: "Support ticket not found",
-                });
+                return response_handler(res, 404, "Support ticket not found", null);
             }
 
             if (ticket.status === "closed") {
-                return res.status(400).json({
-                    status: false,
-                    message: "Ticket is already closed",
-                });
+                return response_handler(res, 400, "Ticket is already closed", null);
             }
 
             ticket.status = "closed";
             ticket.closed_at = new Date();
             await ticket.save();
 
-            res.status(200).json({
-                status: true,
-                message: "Support ticket closed successfully",
-                data: ticket,
-            });
+            response_handler(res, 200, "Support ticket closed successfully", ticket);
         } catch (error) {
-            createError(error, res);
+            response_handler(res, 500, error.message, null);
         }
     },
 
@@ -190,30 +161,20 @@ const supportTicketsController = {
             });
 
             if (!ticket) {
-                return res.status(404).json({
-                    status: false,
-                    message: "Support ticket not found",
-                });
+                return response_handler(res, 404, "Support ticket not found", null);
             }
 
             if (ticket.status !== "closed") {
-                return res.status(400).json({
-                    status: false,
-                    message: "Ticket is not closed",
-                });
+                return response_handler(res, 400, "Ticket is not closed", null);
             }
 
             ticket.status = "reopened";
             ticket.closed_at = null;
             await ticket.save();
 
-            res.status(200).json({
-                status: true,
-                message: "Support ticket reopened successfully",
-                data: ticket,
-            });
+            response_handler(res, 200, "Support ticket reopened successfully", ticket);
         } catch (error) {
-            createError(error, res);
+            response_handler(res, 500, error.message, null);
         }
     },
 };

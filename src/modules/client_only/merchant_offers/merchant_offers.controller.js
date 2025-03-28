@@ -62,7 +62,7 @@ exports.getAvailableOffers = async (req, res) => {
             };
         }));
 
-        return response_handler.success(res, "Available offers retrieved successfully", {
+        return response_handler(res, 200, "Available offers retrieved successfully", {
             offers: offersWithEligibility,
             pagination: {
                 total,
@@ -73,7 +73,7 @@ exports.getAvailableOffers = async (req, res) => {
         });
     } catch (error) {
         logger.error(`Error fetching available offers: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 };
 
@@ -87,7 +87,7 @@ exports.getOfferDetails = async (req, res) => {
             .populate("couponCategoryId", "name");
 
         if (!offer) {
-            return response_handler.error(res, "Offer not found", 404);
+            return response_handler(res, 404, "Offer not found", null);
         }
 
         // Check eligibility if transaction details are provided
@@ -96,13 +96,13 @@ exports.getOfferDetails = async (req, res) => {
             eligibility = await offer.checkEligibility(req.user, transaction_value, payment_method);
         }
 
-        return response_handler.success(res, "Offer details retrieved successfully", {
+        return response_handler(res, 200, "Offer details retrieved successfully", {
             ...offer.toObject(),
             eligibility
         });
     } catch (error) {
         logger.error(`Error fetching offer details: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 };
 
@@ -112,7 +112,7 @@ exports.checkOfferEligibility = async (req, res) => {
         const { transaction_value, payment_method } = req.body;
 
         if (!transaction_value || !payment_method) {
-            return response_handler.error(res, "Transaction value and payment method are required", 400);
+            return response_handler(res, 400, "Transaction value and payment method are required", null);
         }
 
         const offer = await CouponCode.findById(offer_id)
@@ -120,18 +120,18 @@ exports.checkOfferEligibility = async (req, res) => {
             .populate("couponCategoryId", "name");
 
         if (!offer) {
-            return response_handler.error(res, "Offer not found", 404);
+            return response_handler(res, 404, "Offer not found", null);
         }
 
         const eligibility = await offer.checkEligibility(req.user, transaction_value, payment_method);
 
-        return response_handler.success(res, "Offer eligibility checked successfully", {
+        return response_handler(res, 200, "Offer eligibility checked successfully", {
             offer_id,
             eligibility
         });
     } catch (error) {
         logger.error(`Error checking offer eligibility: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 };
 
@@ -166,7 +166,7 @@ exports.getMyClaimedOffers = async (req, res) => {
         // Get total count for pagination
         const total = await CouponCode.countDocuments(query);
 
-        return response_handler.success(res, "Claimed offers retrieved successfully", {
+        return response_handler(res, 200, "Claimed offers retrieved successfully", {
             offers,
             pagination: {
                 total,
@@ -177,6 +177,6 @@ exports.getMyClaimedOffers = async (req, res) => {
         });
     } catch (error) {
         logger.error(`Error fetching claimed offers: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 }; 

@@ -21,36 +21,36 @@ exports.customer_register = async (req, res) => {
 
     // Validate required fields
     if (!name || !email || !phone || !customer_id || !password) {
-      return response_handler.error(res, "Required fields are missing");
+      return response_handler(res, 400, "Required fields are missing", null);
     }
 
     // Validate device type
     if (device_type && !["android", "ios", "web"].includes(device_type)) {
-      return response_handler.error(res, "Invalid device type");
+      return response_handler(res, 400, "Invalid device type", null);
     }
 
     // Check for existing customer by email
     const existingEmail = await Customer.findOne({ email });
     if (existingEmail) {
-      return response_handler.error(res, "Email already registered");
+      return response_handler(res, 400, "Email already registered", null);
     }
 
     // Check for existing customer by customer_id
     const existingCustomerId = await Customer.findOne({ customer_id });
     if (existingCustomerId) {
-      return response_handler.error(res, "Customer ID already exists");
+      return response_handler(res, 400, "Customer ID already exists", null);
     }
 
     // Check for existing customer by phone
     const existingPhone = await Customer.findOne({ phone });
     if (existingPhone) {
-      return response_handler.error(res, "Phone number already registered");
+      return response_handler(res, 400, "Phone number already registered", null);
     }
 
     // Find basic tier
     const basicTier = await Tier.findOne({ points_required: 0 });
     if (!basicTier) {
-      return response_handler.error(res, "Basic tier not found");
+      return response_handler(res, 404, "Basic tier not found", null);
     }
 
     // Handle referral system
@@ -99,13 +99,14 @@ exports.customer_register = async (req, res) => {
     delete customerResponse.password;
     delete customerResponse.__v;
 
-    return response_handler.success(
+    return response_handler(
       res,
+      200,
       "Customer registered successfully",
       customerResponse
     );
   } catch (error) {
     logger.error("Customer registration error:", error);
-    return response_handler.error(res, "Registration failed", error);
+    return response_handler(res, 500, "Registration failed", error);
   }
 };

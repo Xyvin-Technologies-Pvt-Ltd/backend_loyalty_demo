@@ -70,14 +70,15 @@ exports.get_kedhmah_offers = async (req, res) => {
             return new Date(a.validityPeriod.endDate) - new Date(b.validityPeriod.endDate);
         });
 
-        return response_handler.success(
+        return response_handler(
             res,
+            200,
             "Kedmah offers fetched successfully",
             sortedOffers
         );
     } catch (error) {
         logger.error(`Error fetching kedmah offers: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 };
 
@@ -94,7 +95,7 @@ exports.get_kedhmah_offer = async (req, res) => {
             .select("-usageHistory");
 
         if (!offer) {
-            return response_handler.error(res, "Offer not found", 404);
+            return response_handler(res, 404, "Offer not found", null);
         }
 
         // Check eligibility with transaction value and payment method
@@ -104,8 +105,9 @@ exports.get_kedhmah_offer = async (req, res) => {
             payment_method || "ALL"
         );
 
-        return response_handler.success(
+        return response_handler(
             res,
+            200,
             "Kedmah offer fetched successfully",
             {
                 ...offer.toObject(),
@@ -117,7 +119,7 @@ exports.get_kedhmah_offer = async (req, res) => {
         );
     } catch (error) {
         logger.error(`Error fetching kedmah offer: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 };
 
@@ -127,13 +129,13 @@ exports.check_offer_eligibility = async (req, res) => {
 
         // Validate required fields
         if (!offer_id) {
-            return response_handler.error(res, "Offer ID is required", 400);
+            return response_handler(res, 400, "Offer ID is required", null);
         }
 
         // Find offer
         const offer = await KedmahOffers.findById(offer_id);
         if (!offer) {
-            return response_handler.error(res, "Offer not found", 404);
+            return response_handler(res, 404, "Offer not found", null);
         }
 
         // Check eligibility
@@ -143,8 +145,9 @@ exports.check_offer_eligibility = async (req, res) => {
             payment_method || "ALL"
         );
 
-        return response_handler.success(
+            return response_handler(
             res,
+            200,
             "Offer eligibility checked successfully",
             {
                 offerId: offer_id,

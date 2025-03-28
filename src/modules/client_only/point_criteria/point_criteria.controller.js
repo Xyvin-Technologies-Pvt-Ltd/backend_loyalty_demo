@@ -17,7 +17,7 @@ exports.calculatePoints = async (req, res) => {
 
         // Validate required fields
         if (!unique_code || !transaction_value || !payment_method || !app_type) {
-            return response_handler.error(res, "Missing required fields", 400);
+            return response_handler(res, 400, "Missing required fields", null);
         }
 
         // Call the core process_loyalty_event function
@@ -36,7 +36,7 @@ exports.calculatePoints = async (req, res) => {
         return result;
     } catch (error) {
         logger.error(`Error calculating points: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 };
 
@@ -51,7 +51,7 @@ exports.getPointCalculationDetails = async (req, res) => {
 
         // Validate required fields
         if (!unique_code || !transaction_value || !payment_method || !app_type) {
-            return response_handler.error(res, "Missing required fields", 400);
+            return response_handler(res, 400, "Missing required fields", null);
         }
 
         // Find matching point criteria
@@ -63,7 +63,7 @@ exports.getPointCalculationDetails = async (req, res) => {
             .populate("appType", "name");
 
         if (!pointCriteria) {
-            return response_handler.error(res, "No matching point criteria found", 404);
+            return response_handler(res, 404, "No matching point criteria found", null);
         }
 
         // Check eligibility
@@ -76,7 +76,7 @@ exports.getPointCalculationDetails = async (req, res) => {
         // Calculate points
         const pointCalculation = pointCriteria.calculatePoints(payment_method, transaction_value);
 
-        return response_handler.success(res, "Point calculation details retrieved successfully", {
+        return response_handler(res, 200, "Point calculation details retrieved successfully", {
             point_criteria: {
                 _id: pointCriteria._id,
                 unique_code: pointCriteria.unique_code,
@@ -91,19 +91,19 @@ exports.getPointCalculationDetails = async (req, res) => {
         });
     } catch (error) {
         logger.error(`Error getting point calculation details: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 };
 
 exports.getSupportedPaymentMethods = async (req, res) => {
     try {
         const paymentMethods = await PointsCriteria.getSupportedPaymentMethods();
-        return response_handler.success(res, "Supported payment methods retrieved successfully", {
+        return response_handler(res, 200, "Supported payment methods retrieved successfully", {
             payment_methods: paymentMethods
         });
     } catch (error) {
         logger.error(`Error getting supported payment methods: ${error.message}`);
-        return response_handler.error(res, error);
+            return response_handler(res, 500, error.message, null);
     }
 };
 
@@ -118,7 +118,7 @@ exports.checkCustomerEligibility = async (req, res) => {
 
         // Validate required fields
         if (!unique_code || !payment_method || !transaction_value || !app_type) {
-            return response_handler.error(res, "Missing required fields", 400);
+            return response_handler(res, 400, "Missing required fields", null);
         }
 
         // Find matching point criteria
@@ -130,7 +130,7 @@ exports.checkCustomerEligibility = async (req, res) => {
             .populate("appType", "name");
 
         if (!pointCriteria) {
-            return response_handler.error(res, "No matching point criteria found", 404);
+            return response_handler(res, 404, "No matching point criteria found", null);
         }
 
         // Get customer's transaction history for this criteria
@@ -185,7 +185,7 @@ exports.checkCustomerEligibility = async (req, res) => {
         // Calculate potential points
         const pointCalculation = pointCriteria.calculatePoints(payment_method, transaction_value);
 
-        return response_handler.success(res, "Customer eligibility checked successfully", {
+                return response_handler(res, 200, "Customer eligibility checked successfully", {
             point_criteria: {
                 _id: pointCriteria._id,
                 unique_code: pointCriteria.unique_code,
@@ -207,6 +207,6 @@ exports.checkCustomerEligibility = async (req, res) => {
         });
     } catch (error) {
         logger.error(`Error checking customer eligibility: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 }; 

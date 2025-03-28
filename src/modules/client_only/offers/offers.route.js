@@ -1,9 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const offersController = require("./offers.controller");
-const { sdkAuth } = require("../../../middlewares/auth/sdk_auth");
-const { sdkUserAuth } = require("../../../middlewares/auth/sdk_auth");
-const { createAuditMiddleware } = require("../../../middleware/audit_middleware");
+const { sdkAuth ,sdkUserAuth} = require("../../../middlewares/auth/sdk_auth");
+const { createAuditMiddleware } = require("../../audit");
 
 // Apply SDK authentication middleware
 router.use(sdkAuth());
@@ -23,7 +22,7 @@ router.get(
             filters: req.query
         })
     }),
-    offersController.getKedmahOffers
+    offersController.get_kedhmah_offers
 );
 
 // Get specific Kedmah offer
@@ -39,7 +38,7 @@ router.get(
             payment_method: req.query.payment_method
         })
     }),
-    offersController.getKedmahOffer
+    offersController.get_kedhmah_offers
 );
 
 // Check offer eligibility
@@ -55,7 +54,7 @@ router.post(
             payment_method: req.body.payment_method
         })
     }),
-    offersController.checkOfferEligibility
+    offersController.check_offer_eligibility
 );
 
 module.exports = router;

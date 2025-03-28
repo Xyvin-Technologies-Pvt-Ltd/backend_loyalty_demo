@@ -14,35 +14,35 @@ exports.convertPointsToCoins = async (req, res) => {
 
         // Validate points
         if (!points || points <= 0) {
-            return response_handler.error(res, "Invalid points value", 400);
+            return response_handler(res, 400, "Invalid points value", null);
         }
 
         // Get active conversion rules
         const conversionRule = await CoinConversionRule.getActiveRules();
         if (!conversionRule) {
-            return response_handler.error(res, "No active coin conversion rules found", 404);
+            return response_handler(res, 404, "No active coin conversion rules found", null);
         }
 
         // Check if points meet minimum requirement
         if (points < conversionRule.minimumPoints) {
-            return response_handler.error(res, `Minimum ${conversionRule.minimumPoints} points required for conversion`, 400);
+            return response_handler(res, 400, `Minimum ${conversionRule.minimumPoints} points required for conversion`, null);
         }
 
         // Calculate coins
         const coins = Math.floor(points / conversionRule.pointsPerCoin);
         if (coins <= 0) {
-            return response_handler.error(res, "Insufficient points for coin conversion", 400);
+            return response_handler(res, 400, "Insufficient points for coin conversion", null);
         }
 
         // Get customer with current points
         const customer = await Customer.findById(req.user._id);
         if (!customer) {
-            return response_handler.error(res, "Customer not found", 404);
+            return response_handler(res, 404, "Customer not found", null);
         }
 
         // Check if customer has enough points
         if (customer.total_points < points) {
-            return response_handler.error(res, "Insufficient points balance", 400);
+            return response_handler(res, 400, "Insufficient points balance", null);
         }
 
         // Create transaction record
@@ -80,7 +80,7 @@ exports.convertPointsToCoins = async (req, res) => {
         await session.commitTransaction();
         session.endSession();
 
-        return response_handler.success(res, "Points converted to coins successfully", {
+        return response_handler(res, 200, "Points converted to coins successfully", {
             transaction_id: transaction._id,
             points_converted: points,
             coins_received: coins,
@@ -92,7 +92,7 @@ exports.convertPointsToCoins = async (req, res) => {
         await session.abortTransaction();
         session.endSession();
         logger.error(`Error converting points to coins: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 };
 
@@ -102,33 +102,33 @@ exports.getCoinConversionDetails = async (req, res) => {
 
         // Validate points
         if (!points || points <= 0) {
-            return response_handler.error(res, "Invalid points value", 400);
+            return response_handler(res, 400, "Invalid points value", null);
         }
 
         // Get active conversion rules
         const conversionRule = await CoinConversionRule.getActiveRules();
         if (!conversionRule) {
-            return response_handler.error(res, "No active coin conversion rules found", 404);
+            return response_handler(res, 404, "No active coin conversion rules found", null);
         }
 
         // Check if points meet minimum requirement
         if (points < conversionRule.minimumPoints) {
-            return response_handler.error(res, `Minimum ${conversionRule.minimumPoints} points required for conversion`, 400);
+            return response_handler(res, 400, `Minimum ${conversionRule.minimumPoints} points required for conversion`, null);
         }
 
         // Calculate coins
         const coins = Math.floor(points / conversionRule.pointsPerCoin);
         if (coins <= 0) {
-            return response_handler.error(res, "Insufficient points for coin conversion", 400);
+            return response_handler(res, 400, "Insufficient points for coin conversion", null);
         }
 
         // Get customer with current points
         const customer = await Customer.findById(req.user._id);
         if (!customer) {
-            return response_handler.error(res, "Customer not found", 404);
+            return response_handler(res, 404, "Customer not found", null);
         }
 
-        return response_handler.success(res, "Coin conversion details retrieved successfully", {
+        return response_handler(res, 200, "Coin conversion details retrieved successfully", {
             conversion_rule: {
                 points_per_coin: conversionRule.pointsPerCoin,
                 minimum_points: conversionRule.minimumPoints
@@ -146,7 +146,7 @@ exports.getCoinConversionDetails = async (req, res) => {
         });
     } catch (error) {
         logger.error(`Error getting coin conversion details: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 };
 
@@ -174,7 +174,7 @@ exports.getCoinHistory = async (req, res) => {
             Transaction.countDocuments(query)
         ]);
 
-        return response_handler.success(res, "Coin history retrieved successfully", {
+        return response_handler(res, 200, "Coin history retrieved successfully", {
             transactions,
             pagination: {
                 total,
@@ -185,7 +185,7 @@ exports.getCoinHistory = async (req, res) => {
         });
     } catch (error) {
         logger.error(`Error getting coin history: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 };
 
@@ -193,15 +193,15 @@ exports.getCoinBalance = async (req, res) => {
     try {
         const customer = await Customer.findById(req.user._id);
         if (!customer) {
-            return response_handler.error(res, "Customer not found", 404);
+            return response_handler(res, 404, "Customer not found", null);
         }
 
-        return response_handler.success(res, "Coin balance retrieved successfully", {
+        return response_handler(res, 200, "Coin balance retrieved successfully", {
             coins: customer.coins,
             total_points: customer.total_points
         });
     } catch (error) {
         logger.error(`Error getting coin balance: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 }; 

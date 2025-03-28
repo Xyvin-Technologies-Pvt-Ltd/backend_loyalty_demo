@@ -43,7 +43,7 @@ exports.getMyPointsHistory = async (req, res) => {
         // Get total count for pagination
         const total = await LoyaltyPoints.countDocuments(query);
 
-        return response_handler.success(res, "Points history retrieved successfully", {
+        return response_handler(res, 200, "Points history retrieved successfully", {
             points_history: pointsHistory,
             pagination: {
                 total,
@@ -54,7 +54,7 @@ exports.getMyPointsHistory = async (req, res) => {
         });
     } catch (error) {
         logger.error(`Error fetching points history: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 };
 
@@ -151,7 +151,7 @@ exports.getPointsSummary = async (req, res) => {
             }
         ]);
 
-        return response_handler.success(res, "Points summary retrieved successfully", {
+        return response_handler(res, 200, "Points summary retrieved successfully", {
             summary_by_status: summaryByStatus.reduce((acc, curr) => {
                 acc[curr._id] = {
                     total_points: curr.total_points,
@@ -174,7 +174,7 @@ exports.getPointsSummary = async (req, res) => {
         });
     } catch (error) {
         logger.error(`Error fetching points summary: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 };
 
@@ -188,12 +188,12 @@ exports.getPointsDetails = async (req, res) => {
         }).populate("transaction_id", "transaction_type transaction_date points");
 
         if (!pointsDetails) {
-            return response_handler.error(res, "Points details not found", 404);
+            return response_handler(res, 404, "Points details not found", null);
         }
 
-        return response_handler.success(res, "Points details retrieved successfully", pointsDetails);
+            return response_handler(res, 200, "Points details retrieved successfully", pointsDetails);
     } catch (error) {
         logger.error(`Error fetching points details: ${error.message}`);
-        return response_handler.error(res, error);
+        return response_handler(res, 500, error.message, null);
     }
 }; 

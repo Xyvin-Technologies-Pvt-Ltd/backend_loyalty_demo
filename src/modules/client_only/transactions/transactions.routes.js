@@ -1,9 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const transactionsController = require("./transactions.controller");
+const { sdkAuth ,sdkUserAuth} = require("../../../middlewares/auth/sdk_auth");
 const { createAuditMiddleware } = require("../../audit");
-const { sdkAuth } = require("../../../middlewares/auth/sdk_auth");
-const { sdkUserAuth } = require("../../../middlewares/auth/sdk_auth");
 
 // Apply SDK authentication middleware
 router.use(sdkAuth());

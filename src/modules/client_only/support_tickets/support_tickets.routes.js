@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const supportTicketsController = require("./support_tickets.controller");
-const { sdkAuth, sdkUserAuth } = require("../../../middleware/sdk_auth");
-const { createAuditMiddleware } = require("../../../middleware/audit_middleware");
+const { sdkAuth ,sdkUserAuth} = require("../../../middlewares/auth/sdk_auth");
+const { createAuditMiddleware } = require("../../audit");
 
 // Apply SDK authentication middleware
 router.use(sdkAuth);
-
+router.use(sdkUserAuth);
 // Create audit middleware for support tickets
 const auditMiddleware = createAuditMiddleware("support_ticket");
 
@@ -14,7 +14,12 @@ const auditMiddleware = createAuditMiddleware("support_ticket");
 router.post(
     "/",
     sdkUserAuth,
-    auditMiddleware,
+    auditMiddleware.captureResponse(),
+    auditMiddleware.sdkAction("create_support_ticket", {
+        description: "Create a new support ticket",
+        targetModel: "SupportTicket",
+        details: (req) => req.body,
+    }),
     supportTicketsController.createTicket
 );
 
@@ -22,7 +27,12 @@ router.post(
 router.get(
     "/",
     sdkUserAuth,
-    auditMiddleware,
+    auditMiddleware.captureResponse(),
+    auditMiddleware.sdkAction("get_my_tickets", {
+        description: "Get all tickets for a customer",
+        targetModel: "SupportTicket",
+        details: (req) => req.body,
+    }),
     supportTicketsController.getMyTickets
 );
 
@@ -30,7 +40,12 @@ router.get(
 router.get(
     "/:ticket_id",
     sdkUserAuth,
-    auditMiddleware,
+    auditMiddleware.captureResponse(),
+    auditMiddleware.sdkAction("get_ticket_by_id", {
+        description: "Get specific ticket details",
+        targetModel: "SupportTicket",
+        details: (req) => req.params,
+    }),
     supportTicketsController.getTicketById
 );
 
@@ -38,7 +53,12 @@ router.get(
 router.post(
     "/:ticket_id/messages",
     sdkUserAuth,
-    auditMiddleware,
+    auditMiddleware.captureResponse(),
+    auditMiddleware.sdkAction("add_message_to_ticket", {
+        description: "Add a message to a ticket",
+        targetModel: "SupportTicket",
+        details: (req) => req.params,
+    }),
     supportTicketsController.addMessage
 );
 
@@ -46,7 +66,12 @@ router.post(
 router.post(
     "/:ticket_id/close",
     sdkUserAuth,
-    auditMiddleware,
+    auditMiddleware.captureResponse(),
+    auditMiddleware.sdkAction("close_ticket", {
+        description: "Close a ticket",
+        targetModel: "SupportTicket",
+        details: (req) => req.params,
+    }),
     supportTicketsController.closeTicket
 );
 
@@ -54,7 +79,12 @@ router.post(
 router.post(
     "/:ticket_id/reopen",
     sdkUserAuth,
-    auditMiddleware,
+    auditMiddleware.captureResponse(),
+    auditMiddleware.sdkAction("reopen_ticket", {
+        description: "Reopen a ticket",
+        targetModel: "SupportTicket",
+        details: (req) => req.params,
+    }),
     supportTicketsController.reopenTicket
 );
 
