@@ -1,0 +1,497 @@
+openapi: 3.0.0
+info:
+  title: Sub-Admin Management API
+  description: |
+    # Overview
+    This API provides endpoints for managing sub-administrators in the loyalty system. It allows authorized administrators to:
+    - Create new sub-admin accounts
+    - List and view sub-admin details
+    - Update sub-admin information
+    - Delete sub-admin accounts
+    - Reset sub-admin passwords
+    
+    # Authentication
+    All endpoints require admin authentication with appropriate permissions.
+    
+    # Authorization
+    Access to these endpoints requires the following permissions:
+    - `MANAGE_SUB_ADMINS`: For creating, updating, and deleting sub-admins
+    - `VIEW_SUB_ADMINS`: For viewing sub-admin information
+    
+    # Audit Logging
+    All actions on sub-admin accounts are logged in the system audit trail.
+    
+    # Error Handling
+    All endpoints follow a consistent error response format:
+    ```json
+    {
+      "status": false,
+      "message": "Error description"
+    }
+    ```
+  version: 1.0.0
+tags:
+  - name: Sub-Administrators
+    description: APIs for managing sub-administrator accounts
+
+paths:
+  /sub-admin:
+    post:
+      summary: Create a new sub-admin
+      description: |
+        # Description
+        Creates a new sub-administrator account with assigned role and permissions.
+        
+        # Required Permissions
+        - `MANAGE_SUB_ADMINS`
+        
+        # Example Usage
+        ```javascript
+        POST /sub-admin
+        {
+          "name": "John Doe",
+          "email": "john.doe@example.com",
+          "phoneNumber": "+1234567890",
+          "password": "securePassword123",
+          "roleId": "507f1f77bcf86cd799439011"
+        }
+        ```
+      tags:
+        - Sub-Administrators
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - roleId
+              properties:
+                name:
+                  type: string
+                  description: "Full name of the sub-admin"
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  description: "Email address (used for login)"
+                  example: "john.doe@example.com"
+                phoneNumber:
+                  type: string
+                  description: "Contact phone number"
+                  example: "+1234567890"
+                password:
+                  type: string
+                  format: password
+                  description: "Account password"
+                  example: "securePassword123"
+                roleId:
+                  type: string
+                  description: "Role ID to assign to the sub-admin"
+                  example: "507f1f77bcf86cd799439011"
+      responses:
+        201:
+          description: "Sub-admin created successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Sub-admin created successfully"
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "507f1f77bcf86cd799439015"
+                      email:
+                        type: string
+                        example: "john.doe@example.com"
+        400:
+          description: "Email already registered or invalid input"
+        401:
+          description: "Unauthorized access"
+        403:
+          description: "Insufficient permissions"
+        404:
+          description: "Role not found"
+        500:
+          description: "Internal server error"
+    get:
+      summary: Get all sub-admins
+      description: |
+        # Description
+        Retrieves a list of all sub-administrators in the system.
+        
+        # Required Permissions
+        - `VIEW_SUB_ADMINS`
+        
+        # Example Usage
+        ```javascript
+        GET /sub-admin
+        ```
+      tags:
+        - Sub-Administrators
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: "Sub-admins retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Sub-admins retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: "507f1f77bcf86cd799439015"
+                        name:
+                          type: string
+                          example: "John Doe"
+                        email:
+                          type: string
+                          example: "john.doe@example.com"
+                        phoneNumber:
+                          type: string
+                          example: "+1234567890"
+                        isActive:
+                          type: boolean
+                          example: true
+                        role:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              example: "507f1f77bcf86cd799439011"
+                            name:
+                              type: string
+                              example: "Content Manager"
+                            description:
+                              type: string
+                              example: "Manages content and basic settings"
+                            permissions:
+                              type: array
+                              items:
+                                type: string
+                              example: ["MANAGE_CONTENT", "VIEW_REPORTS"]
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: "2024-03-01T10:00:00Z"
+                        updatedAt:
+                          type: string
+                          format: date-time
+                          example: "2024-03-10T15:30:00Z"
+        401:
+          description: "Unauthorized access"
+        403:
+          description: "Insufficient permissions"
+        500:
+          description: "Internal server error"
+
+  /sub-admin/{id}:
+    get:
+      summary: Get sub-admin by ID
+      description: |
+        # Description
+        Retrieves detailed information about a specific sub-administrator.
+        
+        # Required Permissions
+        - `VIEW_SUB_ADMINS`
+        
+        # Example Usage
+        ```javascript
+        GET /sub-admin/507f1f77bcf86cd799439015
+        ```
+      tags:
+        - Sub-Administrators
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Sub-admin ID"
+          example: "507f1f77bcf86cd799439015"
+      responses:
+        200:
+          description: "Sub-admin retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Sub-admin retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        example: "507f1f77bcf86cd799439015"
+                      name:
+                        type: string
+                        example: "John Doe"
+                      email:
+                        type: string
+                        example: "john.doe@example.com"
+                      phoneNumber:
+                        type: string
+                        example: "+1234567890"
+                      isActive:
+                        type: boolean
+                        example: true
+                      role:
+                        type: object
+                        properties:
+                          _id:
+                            type: string
+                            example: "507f1f77bcf86cd799439011"
+                          name:
+                            type: string
+                            example: "Content Manager"
+                          description:
+                            type: string
+                            example: "Manages content and basic settings"
+                          permissions:
+                            type: array
+                            items:
+                              type: string
+                            example: ["MANAGE_CONTENT", "VIEW_REPORTS"]
+                      createdAt:
+                        type: string
+                        format: date-time
+                        example: "2024-03-01T10:00:00Z"
+                      updatedAt:
+                        type: string
+                        format: date-time
+                        example: "2024-03-10T15:30:00Z"
+        401:
+          description: "Unauthorized access"
+        403:
+          description: "Insufficient permissions"
+        404:
+          description: "Sub-admin not found"
+        500:
+          description: "Internal server error"
+    put:
+      summary: Update sub-admin information
+      description: |
+        # Description
+        Updates information for a specific sub-administrator.
+        
+        # Required Permissions
+        - `MANAGE_SUB_ADMINS`
+        
+        # Example Usage
+        ```javascript
+        PUT /sub-admin/507f1f77bcf86cd799439015
+        {
+          "name": "John Updated",
+          "email": "john.updated@example.com",
+          "phoneNumber": "+9876543210",
+          "roleId": "507f1f77bcf86cd799439012",
+          "isActive": true
+        }
+        ```
+      tags:
+        - Sub-Administrators
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Sub-admin ID"
+          example: "507f1f77bcf86cd799439015"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: "Full name of the sub-admin"
+                  example: "John Updated"
+                email:
+                  type: string
+                  format: email
+                  description: "Email address"
+                  example: "john.updated@example.com"
+                phoneNumber:
+                  type: string
+                  description: "Contact phone number"
+                  example: "+9876543210"
+                roleId:
+                  type: string
+                  description: "Role ID to assign"
+                  example: "507f1f77bcf86cd799439012"
+                isActive:
+                  type: boolean
+                  description: "Account status"
+                  example: true
+      responses:
+        200:
+          description: "Sub-admin updated successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Sub-admin updated successfully"
+        401:
+          description: "Unauthorized access"
+        403:
+          description: "Insufficient permissions"
+        404:
+          description: "Sub-admin not found"
+        500:
+          description: "Internal server error"
+    delete:
+      summary: Delete sub-admin
+      description: |
+        # Description
+        Deletes a specific sub-administrator account.
+        
+        # Required Permissions
+        - `MANAGE_SUB_ADMINS`
+        
+        # Example Usage
+        ```javascript
+        DELETE /sub-admin/507f1f77bcf86cd799439015
+        ```
+      tags:
+        - Sub-Administrators
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Sub-admin ID"
+          example: "507f1f77bcf86cd799439015"
+      responses:
+        200:
+          description: "Sub-admin deleted successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Sub-admin deleted successfully"
+        401:
+          description: "Unauthorized access"
+        403:
+          description: "Insufficient permissions"
+        404:
+          description: "Sub-admin not found"
+        500:
+          description: "Internal server error"
+
+  /sub-admin/reset-password:
+    post:
+      summary: Reset sub-admin password
+      description: |
+        # Description
+        Initiates password reset for a specific sub-administrator's account.
+        
+        # Required Permissions
+        - `MANAGE_SUB_ADMINS`
+        
+        # Example Usage
+        ```javascript
+        POST /sub-admin/reset-password
+        {
+          "email": "john.doe@example.com"
+        }
+        ```
+      tags:
+        - Sub-Administrators
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: "Email address of the sub-admin"
+                  example: "john.doe@example.com"
+      responses:
+        200:
+          description: "Password reset instructions sent"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Password reset instructions sent to email"
+        401:
+          description: "Unauthorized access"
+        403:
+          description: "Insufficient permissions"
+        404:
+          description: "Sub-admin not found"
+        500:
+          description: "Internal server error"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT 

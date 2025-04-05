@@ -55,8 +55,10 @@ const swagger_definition = {
 
 const options = {
   swaggerDefinition: swagger_definition,
-  apis: ["./src/swagger/paths/*.js"],
-};
+  apis: [
+    "./src/swagger/paths/*.yaml",  // Include all YAML files
+    "./src/swagger/paths/*.js"     // Include all JS files
+  ],};
 
 const swagger_options = {
   swaggerOptions: {

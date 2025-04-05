@@ -39,7 +39,6 @@ const customer_support_routes = require("../modules/customer_support/support.rou
 const sub_admin_routes = require("../modules/sub_admin/sub_admin.routes");
 //clinet only routes
 const client_only_routes = require("../modules/client_only/index");
-
 //Offers routes
 const merchant_offers_routes = require("../modules/merchant_offers/merchant_offers.routes");
 const kedmah_offers_routes = require("../modules/kedmah_offers/kedmah_offers.routes");
@@ -93,7 +92,7 @@ function registerRoutes(app, basePath) {
   app.use(`${basePath}/logs`, log_routes);
   app.use(`${basePath}/tier`, tier_routes);
   app.use(`${basePath}/point-criteria`, point_criteria_routes);
-  app.use(`${basePath}/role-settings`, role_routes);
+  app.use(`${basePath}/roles-settings`, role_routes);
   app.use(`${basePath}/redemption-rules`, redemption_rules_routes);
   app.use(`${basePath}/point-expiry-rules`, points_expiration_routes);
   app.use(`${basePath}/app-types`, app_type_routes);

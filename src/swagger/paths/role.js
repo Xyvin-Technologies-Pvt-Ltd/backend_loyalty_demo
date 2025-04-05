@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /roles:
+ * /roles-settings:
  *   post:
  *     summary: Create a new role
  *     description: Creates a new role with specified permissions.
@@ -45,7 +45,7 @@
 
 /**
  * @swagger
- * /roles:
+ * /roles-settings:
  *   get:
  *     summary: Get all roles
  *     description: Retrieves a list of all roles.
@@ -60,7 +60,7 @@
 
 /**
  * @swagger
- * /roles/{id}:
+ * /roles-settings/{id}:
  *   get:
  *     summary: Get role by ID
  *     description: Fetch a specific role by its ID.
@@ -84,7 +84,7 @@
 
 /**
  * @swagger
- * /roles/{id}:
+ * /roles-settings/{id}:
  *   put:
  *     summary: Update a role
  *     description: Updates an existing role.
@@ -131,7 +131,7 @@
 
 /**
  * @swagger
- * /roles/{id}:
+ * /roles-settings/{id}:
  *   delete:
  *     summary: Delete a role
  *     description: Deletes a role by ID.
