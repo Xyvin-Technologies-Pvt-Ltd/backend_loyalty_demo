@@ -47,7 +47,7 @@ const getAllSubAdmins = async (req, res) => {
     try {
         const subAdmins = await SubAdmin.find({ isSuperAdmin: false })
             .select('-password -passwordResetToken -passwordResetExpires')
-            .populate('roleId', 'name description permissions');
+            .populate('role', 'name description permissions');
 
         return response_handler(res, 200, 'Sub-admins retrieved successfully', subAdmins);
     } catch (error) {
@@ -59,9 +59,11 @@ const getAllSubAdmins = async (req, res) => {
 // Get sub-admin by ID
 const getSubAdminById = async (req, res) => {
     try {
-        const subAdmin = await SubAdmin.findById(req.params.id)
+        const { id } = req.params;
+        console.log('id',id);
+        const subAdmin = await SubAdmin.findById(id)
             .select('-password -passwordResetToken -passwordResetExpires')
-            .populate('roleId', 'name description permissions');
+            .populate('role', 'name description permissions');
 
         if (!subAdmin) {
             return response_handler(res, 404, 'Sub-admin not found');
@@ -111,7 +113,7 @@ const deleteSubAdmin = async (req, res) => {
         }
 
         await subAdmin.logActivity('DELETE', 'Sub-admin account deleted');
-        await subAdmin.remove();
+        await SubAdmin.findByIdAndDelete(req.params.id);
 
         return response_handler(res, 200, 'Sub-admin deleted successfully');
     } catch (error) {
