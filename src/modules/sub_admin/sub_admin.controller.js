@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 // Create new sub-admin
 const createSubAdmin = async (req, res) => {
     try {
-        const { name,email, phoneNumber, password, roleId,  } = req.body;
+        const { name,email, phoneNumber, password, roleId } = req.body;
 
         // Check if role exists
         const role = await Role.findById(roleId);
@@ -25,7 +25,7 @@ const createSubAdmin = async (req, res) => {
             email,
             phoneNumber,
             password,
-            roleId,
+            role:roleId,
             
         });
 
@@ -88,7 +88,7 @@ const updateSubAdmin = async (req, res) => {
         if (name) subAdmin.name = name;
         if (email) subAdmin.email = email;
         if (phoneNumber) subAdmin.phoneNumber = phoneNumber;
-        if (roleId) subAdmin.roleId = roleId;
+        if (roleId) subAdmin.role = roleId;
         if (typeof isActive === 'boolean') subAdmin.isActive = isActive;
 
         await subAdmin.save();
