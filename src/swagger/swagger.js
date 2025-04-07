@@ -10,8 +10,8 @@ const swagger_definition = {
       "Comprehensive API documentation for the Loyalty Management System",
     contact: {
       name: "Support Team",
-      email: "support@xyvin.com",
-      url: "https://xyvin.com",
+      email: "info@continuityoman.com",
+      url: "https://continuityoman.com/",
     },
   },
   servers: [

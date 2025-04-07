@@ -10,8 +10,8 @@ const swagger_sdk_definition = {
     description: "API documentation for clients integrating with the Loyalty SDK",
     contact: {
       name: "Support Team",
-      email: "support@xyvin.com",
-      url: "https://xyvin.com",
+      email: "info@continuityoman.com",
+      url: "https://continuityoman.com/",
     },
   },
   servers: [
