@@ -24,7 +24,7 @@ router.post(
 
 // Get all SDK access keys
 router.get(
-    "/",
+    "/:app_id",
     sdkAudit.adminAction("view_all_keys", {
         description: "Admin viewed all SDK access keys",
         targetModel: "SDKAccessKey"
@@ -35,7 +35,7 @@ router.get(
 
 // Create or Update an SDK access key
 router.put(
-    '/',
+    '/:id',
     sdkAudit.captureResponse(),
     sdkAudit.adminAction("update_key", {
         description: "Admin updated an SDK access key",
@@ -54,7 +54,7 @@ router.put(
 
 // Revoke an SDK access key
 router.delete(
-    "/",
+    "/:id",
     sdkAudit.captureResponse(),
     sdkAudit.adminAction("revoke_key", {
         description: "Admin revoked an SDK access key",

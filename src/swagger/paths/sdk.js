@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /sdk/access-keys:
+ * /sdk/access-keys/{app_id}:
  *   post:
  *     summary: Create a new SDK access key
  *     description: Creates a new SDK access key for integration. Requires MANAGE_SDK permission.
@@ -186,7 +186,7 @@
 
 /**
  * @swagger
- * /sdk/access-keys/{id}:
+    * /sdk/access-keys/{id}:
  *   get:
  *     summary: Get SDK access key details
  *     description: Retrieves details of a specific SDK access key. Requires MANAGE_SDK permission.

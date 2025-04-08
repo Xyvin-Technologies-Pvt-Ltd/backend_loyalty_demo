@@ -3,10 +3,9 @@ const crypto = require("crypto");
 
 const sdk_access_key_schema = new mongoose.Schema(
     {
-        name: {
-            type: String,
-            required: true,
-            trim: true
+        app_id  : {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "App"
         },
        
         key: {
@@ -14,13 +13,7 @@ const sdk_access_key_schema = new mongoose.Schema(
             required: true,
             unique: true
         },
-        permissions: {
-            user_data: { type: Boolean, default: true },
-            transactions: { type: Boolean, default: true },
-            points: { type: Boolean, default: true },
-            redemptions: { type: Boolean, default: true },  
-
-        },
+       
         // rate_limit: {
         //     requests_per_minute: { type: Number, default: 60 },
         //     requests_per_day: { type: Number, default: 10000 }
