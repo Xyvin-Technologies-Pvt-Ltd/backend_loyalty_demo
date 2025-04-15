@@ -5,113 +5,118 @@ const { authorizePermission } = require('../../middlewares/auth/auth');
 const { createAuditMiddleware } = require('../audit');
 const { cacheInvalidationMiddleware } = require('../../middlewares/redis_cache/cache_invalidation.middleware');
 const { cacheMiddleware, cacheKeys } = require('../../middlewares/redis_cache/cache.middleware');
-const validators = require('./merchant_offers.validators');
 
 // Create audit middleware for the merchant_offers module
 const couponAudit = createAuditMiddleware('merchant_offers');
 
-// Merchant routes for coupon management
-router.post('/pre-generated',
+
+
+
+
+// Create a single coupon
+router.post('/create',
     authorizePermission('MANAGE_COUPONS'),
     couponAudit.captureResponse(),
     couponAudit.adminAction('create_coupon', {
-        description: 'Admin created pre-generated coupons',
-        targetModel: 'CouponCode',
-        details: req => req.body,
-        getModifiedData: (req, res) => {
-            if (res.locals.responseBody && res.locals.responseBody.data) {
-                return res.locals.responseBody.data;
-            }
-            return null;
-        }
-    }),
-    cacheInvalidationMiddleware(cacheKeys.allCoupons, cacheKeys.couponByCode),
-    merchant_offers_controller.createPreGeneratedCoupons
-);
-
-router.post('/dynamic',
-    authorizePermission('MANAGE_COUPONS'),
-    couponAudit.captureResponse(),
-    couponAudit.adminAction('create_dynamic_coupon', {
-        description: 'Admin created a dynamic coupon',
-        targetModel: 'CouponCode',
-        details: req => req.body,
-        getModifiedData: (req, res) => {
-            if (res.locals.responseBody && res.locals.responseBody.data) {
-                return res.locals.responseBody.data;
-            }
-            return null;
-        }
-    }),
-    cacheInvalidationMiddleware(cacheKeys.allCoupons, cacheKeys.couponByCode),
-    merchant_offers_controller.generateDynamicCoupon
-);
-
-router.post('/one-time-link',
-    authorizePermission('MANAGE_COUPONS'),
-    couponAudit.captureResponse(),
-    couponAudit.adminAction('create_one_time_link', {
-        description: 'Admin created a one-time link coupon',
-        targetModel: 'CouponCode',
-        details: req => req.body,
-        getModifiedData: (req, res) => {
-            if (res.locals.responseBody && res.locals.responseBody.data) {
-                return res.locals.responseBody.data;
-            }
-            return null;
-        }
-    }),
-    cacheInvalidationMiddleware(cacheKeys.allCoupons, cacheKeys.couponByCode),
-    merchant_offers_controller.createOneTimeLink
-);
-
-router.post('/validate',
-    authorizePermission('MANAGE_COUPONS', 'USE_COUPONS'),
-    couponAudit.captureResponse(),
-    couponAudit.adminAction('validate_coupon', {
-        description: 'User validated a coupon',
-        targetModel: 'CouponCode',
-        details: req => req.body,
-        getModifiedData: (req, res) => {
-            if (res.locals.responseBody && res.locals.responseBody.data) {
-                return res.locals.responseBody.data;
-            }
-            return null;
-        }
-    }),
-    cacheInvalidationMiddleware(cacheKeys.allCoupons, cacheKeys.couponByCode),
-    merchant_offers_controller.validateCoupon
-);
-
-router.post('/check-eligibility',
-    authorizePermission('MANAGE_COUPONS', 'USE_COUPONS'),
-    couponAudit.adminAction('check_coupon_eligibility', {
-        description: 'User checked eligibility for a coupon',
+        description: 'Admin created a coupon',
         targetModel: 'CouponCode',
         details: req => req.body
     }),
-    merchant_offers_controller.checkEligibility
+    cacheInvalidationMiddleware(cacheKeys.ALL_COUPONS),
+    merchant_offers_controller.createCoupon
 );
 
+// Create bulk coupons with pre-generated codes
+router.post('/bulk-create',
+    authorizePermission('MANAGE_COUPONS'),
+    couponAudit.captureResponse(),
+    couponAudit.adminAction('create_bulk_coupons', {
+        description: 'Admin created bulk coupons',
+        targetModel: 'CouponCode',
+        details: req => req.body
+    }),
+    cacheInvalidationMiddleware(cacheKeys.ALL_COUPONS),
+    merchant_offers_controller.createBulkCoupons
+);
+
+// Create a one-time link coupon
+router.post('/create-link',
+    authorizePermission('MANAGE_COUPONS'),
+    couponAudit.captureResponse(),
+    couponAudit.adminAction('create_one_time_link_coupon', {
+        description: 'Admin created a one-time link coupon',
+        targetModel: 'CouponCode',
+        details: req => req.body
+    }),
+    cacheInvalidationMiddleware(cacheKeys.ALL_COUPONS),
+    merchant_offers_controller.createOneTimeLinkCoupon
+);
+
+// Get coupons by batch ID
+router.get('/batch/:batchId',
+    authorizePermission('MANAGE_COUPONS'),
+    couponAudit.adminAction('get_coupons_by_batch', {
+        description: 'User viewed coupons by batch ID',
+        targetModel: 'CouponCode',
+        targetId: req => req.params.batchId
+    }),
+    cacheMiddleware(cacheKeys.COUPONS_BY_BATCH, req => req.params.batchId),
+    merchant_offers_controller.getCouponsByBatch
+);
+
+// Get coupon details by ID
+router.get('/:couponId',
+    authorizePermission('MANAGE_COUPONS'),
+    couponAudit.adminAction('get_coupon_details', {
+        description: 'User viewed coupon details',
+        targetModel: 'CouponCode',
+        targetId: req => req.params.couponId
+    }),
+    cacheMiddleware(cacheKeys.COUPON_DETAILS, req => req.params.couponId),
+    merchant_offers_controller.getCouponDetails
+);
+
+
+// Get all coupons
 router.get('/',
-    authorizePermission('MANAGE_COUPONS', 'VIEW_COUPONS'),
-    couponAudit.adminAction('list_coupons', {
+    authorizePermission('MANAGE_COUPONS'),
+    couponAudit.adminAction('get_all_coupons', {
         description: 'User viewed all coupons',
         targetModel: 'CouponCode'
     }),
-    cacheMiddleware(60, cacheKeys.allCoupons),
-    merchant_offers_controller.listCoupons
+    cacheMiddleware(cacheKeys.ALL_COUPONS),
+    merchant_offers_controller.getAllCoupons
 );
 
-router.get('/:code',
-    authorizePermission('MANAGE_COUPONS', 'VIEW_COUPONS'),
-    couponAudit.adminAction('view_coupon', {
-        description: 'User viewed a coupon',
+// Update coupon details
+router.put('/:couponId',
+    authorizePermission('MANAGE_COUPONS'),
+    couponAudit.captureResponse(),
+    couponAudit.adminAction('update_coupon', {
+        description: 'Admin updated coupon details',
         targetModel: 'CouponCode',
-        targetId: req => req.params.code
+        targetId: req => req.params.couponId,
+        details: req => req.body
     }),
-    cacheMiddleware(60, cacheKeys.couponByCode),
-    merchant_offers_controller.getCouponDetails
+    cacheInvalidationMiddleware(cacheKeys.COUPON_DETAILS, req => req.params.couponId),
+    merchant_offers_controller.updateCoupon
 );
+
+// Delete coupon
+router.delete('/:couponId',
+    authorizePermission('MANAGE_COUPONS'),
+    couponAudit.captureResponse(),
+    couponAudit.adminAction('delete_coupon', {
+        description: 'Admin deleted a coupon',
+        targetModel: 'CouponCode',
+        targetId: req => req.params.couponId
+    }),
+    cacheInvalidationMiddleware(cacheKeys.COUPON_DETAILS, req => req.params.couponId),
+    merchant_offers_controller.deleteCoupon
+);  
+
+
+
+
 
 module.exports = router;

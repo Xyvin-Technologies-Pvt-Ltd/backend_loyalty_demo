@@ -1,0 +1,959 @@
+openapi: 3.0.0
+info:
+  title: Merchant Offers API
+  description: |
+    # Overview
+    This API provides endpoints for managing merchant offers and coupons. It allows merchants to:
+    - Create single and bulk coupons
+    - Create one-time link coupons
+    - Manage coupon batches
+    - View and update coupon details
+    
+    # Authentication
+    All endpoints require both JWT Bearer token and API Key authentication:
+    ```
+    Authorization: Bearer your-jwt-token
+    api-key: your-api-key
+    ```
+    
+    # Rate Limiting
+    - 100 requests per minute per API key
+    - 1000 requests per hour per API key
+    
+    # Error Handling
+    All endpoints follow a consistent error response format:
+    ```json
+    {
+      "success": false,
+      "message": "Error description",
+      "error": {
+        "code": "ERROR_CODE",
+        "details": {}
+      }
+    }
+    ```
+  version: 1.0.0
+tags:
+  - name: Merchant Offers
+    description: APIs for managing merchant offers and coupons
+
+paths:
+  /merchant-offers/create:
+    post:
+      summary: Create a single coupon
+      description: Creates a new coupon with a unique code
+      tags:
+        - Merchant Offers
+      security:
+        # - BearerAuth: []
+        # - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+                - posterImage
+                - merchantId
+                - type
+                - validityPeriod
+                - discountDetails
+              properties:
+                title:
+                  type: string
+                  description: Title of the coupon
+                description:
+                  type: string
+                  description: Detailed description of the coupon
+                posterImage:
+                  type: string
+                  description: URL of the coupon poster image
+                merchantId:
+                  type: string
+                  description: ID of the merchant creating the coupon
+                couponCategoryId:
+                  type: string
+                  description: ID of the coupon category
+                type:
+                  type: string
+                  enum: [PRE_GENERATED, DYNAMIC, ONE_TIME_LINK]
+                  description: Type of coupon
+                code:
+                  type: string
+                  description: Pre-generated code (required for PRE_GENERATED type)
+                validityPeriod:
+                  type: object
+                  required:
+                    - startDate
+                    - endDate
+                  properties:
+                    startDate:
+                      type: string
+                      format: date-time
+                    endDate:
+                      type: string
+                      format: date-time
+                discountDetails:
+                  type: object
+                  required:
+                    - type
+                    - value
+                  properties:
+                    type:
+                      type: string
+                      enum: [PERCENTAGE, FIXED]
+                    value:
+                      type: number
+                redeemablePointsCount:
+                  type: number
+                  description: Number of points required to redeem
+                eligibilityCriteria:
+                  type: object
+                  properties:
+                    userTypes:
+                      type: array
+                      items:
+                        type: string
+                        enum: [NEW, EXISTING, PREMIUM, ALL]
+                    tiers:
+                      type: array
+                      items:
+                        type: string
+                    minPointsBalance:
+                      type: number
+                    minTransactionHistory:
+                      type: number
+                usagePolicy:
+                  type: object
+                  required:
+                    - frequency
+                    - maxUsagePerPeriod
+                  properties:
+                    frequency:
+                      type: string
+                      enum: [DAILY, WEEKLY, BIWEEKLY, MONTHLY, TOTAL]
+                    maxUsagePerPeriod:
+                      type: number
+                    maxTotalUsage:
+                      type: number
+                    userLimit:
+                      type: number
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      appType:
+                        type: array
+                        items:
+                          type: string
+                      minTransactionValue:
+                        type: number
+                      maxTransactionValue:
+                        type: number
+                      applicablePaymentMethods:
+                        type: array
+                        items:
+                          type: string
+                          enum: [Khedmah-Pay, Khedmah-Wallet, ALL]
+                termsAndConditions:
+                  type: array
+                  items:
+                    type: string
+                redemptionInstructions:
+                  type: string
+                redemptionUrl:
+                  type: string
+                linkData:
+                  type: object
+      responses:
+        '201':
+          description: Coupon created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/MerchantOffer'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized - Invalid or missing authentication
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Server error
+
+  /merchant-offers/bulk-create:
+    post:
+      summary: Create bulk coupons
+      description: Creates multiple coupons with pre-generated codes
+      tags:
+        - Merchant Offers
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+                - posterImage
+                - merchantId
+                - codes
+                - validityPeriod
+                - discountDetails
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                posterImage:
+                  type: string
+                merchantId:
+                  type: string
+                couponCategoryId:
+                  type: string
+                codes:
+                  type: array
+                  items:
+                    type: string
+                validityPeriod:
+                  type: object
+                  required:
+                    - startDate
+                    - endDate
+                  properties:
+                    startDate:
+                      type: string
+                      format: date-time
+                    endDate:
+                      type: string
+                      format: date-time
+                discountDetails:
+                  type: object
+                  required:
+                    - type
+                    - value
+                  properties:
+                    type:
+                      type: string
+                      enum: [PERCENTAGE, FIXED]
+                    value:
+                      type: number
+                redeemablePointsCount:
+                  type: number
+                eligibilityCriteria:
+                  type: object
+                  properties:
+                    userTypes:
+                      type: array
+                      items:
+                        type: string
+                        enum: [NEW, EXISTING, PREMIUM, ALL]
+                    tiers:
+                      type: array
+                      items:
+                        type: string
+                    minPointsBalance:
+                      type: number
+                    minTransactionHistory:
+                      type: number
+                usagePolicy:
+                  type: object
+                  required:
+                    - frequency
+                    - maxUsagePerPeriod
+                  properties:
+                    frequency:
+                      type: string
+                      enum: [DAILY, WEEKLY, BIWEEKLY, MONTHLY, TOTAL]
+                    maxUsagePerPeriod:
+                      type: number
+                    maxTotalUsage:
+                      type: number
+                    userLimit:
+                      type: number
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      appType:
+                        type: array
+                        items:
+                          type: string
+                      minTransactionValue:
+                        type: number
+                      maxTransactionValue:
+                        type: number
+                      applicablePaymentMethods:
+                        type: array
+                        items:
+                          type: string
+                          enum: [Khedmah-Pay, Khedmah-Wallet, ALL]
+                termsAndConditions:
+                  type: array
+                  items:
+                    type: string
+                redemptionInstructions:
+                  type: string
+      responses:
+        '201':
+          description: Bulk coupons created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      batchId:
+                        type: string
+                      count:
+                        type: integer
+                      coupons:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MerchantOffer'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized - Invalid or missing authentication
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Server error
+
+  /merchant-offers/create-link:
+    post:
+      summary: Create a one-time link coupon
+      description: Creates a coupon with a unique redemption URL
+      tags:
+        - Merchant Offers
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+                - posterImage
+                - merchantId
+                - validityPeriod
+                - discountDetails
+                - redemptionUrl
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                posterImage:
+                  type: string
+                merchantId:
+                  type: string
+                couponCategoryId:
+                  type: string
+                validityPeriod:
+                  type: object
+                  required:
+                    - startDate
+                    - endDate
+                  properties:
+                    startDate:
+                      type: string
+                      format: date-time
+                    endDate:
+                      type: string
+                      format: date-time
+                discountDetails:
+                  type: object
+                  required:
+                    - type
+                    - value
+                  properties:
+                    type:
+                      type: string
+                      enum: [PERCENTAGE, FIXED]
+                    value:
+                      type: number
+                redeemablePointsCount:
+                  type: number
+                eligibilityCriteria:
+                  type: object
+                  properties:
+                    userTypes:
+                      type: array
+                      items:
+                        type: string
+                        enum: [NEW, EXISTING, PREMIUM, ALL]
+                    tiers:
+                      type: array
+                      items:
+                        type: string
+                    minPointsBalance:
+                      type: number
+                    minTransactionHistory:
+                      type: number
+                usagePolicy:
+                  type: object
+                  required:
+                    - frequency
+                    - maxUsagePerPeriod
+                  properties:
+                    frequency:
+                      type: string
+                      enum: [DAILY, WEEKLY, BIWEEKLY, MONTHLY, TOTAL]
+                    maxUsagePerPeriod:
+                      type: number
+                    maxTotalUsage:
+                      type: number
+                    userLimit:
+                      type: number
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      appType:
+                        type: array
+                        items:
+                          type: string
+                      minTransactionValue:
+                        type: number
+                      maxTransactionValue:
+                        type: number
+                      applicablePaymentMethods:
+                        type: array
+                        items:
+                          type: string
+                          enum: [Khedmah-Pay, Khedmah-Wallet, ALL]
+                termsAndConditions:
+                  type: array
+                  items:
+                    type: string
+                redemptionInstructions:
+                  type: string
+                redemptionUrl:
+                  type: string
+                linkData:
+                  type: object
+      responses:
+        '201':
+          description: One-time link coupon created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/MerchantOffer'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized - Invalid or missing authentication
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Server error
+
+  /merchant-offers/batch/{batchId}:
+    get:
+      summary: Get coupons by batch ID
+      description: Retrieves all coupons created in a specific batch
+      tags:
+        - Merchant Offers
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the batch to retrieve coupons from
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number for pagination
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Number of items per page
+      responses:
+        '200':
+          description: Coupons retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      coupons:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MerchantOffer'
+                      pagination:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                          page:
+                            type: integer
+                          limit:
+                            type: integer
+                          totalPages:
+                            type: integer
+        '401':
+          description: Unauthorized - Invalid or missing authentication
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Batch not found
+        '500':
+          description: Server error
+
+  /merchant-offers/{couponId}:
+    get:
+      summary: Get coupon details
+      description: Retrieves detailed information about a specific coupon
+      tags:
+        - Merchant Offers
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: couponId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the coupon to retrieve
+      responses:
+        '200':
+          description: Coupon details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/MerchantOffer'
+        '401':
+          description: Unauthorized - Invalid or missing authentication
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Coupon not found
+        '500':
+          description: Server error
+
+    put:
+      summary: Update coupon details
+      description: Updates the details of a specific coupon
+      tags:
+        - Merchant Offers
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: couponId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the coupon to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                posterImage:
+                  type: string
+                validityPeriod:
+                  type: object
+                  properties:
+                    startDate:
+                      type: string
+                      format: date-time
+                    endDate:
+                      type: string
+                      format: date-time
+                discountDetails:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum: [PERCENTAGE, FIXED]
+                    value:
+                      type: number
+                redeemablePointsCount:
+                  type: number
+                eligibilityCriteria:
+                  type: object
+                  properties:
+                    userTypes:
+                      type: array
+                      items:
+                        type: string
+                        enum: [NEW, EXISTING, PREMIESTING, ALL]
+                    tiers:
+                      type: array
+                      items:
+                        type: string
+                    minPointsBalance:
+                      type: number
+                    minTransactionHistory:
+                      type: number
+                usagePolicy:
+                  type: object
+                  properties:
+                    frequency:
+                      type: string
+                      enum: [DAILY, WEEKLY, BIWEEKLY, MONTHLY, TOTAL]
+                    maxUsagePerPeriod:
+                      type: number
+                    maxTotalUsage:
+                      type: number
+                    userLimit:
+                      type: number
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      appType:
+                        type: array
+                        items:
+                          type: string
+                      minTransactionValue:
+                        type: number
+                      maxTransactionValue:
+                        type: number
+                      applicablePaymentMethods:
+                        type: array
+                        items:
+                          type: string
+                          enum: [Khedmah-Pay, Khedmah-Wallet, ALL]
+                termsAndConditions:
+                  type: array
+                  items:
+                    type: string
+                redemptionInstructions:
+                  type: string
+      responses:
+        '200':
+          description: Coupon updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/MerchantOffer'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized - Invalid or missing authentication
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Coupon not found
+        '500':
+          description: Server error
+
+    delete:
+      summary: Delete a coupon
+      description: Deletes a specific coupon
+      tags:
+        - Merchant Offers
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: couponId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the coupon to delete
+      responses:
+        '200':
+          description: Coupon deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized - Invalid or missing authentication
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Coupon not found
+        '500':
+          description: Server error
+
+  /merchant-offers:
+    get:
+      summary: Get all coupons
+      description: Retrieves a list of all coupons with pagination and filtering options
+      tags:
+        - Merchant Offers
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number for pagination
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Number of items per page
+        - name: merchantId
+          in: query
+          schema:
+            type: string
+          description: Filter coupons by merchant ID
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [UNUSED, CLAIMED, REDEEMED, EXPIRED]
+          description: Filter coupons by status
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [PRE_GENERATED, DYNAMIC, ONE_TIME_LINK]
+          description: Filter coupons by type
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter coupons created after this date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter coupons created before this date
+      responses:
+        '200':
+          description: Coupons retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      coupons:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MerchantOffer'
+                      pagination:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                          page:
+                            type: integer
+                          limit:
+                            type: integer
+                          totalPages:
+                            type: integer
+        '401':
+          description: Unauthorized - Invalid or missing authentication
+        '403':
+          description: Forbidden - Insufficient permissions (MANAGE_COUPONS required)
+        '500':
+          description: Server error
+
+components:
+  schemas:
+    MerchantOffer:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        posterImage:
+          type: string
+        merchantId:
+          type: string
+        couponCategoryId:
+          type: string
+        type:
+          type: string
+          enum: [PRE_GENERATED, DYNAMIC, ONE_TIME_LINK]
+        code:
+          type: string
+        status:
+          type: string
+          enum: [UNUSED, CLAIMED, REDEEMED, EXPIRED]
+        validityPeriod:
+          type: object
+          properties:
+            startDate:
+              type: string
+              format: date-time
+            endDate:
+              type: string
+              format: date-time
+        discountDetails:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [PERCENTAGE, FIXED]
+            value:
+              type: number
+        redeemablePointsCount:
+          type: number
+        eligibilityCriteria:
+          type: object
+          properties:
+            userTypes:
+              type: array
+              items:
+                type: string
+                enum: [NEW, EXISTING, PREMIUM, ALL]
+            tiers:
+              type: array
+              items:
+                type: string
+            minPointsBalance:
+              type: number
+            minTransactionHistory:
+              type: number
+        usagePolicy:
+          type: object
+          properties:
+            frequency:
+              type: string
+              enum: [DAILY, WEEKLY, BIWEEKLY, MONTHLY, TOTAL]
+            maxUsagePerPeriod:
+              type: number
+            maxTotalUsage:
+              type: number
+            userLimit:
+              type: number
+        conditions:
+          type: array
+          items:
+            type: object
+            properties:
+              appType:
+                type: array
+                items:
+                  type: string
+              minTransactionValue:
+                type: number
+              maxTransactionValue:
+                type: number
+              applicablePaymentMethods:
+                type: array
+                items:
+                  type: string
+                  enum: [Khedmah-Pay, Khedmah-Wallet, ALL]
+        termsAndConditions:
+          type: array
+          items:
+            type: string
+        redemptionInstructions:
+          type: string
+        redemptionUrl:
+          type: string
+        linkData:
+          type: object
+        batchId:
+          type: string
+        usageHistory:
+          type: array
+          items:
+            type: object
+            properties:
+              customerId:
+                type: string
+              usedAt:
+                type: string
+                format: date-time
+              transactionId:
+                type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time 

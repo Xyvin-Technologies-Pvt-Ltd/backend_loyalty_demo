@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 
 const couponCodeSchema = new mongoose.Schema({
     // Basic identification
-
     title: {
         type: String,
         required: true
@@ -22,7 +21,7 @@ const couponCodeSchema = new mongoose.Schema({
         ref: 'CouponBrand',
         required: true
     },
-   
+
     couponCategoryId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'CouponCategory',
@@ -37,7 +36,7 @@ const couponCodeSchema = new mongoose.Schema({
     },
     code: {
         type: String,
-        required: function() {
+        required: function () {
             return this.type === 'PRE_GENERATED' || this.type === 'DYNAMIC';
         }
     },
@@ -46,7 +45,6 @@ const couponCodeSchema = new mongoose.Schema({
         enum: ['UNUSED', 'CLAIMED', 'REDEEMED', 'EXPIRED'],
         default: 'UNUSED'
     },
- 
 
     // Validity period
     validityPeriod: {
@@ -85,12 +83,12 @@ const couponCodeSchema = new mongoose.Schema({
             type: String,
             enum: ['NEW', 'EXISTING', 'PREMIUM', 'ALL'],
         }],
- 
+
         tiers: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Tier'
         }],
-    
+
         minTransactionHistory: {
             type: Number,
             default: 0
@@ -169,6 +167,18 @@ const couponCodeSchema = new mongoose.Schema({
     customerId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Customer',
+        default: null
+    },
+
+    // Bulk upload tracking
+    batchId: {
+        type: String,
+        default: null
+    },
+
+    // One-time link specific fields
+    linkData: {
+        type: Object,
         default: null
     }
 }, { timestamps: true });
@@ -258,7 +268,6 @@ couponCodeSchema.methods.checkEligibility = async function (customer, transactio
             };
         }
     }
-        
 
     // Check transaction value
     if (transactionValue < this.conditions.minTransactionValue) {
@@ -336,5 +345,6 @@ couponCodeSchema.index({ 'validityPeriod.startDate': 1, 'validityPeriod.endDate'
 couponCodeSchema.index({ 'eligibilityCriteria.tiers': 1 });
 couponCodeSchema.index({ couponCategoryId: 1 });
 couponCodeSchema.index({ isActive: 1, type: 1 });
+couponCodeSchema.index({ batchId: 1 });
 
 module.exports = mongoose.model('CouponCode', couponCodeSchema); 

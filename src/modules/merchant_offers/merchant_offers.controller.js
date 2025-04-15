@@ -1,27 +1,25 @@
 const response_handler = require("../../helpers/response_handler");
 const CouponCode = require("../../models/merchant_offers.model");
-const Customer = require("../../models/customer_model");     // Assuming you have a user model
-const Transaction = require("../../models/transaction_model");
-const { logger } = require("../../middlewares/logger"); 
+const { validateCouponCreation, validateCouponUpdate } = require('./merchant_offers.validators');
+const { v4: uuidv4 } = require('uuid');
 
-exports.createPreGeneratedCoupons = async (req, res) => {
+
+// Create a single coupon
+exports.createCoupon = async (req, res) => {
     try {
-        const {
-            title, description, posterImage, merchantId, appType, couponCategoryId,
-            coupons, validityPeriod, discountDetails, redeemablePointsCount,
-            eligibilityCriteria, usagePolicy, conditions, termsAndConditions,
-            redemptionInstructions, isActive
-        } = req.body;
+        const { error } = validateCouponCreation(req.body);
+        if (error) {
+            return response_handler(res, 400, false, error.details[0].message);
+        }
 
-        const couponDocs = coupons.map(code => ({
-            code,
+        const {
             title,
             description,
             posterImage,
             merchantId,
-            appType,
             couponCategoryId,
-            type: 'PRE_GENERATED',
+            type,
+            code,
             validityPeriod,
             discountDetails,
             redeemablePointsCount,
@@ -30,48 +28,27 @@ exports.createPreGeneratedCoupons = async (req, res) => {
             conditions,
             termsAndConditions,
             redemptionInstructions,
-            isActive
-        }));
-
-        const newCoupons = await CouponCode.insertMany(couponDocs);
-        logger.info(`New coupons created: ${newCoupons.length}`);
-        return response_handler(
-            res,
-            201,
-            "Pre-generated coupons created successfully!",
-            newCoupons
-        );
-    } catch (error) {
-        logger.error(`Error creating pre-generated coupons: ${error.message}`);
-        return response_handler(
-            res,
-            500,
-            `Internal Server Error. ${error.message}`
-        );
-    }
-};
-
-exports.generateDynamicCoupon = async (req, res) => {
-    try {
-        const {
-            title, description, posterImage, merchantId, appType, couponCategoryId,
-            validityPeriod, discountDetails, redeemablePointsCount,
-            eligibilityCriteria, usagePolicy, conditions, termsAndConditions,
-            redemptionInstructions, isActive
+            redemptionUrl,
+            linkData
         } = req.body;
 
-        // Generate a unique code with prefix based on merchant ID
-        const code = `${merchantId.substr(0, 4)}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+        // Validate type-specific requirements
+        if (type === 'PRE_GENERATED' && !code) {
+            return response_handler(res, 400, false, 'Code is required for PRE_GENERATED type');
+        }
 
-        const coupon = await CouponCode.create({
-            code,
+        if (type === 'ONE_TIME_LINK' && !redemptionUrl) {
+            return response_handler(res, 400, false, 'Redemption URL is required for ONE_TIME_LINK type');
+        }
+
+        const coupon = new CouponCode({
             title,
             description,
             posterImage,
             merchantId,
-            appType,
             couponCategoryId,
-            type: 'DYNAMIC',
+            type,
+            code: type === 'DYNAMIC' ? uuidv4().substring(0, 4) : code,
             validityPeriod,
             discountDetails,
             redeemablePointsCount,
@@ -80,44 +57,113 @@ exports.generateDynamicCoupon = async (req, res) => {
             conditions,
             termsAndConditions,
             redemptionInstructions,
-            isActive
+            redemptionUrl,
+            linkData
         });
 
-        return response_handler(
-            res,
-            201,
-            "Dynamic coupon generated successfully!",
-            coupon
-        );
+        await coupon.save();
+        return response_handler(res, 201, true, 'Coupon created successfully', coupon);
     } catch (error) {
-        console.error(error);
-        return response_handler(
-            res,
-            500,
-            `Internal Server Error. ${error.message}`
-        );
+        console.error('Error creating coupon:', error);
+        return response_handler(res, 500, false, 'Error creating coupon');
     }
 };
 
-exports.createOneTimeLink = async (req, res) => {
+// Create bulk coupons with pre-generated codes
+exports.createBulkCoupons = async (req, res) => {
     try {
+        const { error } = validateCouponCreation(req.body);
+        if (error) {
+            return response_handler(res, 400, false, error.details[0].message);
+        }
+
         const {
-            title, description, posterImage, merchantId, appType, couponCategoryId,
-            validityPeriod, discountDetails, redeemablePointsCount,
-            eligibilityCriteria, usagePolicy, conditions, termsAndConditions,
-            redemptionInstructions, redirectUrl, isActive
-        } = req.body;
-
-        // Generate a unique code for the one-time link
-        const code = Math.random().toString(36).substring(2, 15).toUpperCase();
-
-        const coupon = await CouponCode.create({
-            code,
             title,
             description,
             posterImage,
             merchantId,
-            appType,
+            couponCategoryId,
+            validityPeriod,
+            discountDetails,
+            redeemablePointsCount,
+            eligibilityCriteria,
+            usagePolicy,
+            conditions,
+            termsAndConditions,
+            redemptionInstructions,
+            codes // Array of pre-generated codes
+        } = req.body;
+
+        if (!codes || !Array.isArray(codes) || codes.length === 0) {
+            return response_handler(res, 400, false, 'Pre-generated codes are required for bulk creation');
+        }
+
+        const batchId = uuidv4();
+        const coupons = codes.map(code => ({
+            title,
+            description,
+            posterImage,
+            merchantId,
+            couponCategoryId,
+            type: 'PRE_GENERATED',
+            code,
+            validityPeriod,
+            discountDetails,
+            redeemablePointsCount,
+            eligibilityCriteria,
+            usagePolicy,
+            conditions,
+            termsAndConditions,
+            redemptionInstructions,
+            batchId
+        }));
+
+        const createdCoupons = await CouponCode.insertMany(coupons);
+        return response_handler(res, 201, true, 'Bulk coupons created successfully', {
+            batchId,
+            count: createdCoupons.length,
+            coupons: createdCoupons
+        });
+    } catch (error) {
+        console.error('Error creating bulk coupons:', error);
+        return response_handler(res, 500, false, 'Error creating bulk coupons');
+    }
+};
+
+// Create a one-time link coupon
+exports.createOneTimeLinkCoupon = async (req, res) => {
+    try {
+        const { error } = validateCouponCreation(req.body);
+        if (error) {
+            return response_handler(res, 400, false, error.details[0].message);
+        }
+
+        const {
+            title,
+            description,
+            posterImage,
+            merchantId,
+            couponCategoryId,
+            validityPeriod,
+            discountDetails,
+            redeemablePointsCount,
+            eligibilityCriteria,
+            usagePolicy,
+            conditions,
+            termsAndConditions,
+            redemptionUrl,
+            linkData
+        } = req.body;
+
+        if (!redemptionUrl) {
+            return response_handler(res, 400, false, 'Redemption URL is required for one-time link coupons');
+        }
+
+        const coupon = new CouponCode({
+            title,
+            description,
+            posterImage,
+            merchantId,
             couponCategoryId,
             type: 'ONE_TIME_LINK',
             validityPeriod,
@@ -127,235 +173,148 @@ exports.createOneTimeLink = async (req, res) => {
             usagePolicy,
             conditions,
             termsAndConditions,
-            redemptionInstructions,
-            redemptionUrl: `${redirectUrl}?code=${code}`,
-            isActive
+            redemptionUrl,
+            linkData
         });
 
-        return response_handler(
-            res,
-            201,
-            "One-time link coupon created successfully!",
-            coupon
-        );
-    } catch (error) {
-        console.error(error);
-        return response_handler(
-            res,
-            500,
-            `Internal Server Error. ${error.message}`
-        );
-    }
-};
-
-exports.validateCoupon = async (req, res) => {
-    try {
-        const { code, merchantId, userId, transactionValue, paymentMethod } = req.body;
-
-        // Find the coupon
-        const coupon = await CouponCode.findOne({
-            code,
-            merchantId,
-            status: { $in: ['UNUSED', 'CLAIMED'] }
-        });
-
-        if (!coupon) {
-            return response_handler(
-                res,
-                400,
-                "Invalid coupon code"
-            );
-        }
-
-        // Find user
-        const user = await Customer.findById(userId);
-        if (!user) {
-            return response_handler(
-                res,
-                404,
-                "User not found"
-            );
-        }
-
-        // Check eligibility
-        const eligibilityCheck = await coupon.checkEligibility(user, transactionValue, paymentMethod);
-        if (!eligibilityCheck.eligible) {
-            return response_handler(
-                res,
-                400,
-                eligibilityCheck.reason
-            );
-        }
-
-        //Transaction registration
-        const transaction = await Transaction.create({
-            userId,
-            transactionValue,
-            paymentMethod,
-            couponId: coupon._id,
-            status: 'SUCCESS'
-        });
-
-        // Mark as redeemed and update usage history
-        coupon.status = 'REDEEMED';
-        coupon.usageHistory.push({
-            userId,
-            usedAt: new Date()
-        });
         await coupon.save();
-
-        await transaction.save();
-
-        return response_handler(
-            res,
-            200,
-            "Coupon redeemed successfully",
-            {
-                coupon: {
-                    _id: coupon._id,
-                    code: coupon.code,
-                    title: coupon.title,
-                    discountDetails: coupon.discountDetails
-                }
-            }
-        );
+        return response_handler(res, 201, true, 'One-time link coupon created successfully', coupon);
     } catch (error) {
-        console.error(error);
-        return response_handler(
-            res,
-            500,
-            `Internal Server Error. ${error.message}`
-        );
+        console.error('Error creating one-time link coupon:', error);
+        return response_handler(res, 500, false, 'Error creating one-time link coupon');
     }
 };
 
-exports.checkEligibility = async (req, res) => {
+// Get coupons by batch ID
+exports.getCouponsByBatch = async (req, res) => {
     try {
-        const { couponId, customerId, transactionValue, paymentMethod } = req.body;
+        const { batchId } = req.params;
+        const { page = 1, limit = 10 } = req.query;
 
-        // Find the coupon and user
-        const coupon = await CouponCode.findById(couponId);
-        const customer = await Customer.findById(customerId);
+        const coupons = await CouponCode.find({ batchId })
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit))
+            .sort({ createdAt: -1 });
 
-        if (!coupon) {
-            return response_handler(
-                res,
-                404,
-                "Coupon not found"
-            );
-        }
+        const total = await CouponCode.countDocuments({ batchId });
 
-        if (!customer) {
-            return response_handler(
-                res,
-                404,
-                "User not found"
-            );
-        }
-
-        // Check eligibility
-        const eligibilityCheck = await coupon.checkEligibility(customer, transactionValue, paymentMethod);
-
-        if (!eligibilityCheck.eligible) {       
-            return response_handler(
-                res,
-                400,
-                eligibilityCheck.reason,
-                { eligible: false, reason: eligibilityCheck.reason }
-            );
-        }
-
-        return response_handler(
-            res,
-            200,
-            "User is eligible for this coupon",
-            {
-                eligible: true,
-                coupon: {
-                    _id: coupon._id,
-                    code: coupon.code,
-                    title: coupon.title,
-                    description: coupon.description,
-                    discountDetails: coupon.discountDetails,
-                    validityPeriod: coupon.validityPeriod
-                }
+        return response_handler(res, 200, true, 'Coupons retrieved successfully', {
+            coupons,
+            pagination: {
+                total,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                pages: Math.ceil(total / limit)
             }
-        );
+        });
     } catch (error) {
-        console.error(error);
-        return response_handler(
-            res,
-            500,
-            `Internal Server Error. ${error.message}`
-        );
+        console.error('Error retrieving coupons by batch:', error);
+        return response_handler(res, 500, false, 'Error retrieving coupons by batch');
     }
 };
+
 
 exports.getCouponDetails = async (req, res) => {
     try {
-        const { code } = req.params;
-        const coupon = await CouponCode.findOne({ code })
-            .select('-usageHistory');
-
-        if (!coupon) {
-            return response_handler(
-                res,
-                404,
-                "Coupon not found"
-            );
-        }
-
-        return response_handler(
-            res,
-            200,
-            "Coupon details fetched successfully!",
-            coupon
-        );
+        const { couponId } = req.params;
+        const coupon = await CouponCode.findById(couponId);
+        return response_handler(res, 200, true, 'Coupon details retrieved successfully', coupon);
     } catch (error) {
-        console.error(error);
-        return response_handler(
-            res,
-            500,
-            `Internal Server Error. ${error.message}`
-        );
+        console.error('Error retrieving coupon details:', error);
+        return response_handler(res, 500, false, 'Error retrieving coupon details');
     }
 };
 
-exports.listCoupons = async (req, res) => {
+
+exports.getAllCoupons = async (req, res) => {
     try {
-        const { merchantId, status, type, category, isActive } = req.query;
+        const { page = 1, limit = 10 } = req.query;
+        const coupons = await CouponCode.find()
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit))
+            .sort({ createdAt: -1 });
 
-        const query = {};
-        if (merchantId) query.merchantId = merchantId;
-        if (status) query.status = status;
-        if (type) query.type = type;
-        if (category) query.couponCategoryId = category;
-        if (isActive !== undefined) query.isActive = isActive === 'true';
+        const total = await CouponCode.countDocuments();
 
-        // Only show active coupons that are currently valid
-        if (req.query.activeOnly === 'true') {
-            query.isActive = true;
-            query['validityPeriod.startDate'] = { $lte: new Date() };
-            query['validityPeriod.endDate'] = { $gte: new Date() };
-        }
-
-        const coupons = await CouponCode.find(query)
-            .select('-usageHistory')
-            .populate('merchantId', 'name logo')
-            .populate('couponCategoryId', 'name');
-
-        return response_handler(
-            res,
-            200,
-            "Coupons fetched successfully!",
-            coupons
-        );
+        return response_handler(res, 200, true, 'All coupons retrieved successfully', {
+            coupons,
+            pagination: {
+                total,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                pages: Math.ceil(total / limit)
+            }
+        });
     } catch (error) {
-        console.error(error);
-        return response_handler(
-            res,
-            500,
-            `Internal Server Error. ${error.message}`
-        );
+        console.error('Error retrieving all coupons:', error);
+        return response_handler(res, 500, false, 'Error retrieving all coupons');
     }
 };
+
+
+exports.updateCoupon = async (req, res) => {
+    try {
+        const { couponId } = req.params;
+        const { error } = validateCouponUpdate(req.body);
+        if (error) {
+            return response_handler(res, 400, false, error.details[0].message);
+        }
+
+        const {
+            title,
+            description,
+            posterImage,
+            merchantId,
+            couponCategoryId,
+            validityPeriod,
+            discountDetails,
+            redeemablePointsCount,
+            eligibilityCriteria,
+            usagePolicy,
+            conditions,
+            termsAndConditions,
+            redemptionInstructions,
+            redemptionUrl,
+            linkData
+        } = req.body;
+
+        const coupon = await CouponCode.findByIdAndUpdate(couponId, {
+            $set: {
+                title,
+                description,
+                posterImage,
+                merchantId,
+                couponCategoryId,
+                validityPeriod,
+                discountDetails,
+                redeemablePointsCount,
+                eligibilityCriteria,
+                usagePolicy,
+                conditions,
+                termsAndConditions,
+                redemptionInstructions,
+                redemptionUrl,
+                linkData
+            }
+        });
+
+        return response_handler(res, 200, true, 'Coupon updated successfully', coupon);
+    } catch (error) {
+        console.error('Error updating coupon:', error);
+        return response_handler(res, 500, false, 'Error updating coupon');
+    }
+};
+
+
+exports.deleteCoupon = async (req, res) => {
+    try {
+        const { couponId } = req.params;
+        await CouponCode.findByIdAndDelete(couponId);
+        return response_handler(res, 200, true, 'Coupon deleted successfully');
+    } catch (error) {
+        console.error('Error deleting coupon:', error);
+        return response_handler(res, 500, false, 'Error deleting coupon');
+    }
+};
+
+
