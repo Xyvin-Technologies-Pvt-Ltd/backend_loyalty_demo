@@ -6,7 +6,7 @@ const TriggerServices = require("../../models/trigger_services_model");
 
 exports.create = async (req, res) => {
   try {
-    const { error } = pointsCriteriaValidationSchema.validate(req.body, {  
+    const { error } = pointsCriteriaValidationSchema.validate(req.body, {
       abortEarly: false,
     });
     if (error) {
@@ -18,12 +18,12 @@ exports.create = async (req, res) => {
     const event = await TriggerEvent.findById(req.body.eventType);
     const service = await TriggerServices.findById(req.body.serviceType);
 
-
     let uniqueCode = generateUniqueCode(event.name, service.title);
-   
 
     //check if unique_code already exists
-    const existingCriteria = await Criteria.findOne({ unique_code: uniqueCode });
+    const existingCriteria = await Criteria.findOne({
+      unique_code: uniqueCode,
+    });
     if (existingCriteria) {
       uniqueCode = generateUniqueCode(event.name, service.title);
     }
@@ -39,7 +39,7 @@ exports.create = async (req, res) => {
       new_criteria
     );
   } catch (error) {
-      console.error(error);
+    console.error(error);
     return response_handler(
       res,
       500,
@@ -50,10 +50,16 @@ exports.create = async (req, res) => {
 
 exports.list = async (req, res) => {
   try {
-    const criteria = await Criteria.find()
-    .populate("eventType")
-    .populate("serviceType")
-    .populate("appType");
+    const { appType } = req.query;
+
+    const filter = {};
+    if (appType) {
+      filter.appType = appType;
+    }
+    const criteria = await Criteria.find(filter)
+      .populate("eventType")
+      .populate("serviceType")
+      .populate("appType");
     return response_handler(
       res,
       200,
@@ -73,9 +79,9 @@ exports.get_criteria = async (req, res) => {
   try {
     const { id } = req.params;
     const criteria = await Criteria.findById(id)
-    .populate("eventType")
-    .populate("serviceType")
-    .populate("appType");
+      .populate("eventType")
+      .populate("serviceType")
+      .populate("appType");
     return response_handler(
       res,
       200,
@@ -94,7 +100,6 @@ exports.get_criteria = async (req, res) => {
 exports.update_criteria = async (req, res) => {
   try {
     const { id } = req.params;
-
 
     const updated_criteria = await Criteria.findByIdAndUpdate(id, req.body, {
       new: true,
@@ -133,19 +138,16 @@ exports.delete_criteria = async (req, res) => {
   }
 };
 
-
 const generateUniqueCode = (eventName, serviceTypeName) => {
-  const sanitizedEvent = eventName.replace(/\s+/g, '').toUpperCase().slice(0, 3); // First 3 letters of event name
-  const sanitizedService = serviceTypeName.replace(/\s+/g, '').toUpperCase().slice(0, 3); // First 3 letters of service type
+  const sanitizedEvent = eventName
+    .replace(/\s+/g, "")
+    .toUpperCase()
+    .slice(0, 3); // First 3 letters of event name
+  const sanitizedService = serviceTypeName
+    .replace(/\s+/g, "")
+    .toUpperCase()
+    .slice(0, 3); // First 3 letters of service type
   const randomDigits = Math.floor(100 + Math.random() * 900); // Generate a 3-digit number
 
   return `${sanitizedEvent}-${sanitizedService}-${randomDigits}`;
 };
-
-
-
-
-
-
-
-

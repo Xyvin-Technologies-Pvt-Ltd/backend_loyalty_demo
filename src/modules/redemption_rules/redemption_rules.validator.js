@@ -9,9 +9,7 @@ const redemptionRulesSchema = Joi.object({
         .description("Maximum points that can be redeemed per day")
         .example(1000),
 
-    app_type: Joi.string().required()
-        .description("App type")
-        .example("Khedmah Delivery"),
+        appType: Joi.string().required(),
 
     tier_multipliers: Joi.array().items(
         Joi.object({
