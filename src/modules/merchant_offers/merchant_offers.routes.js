@@ -84,7 +84,7 @@ router.get('/',
         description: 'User viewed all coupons',
         targetModel: 'CouponCode'
     }),
-    cacheMiddleware(cacheKeys.ALL_COUPONS),
+    // cacheMiddleware(cacheKeys.ALL_COUPONS),
     merchant_offers_controller.getAllCoupons
 );
 

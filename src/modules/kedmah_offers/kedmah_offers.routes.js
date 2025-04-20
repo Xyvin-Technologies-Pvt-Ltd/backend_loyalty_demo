@@ -82,7 +82,7 @@ router.delete(
         targetModel: "KedmahOffers",
         targetId: req => req.params.id
     }),
-    cacheInvalidationMiddleware(cacheKeys.allKedmahOffers, cacheKeys.kedmahOfferById),
+    cacheInvalidationMiddleware(cacheKeys.allKedmahOffers, req => req.params.id),
     kedmah_offers_controller.delete_offer
 );
 
