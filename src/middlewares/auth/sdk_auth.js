@@ -44,17 +44,17 @@ const sdkAuth = (requiredPermissions = []) => {
                 return response_handler(res, 401, "This SDK key has expired");
             }
 
-            // Check permissions if required
-            if (requiredPermissions.length > 0) {
-                const hasAllPermissions = requiredPermissions.every(perm =>
-                    keyData.permissions.includes(perm)
-                );
+            // // Check permissions if required
+            // if (requiredPermissions.length > 0) {
+            //     const hasAllPermissions = requiredPermissions.every(perm =>
+            //         keyData.permissions.includes(perm)
+            //     );
 
-                if (!hasAllPermissions) {
-                    logger.warn(`SDK key ${keyData.name} missing required permissions: ${requiredPermissions.join(', ')}`);
-                    return response_handler(res, 403, "This SDK key does not have the required permissions");
-                }
-            }
+            //     if (!hasAllPermissions) {
+            //         logger.warn(`SDK key ${keyData.name} missing required permissions: ${requiredPermissions.join(', ')}`);
+            //         return response_handler(res, 403, "This SDK key does not have the required permissions");
+            //     }
+            // }
 
             // Attach SDK key data to the request
             req.sdkKey = keyData;

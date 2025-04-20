@@ -1,0 +1,124 @@
+openapi: 3.0.0
+info:
+  title: SDK Theme Settings API
+  description: |
+    # Overview
+    This API provides endpoints for retrieving theme settings for the SDK, including:
+    - Accessing color schemes, typography and spacing settings
+    - Getting active theme preset information
+    
+    # Authentication
+    All endpoints require SDK authentication. Include your API key in the request header:
+    ```
+    Authorization: Bearer your-api-key
+    ```
+    
+    # Rate Limiting
+    - 100 requests per minute per API key
+    - 1000 requests per hour per API key
+    
+    # Error Handling
+    All endpoints follow a consistent error response format:
+    ```json
+    {
+      "status": false,
+      "message": "Error description",
+      "error": {
+        "code": "ERROR_CODE",
+        "details": {}
+      }
+    }
+    ```
+  version: 1.0.0
+tags:
+  - name: SDK Theme Settings
+    description: SDK APIs for accessing theme settings
+
+paths:
+  /theme-settings:
+    get:
+      summary: Get theme settings
+      description: |
+        # Description
+        Retrieves the theme settings for the SDK application.
+        
+        # Features
+        - Color scheme information (primary, secondary, accent, etc.)
+        - Typography settings (font family, base font size)
+        - Spacing and border radius configuration
+        - Active theme preset
+        
+        # Example Usage
+        ```javascript
+        GET /theme-settings
+        ```
+      tags:
+        - SDK Theme Settings
+      responses:
+        200:
+          description: "Theme settings retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Theme settings retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      theme:
+                        type: object
+                        properties:
+                          colors:
+                            type: object
+                            properties:
+                              primary:
+                                type: string
+                                example: "#2B5C3F"
+                              secondary:
+                                type: string
+                                example: "#4CAF50"
+                              accent:
+                                type: string
+                                example: "#81C784"
+                              background:
+                                type: string
+                                example: "#FFFFFF"
+                              text:
+                                type: string
+                                example: "#1F2937"
+                          typography:
+                            type: object
+                            properties:
+                              fontFamily:
+                                type: string
+                                example: "Inter"
+                                enum: ["Inter", "Roboto", "Open Sans", "Lato", "Poppins"]
+                              baseFontSize:
+                                type: string
+                                example: "Medium (16px)"
+                                enum: ["Small (14px)", "Medium (16px)", "Large (18px)"]
+                          spacing:
+                            type: object
+                            properties:
+                              baseSpacing:
+                                type: string
+                                example: "Normal (16px)"
+                                enum: ["Compact (12px)", "Normal (16px)", "Relaxed (20px)"]
+                              borderRadius:
+                                type: string
+                                example: "Medium (8px)"
+                                enum: ["None (0px)", "Small (4px)", "Medium (8px)", "Large (12px)", "Extra Large (16px)"]
+                          preset:
+                            type: string
+                            example: "Default"
+                            enum: ["Default", "Ocean", "Sunset", "Custom"]
+        401:
+          description: "Unauthorized"
+        500:
+          description: "Internal Server Error" 
