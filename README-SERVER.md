@@ -261,3 +261,54 @@ The estimated monthly infrastructure cost for this setup ranges from $5,000 to $
 This architecture is designed to provide a robust, scalable infrastructure for the Loyalty App platform, capable of supporting 50,000+ users and over 1 million daily API transactions. It incorporates redundancy, scalability, and performance optimization to ensure high availability and responsiveness for end users.
 
 The architecture can be implemented on major cloud providers (AWS, Azure, Google Cloud) or as an on-premise solution, depending on organizational requirements and constraints.
+
+
+
+
+
+                      ┌───────────────────────────┐
+                      │        Internet            │
+                      └────────────┬──────────────┘
+                                   │
+                          ┌────────▼─────────┐
+                          │     NGINX        │  ← Reverse proxy, SSL, basic load balancing
+                          └────────┬─────────┘
+                                   │
+                          ┌────────▼─────────┐
+                          │ Loyalty App (Node)│ ← Your monolith (API + web in one)
+                          └────────┬─────────┘
+                                   │
+        ┌──────────────────────────┴─────────────────────────┐
+        │                                                    │
+┌───────▼────────┐                                 ┌─────────▼────────┐
+│   MongoDB      │                                 │     Redis        │
+│ (replica set)  │ ← Main DB                       │ (optional)       │ ← Caching, sessions
+└────────────────┘                                 └──────────────────┘
+
+                    ┌────────────────────────┐
+                    │  Local File Storage    │  ← Instead of AWS S3
+                    │  (/mnt/storage, etc.)  │
+                    └────────────────────────┘
+
+
+
+🔹 If You Use One Powerful Server (simplest for smaller teams):
+
+Component	Specification
+CPU	16 cores (Intel Xeon or AMD EPYC)
+RAM	64 GB
+Storage	1 TB SSD (for MongoDB, app files, cache)
+Network	1 Gbps LAN card
+OS	Ubuntu Server 22.04 LTS
+Backup Drive	Optional: External 2TB HDD or NAS
+
+
+
+
+🔹 If You Split into 2-3 Servers (recommended for growth/fault tolerance):
+
+Server Role	CPU	RAM	Storage	Notes
+App + NGINX	8 cores	32GB	250GB SSD	Run Node.js monolith, NGINX, Redis
+MongoDB Primary	8 cores	32GB	500GB–1TB SSD	Dedicated DB server, journaling ON
+MongoDB Replica(s)	4 cores	16GB	500GB SSD	Optional but ideal for HA
+Backup/File Storage	4 cores	16GB	1TB HDD or SSD	Local S3 alt, rsync-friendly backups
