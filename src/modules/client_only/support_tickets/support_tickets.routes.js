@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const supportTicketsController = require("./support_tickets.controller");
-const { sdkAuth ,sdkUserAuth} = require("../../../middlewares/auth/sdk_auth");
+const { sdkAuth, sdkUserAuth } = require("../../../middlewares/auth/sdk_auth");
 const { createAuditMiddleware } = require("../../audit");
 
 // Apply SDK authentication middleware
-router.use(sdkAuth);
+router.use(sdkAuth([]));
 router.use(sdkUserAuth);
 // Create audit middleware for support tickets
 const auditMiddleware = createAuditMiddleware("support_ticket");
@@ -18,7 +18,7 @@ router.post(
     auditMiddleware.sdkAction("create_support_ticket", {
         description: "Create a new support ticket",
         targetModel: "SupportTicket",
-        details: (req) => req.body,
+        details: (req) => req.query,
     }),
     supportTicketsController.createTicket
 );
@@ -31,7 +31,7 @@ router.get(
     auditMiddleware.sdkAction("get_my_tickets", {
         description: "Get all tickets for a customer",
         targetModel: "SupportTicket",
-        details: (req) => req.body,
+        details: (req) => req.query,
     }),
     supportTicketsController.getMyTickets
 );

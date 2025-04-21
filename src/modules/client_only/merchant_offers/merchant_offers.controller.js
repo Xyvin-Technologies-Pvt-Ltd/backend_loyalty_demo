@@ -16,10 +16,11 @@ exports.getAvailableOffers = async (req, res) => {
         // Build query for active and valid offers
         const query = {
             status: "UNUSED",
-            validityPeriod: {
-                startDate: { $lte: new Date() },
-                endDate: { $gte: new Date() }
-            }
+            // TODO  end validity period
+            // validityPeriod: {
+            //     startDate: { $lte: new Date() },
+            //     endDate: { $gte: new Date() }
+            // }
         };
 
         // Add filters if provided
@@ -46,7 +47,7 @@ exports.getAvailableOffers = async (req, res) => {
         const offers = await CouponCode.find(query)
             .populate("merchantId", "name logo")
             .populate("couponCategoryId", "name")
-            .sort({ validityPeriod: { endDate: 1 } })
+            .sort({ "validityPeriod.endDate": 1 })
             .skip(skip)
             .limit(parseInt(limit));
 
@@ -54,16 +55,17 @@ exports.getAvailableOffers = async (req, res) => {
         const total = await CouponCode.countDocuments(query);
 
         // Check eligibility for each offer
-        const offersWithEligibility = await Promise.all(offers.map(async (offer) => {
-            const eligibilityCheck = await offer.checkEligibility(req.user);
-            return {
-                ...offer.toObject(),
-                eligibility: eligibilityCheck
-            };
-        }));
+        // const offersWithEligibility = await Promise.all(offers.map(async (offer) => {
+        //     console.log(req.user,req.customerId);
+        //     const eligibilityCheck = await offer.checkEligibility(req.user);
+        //     return {
+        //         ...offer.toObject(),
+        //         eligibility: eligibilityCheck
+        //     };
+        // }));
 
         return response_handler(res, 200, "Available offers retrieved successfully", {
-            offers: offersWithEligibility,
+            offers: offers,
             pagination: {
                 total,
                 page: parseInt(page),

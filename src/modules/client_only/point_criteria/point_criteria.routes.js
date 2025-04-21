@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const pointCriteriaController = require("./point_criteria.controller");
-const { sdkAuth ,sdkUserAuth} = require("../../../middlewares/auth/sdk_auth");
+const { sdkAuth, sdkUserAuth } = require("../../../middlewares/auth/sdk_auth");
 const { createAuditMiddleware } = require("../../audit");
 
 // Apply SDK authentication middleware
-router.use(sdkAuth);
+router.use(sdkAuth([]));
 router.use(sdkUserAuth);
 
 // Create audit middleware for point criteria
@@ -16,39 +16,29 @@ router.post("/process", auditMiddleware.captureResponse(),auditMiddleware.sdkAct
     description: "Process loyalty event and calculate points",
     targetModel: "PointCriteria",
     details: (req) => req.body,
-}), async (req, res) => {
-    const response = await pointCriteriaController.calculatePoints(req, res);
-    req.auditLog.response = response;
-});
+}), pointCriteriaController.calculatePoints );
+
 
 // Check customer eligibility based on usage history
-router.get("/check-eligibility", auditMiddleware.captureResponse(),auditMiddleware.sdkAction("check_customer_eligibility", {
+router.get("/check-eligibility", auditMiddleware.captureResponse(), auditMiddleware.sdkAction("check_customer_eligibility", {
     description: "Check customer eligibility based on usage history",
     targetModel: "PointCriteria",
     details: (req) => req.body,
-}), async (req, res) => {
-    const response = await pointCriteriaController.checkCustomerEligibility(req, res);
-    req.auditLog.response = response;
-});
+}), pointCriteriaController.checkCustomerEligibility );
+
 
 // Get point calculation details without processing
-router.get("/calculate-details", auditMiddleware.captureResponse(),auditMiddleware.sdkAction("get_point_calculation_details", {
+router.get("/calculate-details", auditMiddleware.captureResponse(), auditMiddleware.sdkAction("get_point_calculation_details", {
     description: "Get point calculation details without processing",
     targetModel: "PointCriteria",
     details: (req) => req.body,
-}), async (req, res) => {
-    const response = await pointCriteriaController.getPointCalculationDetails(req, res);
-    req.auditLog.response = response;
-});
+}), pointCriteriaController.getPointCalculationDetails );
 
 // Get supported payment methods
-router.get("/payment-methods", auditMiddleware.captureResponse(),auditMiddleware.sdkAction("get_supported_payment_methods", {
+router.get("/payment-methods", auditMiddleware.captureResponse(), auditMiddleware.sdkAction("get_supported_payment_methods", {
     description: "Get supported payment methods",
     targetModel: "PointCriteria",
     details: (req) => req.body,
-}), async (req, res) => {
-    const response = await pointCriteriaController.getSupportedPaymentMethods(req, res);
-    req.auditLog.response = response;
-});
+}), pointCriteriaController.getSupportedPaymentMethods );
 
 module.exports = router; 

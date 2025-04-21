@@ -123,7 +123,7 @@ exports.getCoinConversionDetails = async (req, res) => {
         }
 
         // Get customer with current points
-        const customer = await Customer.findById(req.user._id);
+        const customer = await Customer.findById(req.customer._id);
         if (!customer) {
             return response_handler(res, 404, "Customer not found", null);
         }
@@ -157,7 +157,7 @@ exports.getCoinHistory = async (req, res) => {
 
         // Build query
         const query = {
-            customer_id: req.user._id,
+            customer_id: req.customer._id,
             coins: { $exists: true, $ne: 0 }
         };
 
@@ -191,7 +191,7 @@ exports.getCoinHistory = async (req, res) => {
 
 exports.getCoinBalance = async (req, res) => {
     try {
-        const customer = await Customer.findById(req.user._id);
+        const customer = await Customer.findById(req.customer._id);
         if (!customer) {
             return response_handler(res, 404, "Customer not found", null);
         }

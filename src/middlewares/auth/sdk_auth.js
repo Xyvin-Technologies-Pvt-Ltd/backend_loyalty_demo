@@ -19,7 +19,7 @@ const sdkAuth = (requiredPermissions = []) => {
             }
 
             // Check for access key in headers
-            const accessKey = req.headers["sdk-api-key"]|| req.headers["x-access-key"] || req.headers["access-key"] ;
+            const accessKey = req.headers["sdk-api-key"] || req.headers["x-access-key"] || req.headers["access-key"];
             if (!accessKey) {
                 logger.warn("SDK API request without access key");
                 return response_handler(res, 401, "Access key is required for SDK API access");
@@ -39,22 +39,22 @@ const sdkAuth = (requiredPermissions = []) => {
             }
 
             // Check if the key has expired
-            if (keyData.expiresAt && new Date(keyData.expiresAt) < new Date()) {
-                logger.warn(`Attempt to use expired SDK key: ${keyData.name}`);
-                return response_handler(res, 401, "This SDK key has expired");
-            }
-
-            // // Check permissions if required
-            // if (requiredPermissions.length > 0) {
-            //     const hasAllPermissions = requiredPermissions.every(perm =>
-            //         keyData.permissions.includes(perm)
-            //     );
-
-            //     if (!hasAllPermissions) {
-            //         logger.warn(`SDK key ${keyData.name} missing required permissions: ${requiredPermissions.join(', ')}`);
-            //         return response_handler(res, 403, "This SDK key does not have the required permissions");
-            //     }
+            // if (keyData.expiresAt && new Date(keyData.expiresAt) < new Date()) {
+            //     logger.warn(`Attempt to use expired SDK key: ${keyData.name}`);
+            //     return response_handler(res, 401, "This SDK key has expired");
             // }
+
+            // Check permissions if required
+            if (requiredPermissions.length > 0 && keyData.permissions) {
+                const hasAllPermissions = requiredPermissions.every(perm =>
+                    keyData.permissions.includes(perm)
+                );
+
+                if (!hasAllPermissions) {
+                    logger.warn(`SDK key ${keyData.name} missing required permissions: ${requiredPermissions.join(', ')}`);
+                    return response_handler(res, 403, "This SDK key does not have the required permissions");
+                }
+            }
 
             // Attach SDK key data to the request
             req.sdkKey = keyData;
@@ -108,7 +108,7 @@ const sdkUserAuth = async (req, res, next) => {
         }
 
         // Check for user token in headers
-        const customer_id = req.headers["x-user-token"] || req.headers["user-token"]||req.headers["customer_id"];
+        const customer_id = req.headers["x-user-token"] || req.headers["user-token"] || req.headers["customer_id"];
         if (!customer_id) {
             logger.warn(`SDK client ${req.sdkKey.name} attempted to access user data without user token`);
             return response_handler(res, 401, "User token is required for this operation");
@@ -116,7 +116,7 @@ const sdkUserAuth = async (req, res, next) => {
 
         // In a real implementation, you would validate the token
         // For now, we'll just check if the user exists by ID (assuming the token is the user ID)
-        const user = await Customer.findOne({customer_id:customer_id});
+        const user = await Customer.findOne({ customer_id: customer_id });
         if (!user) {
             logger.warn(`SDK client ${req.sdkKey.name} attempted to access with invalid user token`);
             return response_handler(res, 401, "Invalid user token");

@@ -12,8 +12,8 @@ exports.getThemeSettings = async (req, res) => {
         let themeSettings = await ThemeSettings.findOne().sort({ createdAt: -1 });
 
         if (!themeSettings) {
-            // Use defaults if no theme settings exist
-            themeSettings = ThemeSettings.getDefaults();
+            // Create a new instance with defaults if no theme settings exist
+            themeSettings = new ThemeSettings();
             logger.info("Using default theme settings for SDK");
         } else {
             // Transform the document to a plain object to remove unnecessary fields

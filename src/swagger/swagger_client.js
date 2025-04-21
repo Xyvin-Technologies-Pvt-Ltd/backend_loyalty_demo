@@ -40,7 +40,7 @@ const swagger_sdk_definition = {
       },
     },
   },
-  security: [{ ApiKeyAuth: ['7f4d082c436b88976239f94e3f984aa965db89e0650377d8caf715222204df5b'] }, { customer_id: ['CUST123456'] }],
+  security: [{ ApiKeyAuth: ['da59906ea2e4ec1dfb371bccd197c71a44e64b5b3668ae8192527912d69f96f1'] }, { customer_id: ['CUST123456'] }],
 };
 
 const sdk_options = {

@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const themeSettingsController = require("./theme_settings.controller");
-const { sdkAuth ,sdkUserAuth} = require("../../../middlewares/auth/sdk_auth");
+const { sdkAuth, sdkUserAuth } = require("../../../middlewares/auth/sdk_auth");
 const { createAuditMiddleware } = require("../../audit");
 
 // Apply SDK authentication middleware
-    router.use(sdkAuth)
+router.use(sdkAuth([]));
 router.use(sdkUserAuth);
 
 // Create audit middleware for theme settings
