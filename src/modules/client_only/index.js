@@ -8,17 +8,18 @@ const offersRoutes = require("./offers/offers.route");
 const merchantOffersRoutes = require("./merchant_offers/merchant_offers.routes");
 const supportRoutes = require("./support_tickets/support_tickets.routes");
 const themeSettingsRoutes = require("./theme_settings/theme_settings.routes");
-
+const transactionRoutes = require("./transactions/transactions.routes");
 
 
 
 router.use("/customer", customerRoutes);
 router.use("/point-criteria", pointCriteriaRoutes);
-router.use("/loyalty-points", loyaltyPointsRoutes);
-router.use("/coins", coinsRoutes);
-router.use("/offers", offersRoutes);
+router.use("/loyalty-points", loyaltyPointsRoutes);//
+router.use("/coins", coinsRoutes);//
+router.use("/offers", offersRoutes);//
 router.use("/merchant-offers", merchantOffersRoutes);
-router.use("/support", supportRoutes);
+router.use("/support", supportRoutes);//
+router.use("/transactions",transactionRoutes);//
 router.use("/theme-settings", themeSettingsRoutes);
 
 module.exports = router;
