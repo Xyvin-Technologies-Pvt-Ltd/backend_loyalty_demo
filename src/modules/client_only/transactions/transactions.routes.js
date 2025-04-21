@@ -5,8 +5,8 @@ const { sdkAuth ,sdkUserAuth} = require("../../../middlewares/auth/sdk_auth");
 const { createAuditMiddleware } = require("../../audit");
 
 // Apply SDK authentication middleware
-router.use(sdkAuth());
-router.use(sdkUserAuth);
+// router.use(sdkAuth());
+// router.use(sdkUserAuth);
 
 // Create audit middleware for transactions
 const SdkTransactionAudit = createAuditMiddleware("transaction");
