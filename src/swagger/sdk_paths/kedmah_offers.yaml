@@ -3,16 +3,17 @@ info:
   title: SDK Kedmah Offers API
   description: |
     # Overview
-    This API provides endpoints for managing Kedmah offers in the loyalty system. It allows customers to:
-    - View available Kedmah offers
-    - Get detailed offer information
+    This API provides endpoints for managing Kedmah offers in the loyalty system.
+    It allows customers to:
+    - Browse available Kedmah offers
+    - View offer details
     - Check offer eligibility
-    - Track offer validity and terms
     
     # Authentication
-    All endpoints require SDK authentication. Include your API key in the request header:
+    All endpoints require SDK authentication via the SDK API Key and customer ID. Include these in your request headers:
     ```
-    Authorization: Bearer your-api-key
+    sdk-api-key: your-api-key
+    customer_id: CUSTOMER_ID
     ```
     
     # Rate Limiting
@@ -34,32 +35,97 @@ info:
   version: 1.0.0
 tags:
   - name: SDK Kedmah Offers
-    description: SDK APIs for Kedmah offer operations
+    description: SDK APIs for Kedmah offers operations
 
 paths:
-  /kedmah-offers:
+  /offers/kedmah-offers:
     get:
-      summary: Get all Kedmah offers for the authenticated customer
+      summary: Get available Kedmah offers
       description: |
         # Description
-        Retrieves all active Kedmah offers with eligibility status for the authenticated customer.
+        Retrieves a list of available Kedmah offers with pagination and filtering options.
         
         # Features
-        - Active offers only
-        - Validity period filtering
-        - Eligibility checking
-        - Sorted by eligibility and expiry date
-        - Includes service category and app type details
+        - Pagination support
+        - Category filtering
+        - Status filtering
+        - Search by keywords
+        - Sorting options
+        
+        # Query Parameters
+        - page: Page number (default: 1)
+        - limit: Items per page (default: 10)
+        - category: Filter by offer category
+        - status: Filter by offer status
+        - search: Search by keywords in title or description
+        - sort: Sorting field
+        - sort_direction: Sorting direction (asc, desc)
         
         # Example Usage
         ```javascript
-        GET /kedmah-offers
+        // Get all available offers
+        GET /offers/kedmah-offers
+        
+        // Get offers with filters
+        GET /offers/kedmah-offers?category=food&status=active&page=1&limit=20&sort=created_at&sort_direction=desc
         ```
       tags:
         - SDK Kedmah Offers
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: "Page number for pagination"
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: "Number of items per page"
+          example: 10
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: "Filter by offer category"
+          example: "food"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, expired]
+          description: "Filter by offer status"
+          example: "active"
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: "Search by keywords in title or description"
+          example: "discount"
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: created_at
+          description: "Sorting field"
+          example: "created_at"
+        - name: sort_direction
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: "Sorting direction"
+          example: "desc"
       responses:
         200:
-          description: "Kedmah offers retrieved successfully"
+          description: "Available offers retrieved successfully"
           content:
             application/json:
               schema:
@@ -70,131 +136,145 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Kedmah offers fetched successfully"
+                    example: "Available offers retrieved successfully"
                   data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        _id:
-                          type: string
-                          example: "507f1f77bcf86cd799439011"
-                        title:
-                          type: string
-                          example: "Welcome Bonus"
-                        description:
-                          type: string
-                          example: "Get 100 points on your first purchase"
-                        posterImage:
-                          type: string
-                          example: "https://example.com/images/welcome-bonus.jpg"
-                        serviceCategory:
+                    type: object
+                    properties:
+                      offers:
+                        type: array
+                        items:
                           type: object
                           properties:
-                            name:
+                            _id:
                               type: string
-                              example: "Shopping"
-                        appType:
-                          type: object
-                          properties:
-                            name:
+                              example: "507f1f77bcf86cd799439011"
+                            title:
                               type: string
-                              example: "Mobile App"
-                        eventType:
-                          type: object
-                          properties:
-                            name:
+                              example: "30% Off at Kedmah Restaurant"
+                            description:
                               type: string
-                              example: "First Purchase"
-                        offerType:
-                          type: string
-                          example: "points"
-                        isActive:
-                          type: boolean
-                          example: true
-                        validityPeriod:
-                          type: object
-                          properties:
-                            startDate:
+                              example: "Get 30% off on all food items"
+                            image:
+                              type: string
+                              example: "https://example.com/offer-image.jpg"
+                            category:
+                              type: string
+                              example: "food"
+                            discount_type:
+                              type: string
+                              enum: [percentage, fixed]
+                              example: "percentage"
+                            discount_value:
+                              type: number
+                              example: 30
+                            start_date:
                               type: string
                               format: date-time
                               example: "2024-01-01T00:00:00Z"
-                            endDate:
+                            expiry_date:
                               type: string
                               format: date-time
                               example: "2024-12-31T23:59:59Z"
-                        discountDetails:
-                          type: object
-                          properties:
-                            points:
-                              type: number
-                              example: 100
-                        redeemablePointsCount:
-                          type: number
-                          example: 100
-                        eligibility:
-                          type: object
-                          properties:
-                            isEligible:
+                            status:
+                              type: string
+                              enum: [active, inactive, expired]
+                              example: "active"
+                            is_featured:
                               type: boolean
                               example: true
-                            reason:
+                            terms_conditions:
                               type: string
-                              example: "Eligible for this offer"
+                              example: "Valid on all food items. Cannot be combined with other offers."
+                            eligibility:
+                              type: object
+                              properties:
+                                is_eligible:
+                                  type: boolean
+                                  example: true
+                                message:
+                                  type: string
+                                  example: null
+                      pagination:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            example: 50
+                          page:
+                            type: integer
+                            example: 1
+                          limit:
+                            type: integer
+                            example: 10
+                          total_pages:
+                            type: integer
+                            example: 5
+                      categories:
+                        type: array
+                        items:
+                          type: string
+                        example: ["food", "retail", "entertainment", "travel"]
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key or customer ID"
+        500:
+          description: "Internal Server Error"
 
-  /kedmah-offers/{id}:
+  /offers/kedmah-offers/{id}:
     get:
-      summary: Get specific Kedmah offer with eligibility check
+      summary: Get specific Kedmah offer details
       description: |
         # Description
-        Retrieves detailed information about a specific Kedmah offer with eligibility status.
+        Retrieves detailed information about a specific Kedmah offer.
         
         # Features
         - Complete offer details
-        - Eligibility checking
-        - Transaction value validation
-        - Payment method validation
+        - Eligibility check with transaction details (optional)
+        - Terms and conditions
+        - Redemption instructions
+        
+        # Path Parameters
+        - id: Offer ID
         
         # Query Parameters
-        - transaction_value: Optional transaction value for eligibility check
-        - payment_method: Optional payment method for eligibility check
+        - transaction_value: Transaction amount for eligibility check (optional)
+        - payment_method: Payment method for eligibility check (optional)
         
         # Example Usage
         ```javascript
         // Get offer details
-        GET /kedmah-offers/507f1f77bcf86cd799439011
+        GET /offers/kedmah-offers/507f1f77bcf86cd799439011
         
-        // Get offer with eligibility check
-        GET /kedmah-offers/507f1f77bcf86cd799439011?transaction_value=100&payment_method=KhedmahPay-Wallet
+        // Get offer details with eligibility check
+        GET /offers/kedmah-offers/507f1f77bcf86cd799439011?transaction_value=100&payment_method=credit_card
         ```
       tags:
         - SDK Kedmah Offers
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
-          description: "Unique offer identifier"
+          description: "Offer ID"
           example: "507f1f77bcf86cd799439011"
         - name: transaction_value
           in: query
           schema:
             type: number
-          description: "Transaction value for eligibility check"
+          description: "Transaction amount for eligibility check"
           example: 100
         - name: payment_method
           in: query
           schema:
             type: string
-            enum: [Khedmah-site, KhedmahPay-Wallet]
           description: "Payment method for eligibility check"
-          example: "KhedmahPay-Wallet"
+          example: "credit_card"
       responses:
         200:
-          description: "Kedmah offer retrieved successfully"
+          description: "Offer details retrieved successfully"
           content:
             application/json:
               schema:
@@ -205,7 +285,7 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Kedmah offer fetched successfully"
+                    example: "Offer details retrieved successfully"
                   data:
                     type: object
                     properties:
@@ -214,95 +294,111 @@ paths:
                         example: "507f1f77bcf86cd799439011"
                       title:
                         type: string
-                        example: "Welcome Bonus"
+                        example: "30% Off at Kedmah Restaurant"
                       description:
                         type: string
-                        example: "Get 100 points on your first purchase"
-                      posterImage:
+                        example: "Get 30% off on all food items"
+                      image:
                         type: string
-                        example: "https://example.com/images/welcome-bonus.jpg"
-                      serviceCategory:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                            example: "Shopping"
-                      appType:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                            example: "Mobile App"
-                      eventType:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                            example: "First Purchase"
-                      offerType:
+                        example: "https://example.com/offer-image.jpg"
+                      category:
                         type: string
-                        example: "points"
-                      isActive:
+                        example: "food"
+                      discount_type:
+                        type: string
+                        enum: [percentage, fixed]
+                        example: "percentage"
+                      discount_value:
+                        type: number
+                        example: 30
+                      start_date:
+                        type: string
+                        format: date-time
+                        example: "2024-01-01T00:00:00Z"
+                      expiry_date:
+                        type: string
+                        format: date-time
+                        example: "2024-12-31T23:59:59Z"
+                      status:
+                        type: string
+                        enum: [active, inactive, expired]
+                        example: "active"
+                      is_featured:
                         type: boolean
                         example: true
-                      validityPeriod:
-                        type: object
-                        properties:
-                          startDate:
-                            type: string
-                            format: date-time
-                            example: "2024-01-01T00:00:00Z"
-                          endDate:
-                            type: string
-                            format: date-time
-                            example: "2024-12-31T23:59:59Z"
-                      discountDetails:
-                        type: object
-                        properties:
-                          points:
-                            type: number
-                            example: 100
-                      redeemablePointsCount:
-                        type: number
-                        example: 100
+                      terms_conditions:
+                        type: string
+                        example: "Valid on all food items. Cannot be combined with other offers."
+                      redemption_instructions:
+                        type: string
+                        example: "Show this offer to the cashier at the time of payment"
+                      gallery:
+                        type: array
+                        items:
+                          type: string
+                        example: ["https://example.com/image1.jpg", "https://example.com/image2.jpg"]
                       eligibility:
                         type: object
                         properties:
-                          isEligible:
+                          is_eligible:
                             type: boolean
                             example: true
-                          reason:
+                          message:
                             type: string
-                            example: "Eligible for this offer"
+                            example: "You are eligible for this offer"
+                          details:
+                            type: object
+                            properties:
+                              transaction_value:
+                                type: number
+                                example: 100
+                              payment_method:
+                                type: string
+                                example: "credit_card"
+                              discount_amount:
+                                type: number
+                                example: 30
+                              final_amount:
+                                type: number
+                                example: 70
+        401:
+          description: "Unauthorized - Invalid SDK API key or customer ID"
         404:
           description: "Offer not found"
-        401:
-          description: "Unauthorized"
+        500:
+          description: "Internal Server Error"
 
-  /kedmah-offers/check-eligibility:
+  /offers/kedmah-offers/check-eligibility:
     post:
       summary: Check offer eligibility
       description: |
         # Description
-        Checks if the authenticated customer is eligible for a specific offer.
+        Check if the customer is eligible for a specific Kedmah offer based on transaction details.
         
         # Features
-        - Comprehensive eligibility check
-        - Transaction value validation
-        - Payment method validation
-        - Detailed eligibility response
+        - Eligibility validation based on offer rules
+        - Transaction-based eligibility checking
+        - Detailed eligibility response with discount calculation
+        
+        # Request Body
+        - offer_id: ID of the offer to check
+        - transaction_value: Transaction amount
+        - payment_method: Payment method used
         
         # Example Usage
         ```javascript
-        POST /kedmah-offers/check-eligibility
+        POST /offers/kedmah-offers/check-eligibility
         {
           "offer_id": "507f1f77bcf86cd799439011",
           "transaction_value": 100,
-          "payment_method": "KhedmahPay-Wallet"
+          "payment_method": "credit_card"
         }
         ```
       tags:
         - SDK Kedmah Offers
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       requestBody:
         required: true
         content:
@@ -311,23 +407,24 @@ paths:
               type: object
               required:
                 - offer_id
+                - transaction_value
+                - payment_method
               properties:
                 offer_id:
                   type: string
-                  description: "Unique offer identifier"
+                  description: "ID of the offer to check"
                   example: "507f1f77bcf86cd799439011"
                 transaction_value:
                   type: number
-                  description: "Transaction value for eligibility check"
+                  description: "Transaction amount"
                   example: 100
                 payment_method:
                   type: string
-                  enum: [Khedmah-site, KhedmahPay-Wallet]
-                  description: "Payment method for eligibility check"
-                  example: "KhedmahPay-Wallet"
+                  description: "Payment method used"
+                  example: "credit_card"
       responses:
         200:
-          description: "Offer eligibility checked successfully"
+          description: "Eligibility check completed successfully"
           content:
             application/json:
               schema:
@@ -338,67 +435,68 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Offer eligibility checked successfully"
+                    example: "Eligibility check completed successfully"
                   data:
                     type: object
                     properties:
-                      offerId:
-                        type: string
-                        example: "507f1f77bcf86cd799439011"
-                      isEligible:
+                      is_eligible:
                         type: boolean
                         example: true
-                      reason:
+                      message:
                         type: string
-                        example: "Eligible for this offer"
-                      offerDetails:
+                        example: "You are eligible for this offer"
+                      offer:
                         type: object
                         properties:
+                          _id:
+                            type: string
+                            example: "507f1f77bcf86cd799439011"
                           title:
                             type: string
-                            example: "Welcome Bonus"
-                          description:
+                            example: "30% Off at Kedmah Restaurant"
+                          discount_type:
                             type: string
-                            example: "Get 100 points on your first purchase"
-                          offerType:
+                            enum: [percentage, fixed]
+                            example: "percentage"
+                          discount_value:
+                            type: number
+                            example: 30
+                      transaction_details:
+                        type: object
+                        properties:
+                          transaction_value:
+                            type: number
+                            example: 100
+                          payment_method:
                             type: string
-                            example: "points"
-                          discountDetails:
-                            type: object
-                            properties:
-                              points:
-                                type: number
-                                example: 100
-                          validityPeriod:
-                            type: object
-                            properties:
-                              startDate:
-                                type: string
-                                format: date-time
-                                example: "2024-01-01T00:00:00Z"
-                              endDate:
-                                type: string
-                                format: date-time
-                                example: "2024-12-31T23:59:59Z"
-                          termsAndConditions:
-                            type: array
-                            items:
-                              type: string
-                            example: [
-                              "Valid only on first purchase",
-                              "Minimum transaction value: 50"
-                            ]
-                          redemptionInstructions:
-                            type: array
-                            items:
-                              type: string
-                            example: [
-                              "Points will be credited automatically",
-                              "Valid for 30 days"
-                            ]
+                            example: "credit_card"
+                          discount_amount:
+                            type: number
+                            example: 30
+                          final_amount:
+                            type: number
+                            example: 70
         400:
-          description: "Offer ID is required"
+          description: |
+            Bad Request
+            Possible reasons:
+            - Missing required fields
+            - Invalid offer ID
+            - Invalid transaction value
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Missing required fields"
+        401:
+          description: "Unauthorized - Invalid SDK API key or customer ID"
         404:
           description: "Offer not found"
-        401:
-          description: "Unauthorized" 
+        500:
+          description: "Internal Server Error" 

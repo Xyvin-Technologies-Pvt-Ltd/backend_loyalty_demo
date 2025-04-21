@@ -3,16 +3,14 @@ info:
   title: SDK Coins API
   description: |
     # Overview
-    This API provides endpoints for managing customer coins, including:
-    - Converting points to coins
-    - Viewing coin conversion details
-    - Checking coin balance
-    - Viewing coin transaction history
+    This API provides endpoints for managing customer coins in the loyalty system. Coins are a virtual currency
+    that can be earned by converting loyalty points and used for various rewards or purchases.
     
     # Authentication
-    All endpoints require SDK authentication. Include your API key in the request header:
+    All endpoints require SDK authentication via the SDK API Key and customer ID. Include these in your request headers:
     ```
-    Authorization: Bearer your-api-key
+    sdk-api-key: your-api-key
+    customer_id: CUSTOMER_ID
     ```
     
     # Rate Limiting
@@ -34,7 +32,7 @@ info:
   version: 1.0.0
 tags:
   - name: SDK Coins
-    description: SDK APIs for coin conversion and management
+    description: SDK APIs for customer coins operations
 
 paths:
   /coins/convert:
@@ -42,13 +40,15 @@ paths:
       summary: Convert points to coins
       description: |
         # Description
-        Converts customer points to coins based on active conversion rules.
+        Convert a specified amount of loyalty points into coins.
         
         # Features
-        - Points to coins conversion
-        - Minimum points validation
+        - Points validation
+        - Automatic conversion based on configured rate
         - Transaction recording
-        - Balance updates
+        
+        # Request Body
+        - points: Number of points to convert
         
         # Example Usage
         ```javascript
@@ -59,6 +59,9 @@ paths:
         ```
       tags:
         - SDK Coins
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       requestBody:
         required: true
         content:
@@ -70,11 +73,11 @@ paths:
               properties:
                 points:
                   type: number
-                  description: "Number of points to convert"
+                  description: "Number of points to convert to coins"
                   example: 1000
       responses:
         200:
-          description: "Points converted to coins successfully"
+          description: "Points successfully converted to coins"
           content:
             application/json:
               schema:
@@ -85,65 +88,78 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Points converted to coins successfully"
+                    example: "Points successfully converted to coins"
                   data:
                     type: object
                     properties:
-                      transaction_id:
-                        type: string
-                        example: "507f1f77bcf86cd799439015"
-                      points_converted:
-                        type: number
-                        example: 1000
-                      coins_received:
-                        type: number
-                        example: 10
-                      conversion_rate:
-                        type: number
-                        example: 100
-                      remaining_points:
-                        type: number
-                        example: 500
-                      new_coin_balance:
-                        type: number
-                        example: 15
+                      conversion:
+                        type: object
+                        properties:
+                          points_used:
+                            type: number
+                            example: 1000
+                          coins_earned:
+                            type: number
+                            example: 10
+                          conversion_rate:
+                            type: number
+                            example: 100
+                          transaction_id:
+                            type: string
+                            example: "507f1f77bcf86cd799439011"
+                      new_balances:
+                        type: object
+                        properties:
+                          points_balance:
+                            type: number
+                            example: 2000
+                          coins_balance:
+                            type: number
+                            example: 25
         400:
-          description: "Invalid points value or insufficient balance"
-        404:
-          description: "No active conversion rules found"
+          description: |
+            Bad Request
+            Possible reasons:
+            - Insufficient points balance
+            - Invalid points amount
+            - Minimum points requirement not met
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Insufficient points balance"
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key or customer ID"
+        500:
+          description: "Internal Server Error"
 
   /coins/convert-details:
     get:
       summary: Get coin conversion details
       description: |
         # Description
-        Retrieves details about potential coin conversion without processing.
+        Get details about the points-to-coins conversion, including the current conversion rate and minimum requirements.
         
         # Features
-        - Conversion rate information
-        - Minimum points requirement
-        - Potential coins calculation
-        - Balance impact preview
-        
-        # Query Parameters
-        - points: Number of points to convert
+        - Current conversion rate
+        - Minimum points required for conversion
+        - Estimated coins for provided points
         
         # Example Usage
         ```javascript
-        GET /coins/convert-details?points=1000
+        GET /coins/convert-details
         ```
       tags:
         - SDK Coins
-      parameters:
-        - name: points
-          in: query
-          required: true
-          schema:
-            type: number
-          description: "Number of points to convert"
-          example: 1000
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       responses:
         200:
           description: "Coin conversion details retrieved successfully"
@@ -161,90 +177,107 @@ paths:
                   data:
                     type: object
                     properties:
-                      conversion_rule:
+                      conversion_rate:
+                        type: number
+                        description: "Points required for 1 coin"
+                        example: 100
+                      minimum_points:
+                        type: number
+                        description: "Minimum points required for conversion"
+                        example: 500
+                      customer_points_balance:
+                        type: number
+                        description: "Current customer points balance"
+                        example: 3000
+                      customer_coins_balance:
+                        type: number
+                        description: "Current customer coins balance"
+                        example: 15
+                      max_possible_conversion:
                         type: object
-                        properties:
-                          points_per_coin:
-                            type: number
-                            example: 100
-                          minimum_points:
-                            type: number
-                            example: 500
-                      conversion_details:
-                        type: object
-                        properties:
-                          points_to_convert:
-                            type: number
-                            example: 1000
-                          coins_to_receive:
-                            type: number
-                            example: 10
-                          remaining_points:
-                            type: number
-                            example: 500
-                          new_coin_balance:
-                            type: number
-                            example: 15
-                      current_balance:
-                        type: object
+                        description: "Maximum possible conversion with current balance"
                         properties:
                           points:
                             type: number
-                            example: 1500
+                            example: 3000
                           coins:
                             type: number
-                            example: 5
-        400:
-          description: "Invalid points value"
-        404:
-          description: "No active conversion rules found"
+                            example: 30
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key or customer ID"
+        500:
+          description: "Internal Server Error"
 
   /coins/history:
     get:
       summary: Get coin transaction history
       description: |
         # Description
-        Retrieves customer's coin transaction history.
+        Retrieves the coin transaction history for the authenticated customer with pagination and filtering options.
         
         # Features
-        - Paginated results
+        - Pagination support
         - Transaction type filtering
-        - Detailed transaction information
+        - Date range filtering
+        - Sorted by transaction date (newest first)
         
         # Query Parameters
         - page: Page number (default: 1)
         - limit: Items per page (default: 10)
-        - transaction_type: Filter by transaction type
+        - type: Filter by transaction type (earn/spend/all)
+        - start_date: Filter by start date
+        - end_date: Filter by end date
         
         # Example Usage
         ```javascript
-        GET /coins/history?page=1&limit=10&transaction_type=convert_to_coins
+        // Get all coin history
+        GET /coins/history
+        
+        // Get coin history with filters
+        GET /coins/history?type=earn&start_date=2024-01-01&end_date=2024-03-20&page=1&limit=20
         ```
       tags:
         - SDK Coins
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       parameters:
         - name: page
           in: query
           schema:
             type: integer
             default: 1
-          description: "Page number"
+          description: "Page number for pagination"
           example: 1
         - name: limit
           in: query
           schema:
             type: integer
             default: 10
-          description: "Items per page"
+          description: "Number of items per page"
           example: 10
-        - name: transaction_type
+        - name: type
           in: query
           schema:
             type: string
+            enum: [earn, spend, all]
+            default: all
           description: "Filter by transaction type"
-          example: "convert_to_coins"
+          example: "earn"
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: "Filter by start date (YYYY-MM-DD)"
+          example: "2024-01-01"
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: "Filter by end date (YYYY-MM-DD)"
+          example: "2024-03-20"
       responses:
         200:
           description: "Coin history retrieved successfully"
@@ -269,51 +302,58 @@ paths:
                           properties:
                             _id:
                               type: string
-                              example: "507f1f77bcf86cd799439015"
+                              example: "507f1f77bcf86cd799439011"
                             transaction_type:
                               type: string
-                              example: "convert_to_coins"
-                            points:
-                              type: number
-                              example: -1000
+                              enum: [earn, spend]
+                              example: "earn"
                             coins:
                               type: number
                               example: 10
-                            status:
+                            description:
                               type: string
-                              example: "success"
-                            createdAt:
+                              example: "Converted from 1000 points"
+                            transaction_date:
                               type: string
                               format: date-time
-                              example: "2024-03-27T10:00:00Z"
+                              example: "2024-03-20T10:00:00Z"
+                            reference_id:
+                              type: string
+                              example: "CONV-12345"
+                            balance_after:
+                              type: number
+                              example: 25
                       pagination:
                         type: object
                         properties:
                           total:
-                            type: number
+                            type: integer
                             example: 50
                           page:
-                            type: number
+                            type: integer
                             example: 1
                           limit:
-                            type: number
+                            type: integer
                             example: 10
                           total_pages:
-                            type: number
+                            type: integer
                             example: 5
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key or customer ID"
+        500:
+          description: "Internal Server Error"
 
   /coins/balance:
     get:
       summary: Get current coin balance
       description: |
         # Description
-        Retrieves customer's current coin and points balance.
+        Retrieves the current coin balance for the authenticated customer.
         
         # Features
         - Current coin balance
-        - Total points balance
+        - Recent transactions
+        - Available conversions
         
         # Example Usage
         ```javascript
@@ -321,6 +361,9 @@ paths:
         ```
       tags:
         - SDK Coins
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       responses:
         200:
           description: "Coin balance retrieved successfully"
@@ -338,11 +381,42 @@ paths:
                   data:
                     type: object
                     properties:
-                      coins:
+                      balance:
                         type: number
-                        example: 15
-                      total_points:
+                        description: "Current coin balance"
+                        example: 25
+                      total_earned:
                         type: number
-                        example: 1500
+                        description: "Total coins earned"
+                        example: 50
+                      total_spent:
+                        type: number
+                        description: "Total coins spent"
+                        example: 25
+                      recent_transactions:
+                        type: array
+                        description: "Recent coin transactions"
+                        items:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              example: "507f1f77bcf86cd799439011"
+                            transaction_type:
+                              type: string
+                              enum: [earn, spend]
+                              example: "earn"
+                            coins:
+                              type: number
+                              example: 10
+                            transaction_date:
+                              type: string
+                              format: date-time
+                              example: "2024-03-20T10:00:00Z"
+                            description:
+                              type: string
+                              example: "Converted from 1000 points"
         401:
-          description: "Unauthorized" 
+          description: "Unauthorized - Invalid SDK API key or customer ID"
+        500:
+          description: "Internal Server Error" 
