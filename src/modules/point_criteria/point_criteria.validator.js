@@ -10,19 +10,17 @@ const pointsCriteriaValidationSchema = Joi.object({
 
   appType: objectId.required(),
   description: Joi.string().optional(),
-
+  startDate: Joi.date().required(),
+  endDate: Joi.date().greater(Joi.ref("startDate")).required(),
   pointSystem: Joi.array()
     .items(
       Joi.object({
-        paymentMethod: Joi.string()
-          .valid("Khedmah-Pay", "Khedmah-Wallet")
-          .required(),
-        pointType: Joi.string().valid("percentage", "fixed").required(),
-        pointRate: Joi.number().required(),
+        paymentMethod: Joi.string().valid("Khedmah-Pay", "Khedmah-Wallet"),
+        pointType: Joi.string().valid("percentage", "fixed"),
+        pointRate: Joi.number(),
       })
     )
-    .min(1)
-    .required(),
+    .min(1),
 
   conditions: Joi.object({
     maxTransactions: Joi.object({
