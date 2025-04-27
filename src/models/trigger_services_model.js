@@ -1,29 +1,34 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const triggerServicesSchema = new mongoose.Schema({
+const triggerServicesSchema = new mongoose.Schema(
+  {
     title: {
-        type: String,
-        required: true,
-        unique: true
+      en: { type: String, required: true, unique: true },
+      ar: { type: String, required: true },
     },
     icon: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
     description: {
-        type: String,
-        required: true
+      en: { type: String, required: true },
+      ar: { type: String, required: true },
     },
-    triggerEvent: [{
+    triggerEvent: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'TriggerEvent'
-    }]
-}, {
-    timestamps: true
-}
+        ref: "TriggerEvent",
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
 );
 
-const TriggerServices = mongoose.model('TriggerServices', triggerServicesSchema);
+const TriggerServices = mongoose.model(
+  "TriggerServices",
+  triggerServicesSchema
+);
 
 module.exports = TriggerServices;
-

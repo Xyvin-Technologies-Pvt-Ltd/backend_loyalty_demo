@@ -5,12 +5,12 @@ const kedmahOffersSchema = new mongoose.Schema(
     {
         // Basic information
         title: {
-            type: String,
-            required: true,
+          en: { type: String, required: true },
+          ar: { type: String, required: true },
         },
         description: {
-            type: String,
-            required: true,
+           en: { type: String, required: true },
+           ar: { type: String, required: true },
         },
         posterImage: {
             type: String,

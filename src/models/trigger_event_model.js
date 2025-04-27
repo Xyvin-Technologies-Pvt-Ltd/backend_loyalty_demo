@@ -2,14 +2,13 @@ const mongoose = require('mongoose');
 
 const triggerEventSchema = new mongoose.Schema({
     name: {
-        type: String,
-        required: true,
-        unique: true
+        en: { type: String, required: true, unique: true },
+        ar: { type: String, required: true },
     },
   
     description: {
-        type: String,
-        required: true
+       en: { type: String, required: true },
+       ar: { type: String, required: true },
     },
     tags: {
         type: [String],

@@ -1,8 +1,14 @@
 const Joi = require("joi");
 
 const kedmahOffersValidationSchema = Joi.object({
-  title: Joi.string().required(),
-  description: Joi.string().required(),
+  title: Joi.object({
+    en: Joi.string().required(),
+    ar: Joi.string().required().allow(""),
+  }),
+  description: Joi.object({
+    en: Joi.string().required(),
+    ar: Joi.string().required().allow(""),
+  }),
   posterImage: Joi.string().required(),
   serviceCategory: Joi.string().required(),
   eventType: Joi.string().allow(null),
