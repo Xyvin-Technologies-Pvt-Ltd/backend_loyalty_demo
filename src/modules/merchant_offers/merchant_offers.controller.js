@@ -59,8 +59,13 @@ exports.createCoupon = async (req, res) => {
       posterImage,
       merchantId,
       couponCategoryId,
+      numberOfCodes: numberOfCodes || 1,
       type,
-      code: type === "DYNAMIC" ? uuidv4().substring(0, 4) : code,
+      //create dynamic  codes based on number of codes in array
+      code:
+        type === "DYNAMIC"
+          ? Array.from({ length: numberOfCodes }, () => uuidv4().substring(0, 4))
+          : code,
       validityPeriod,
       discountDetails,
       redeemablePointsCount,

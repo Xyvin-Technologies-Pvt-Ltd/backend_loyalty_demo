@@ -31,15 +31,22 @@ const couponCodeSchema = new mongoose.Schema({
     // Type and status
     type: {
         type: String,
-        enum: ['PRE_GENERATED', 'DYNAMIC', 'ONE_TIME_LINK'],
+        enum: ['PRE_GENERATED', 'DYNAMIC', 'ONE_TIME_LINK','BULK-UPLOAD'],
         required: true
     },
-    code: {
-        type: String,
-        required: function () {
-            return this.type === 'PRE_GENERATED' || this.type === 'DYNAMIC';
+
+    code: [{
+        pin: {
+            type: String,
+            required: true
+        },
+        isRedeemed: {
+            type: Boolean,
+            default: false
         }
-    },
+    }
+
+],
     status: {
         type: String,
         enum: ['UNUSED', 'CLAIMED', 'REDEEMED', 'EXPIRED'],
