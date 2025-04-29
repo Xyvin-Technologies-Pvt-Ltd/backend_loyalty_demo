@@ -63,6 +63,7 @@ exports.createRules = async (req, res) => {
                 tier_extensions: req.body.tier_extensions,
                 expiry_notifications: req.body.expiry_notifications,
                 grace_period: req.body.grace_period,
+                appType: req.body.appType,
                 updated_by: admin_id
             });
 
@@ -149,7 +150,10 @@ exports.deleteRule = async (req, res) => {
 exports.getRuleByAppId = async (req, res) => {
     try {
         const { appId } = req.params;
-        const rule = await PointsExpirationRules.findOne({ appType: appId });
+        const rule = await PointsExpirationRules.findOne({ appType: appId }).populate({
+            path: "tier_extensions.tier_id",
+            select: "name _id"  
+        })
         if (!rule) {
             return response_handler(res, 404, "Points expiration rule not found");
         }

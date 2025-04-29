@@ -3,17 +3,18 @@ info:
   title: SDK Merchant Offers API
   description: |
     # Overview
-    This API provides endpoints for managing merchant offers in the client SDK, including:
-    - Browsing available offers with pagination and filters
-    - Viewing offer details
-    - Checking offer eligibility
-    - Retrieving claimed offers
+    This API provides endpoints for managing merchant offers in the loyalty system. 
+    It allows customers to:
+    - Browse available merchant offers
+    - View offer details
+    - Check offer eligibility
+    - View their claimed offers
     
     # Authentication
-    All endpoints require SDK authentication. Include your API key in the request header:
+    All endpoints require SDK authentication via the SDK API Key and customer ID. Include these in your request headers:
     ```
     sdk-api-key: your-api-key
-    customer_id: customer-id
+    customer_id: CUSTOMER_ID
     ```
     
     # Rate Limiting
@@ -35,70 +36,87 @@ info:
   version: 1.0.0
 tags:
   - name: SDK Merchant Offers
-    description: SDK APIs for merchant offers management
+    description: SDK APIs for merchant offers operations
 
 paths:
   /merchant-offers/available:
     get:
-      summary: Get available offers
+      summary: Get available merchant offers
       description: |
         # Description
         Retrieves a list of available merchant offers with pagination and filtering options.
         
         # Features
-        - Filters by merchant, category, date range
         - Pagination support
-        - Includes offer eligibility status
+        - Category filtering
+        - Status filtering
+        - Search by keywords
+        - Sorting options
         
         # Query Parameters
         - page: Page number (default: 1)
         - limit: Items per page (default: 10)
-        - merchant_id: Filter by merchant
-        - category_id: Filter by category
-        - start_date: Filter by start date
-        - end_date: Filter by end date
+        - category: Filter by offer category
+        - search: Search by keywords in title or description
+        - sort: Sorting field (created_at, expiry_date, discount_value)
+        - sort_direction: Sorting direction (asc, desc)
         
         # Example Usage
         ```javascript
-        GET /merchant-offers/available?page=1&limit=10&merchant_id=5f8d0d55b54764421b7156f1
+        // Get all available offers
+        GET /merchant-offers/available
+        
+        // Get offers with filters
+        GET /merchant-offers/available?category=restaurant&search=discount&page=1&limit=20&sort=discount_value&sort_direction=desc
         ```
       tags:
         - SDK Merchant Offers
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       parameters:
         - name: page
           in: query
           schema:
             type: integer
             default: 1
-          description: Page number
+          description: "Page number for pagination"
+          example: 1
         - name: limit
           in: query
           schema:
             type: integer
             default: 10
-          description: Number of items per page
-        - name: merchant_id
+          description: "Number of items per page"
+          example: 10
+        - name: category
           in: query
           schema:
             type: string
-          description: Filter by merchant ID
-        - name: category_id
+          description: "Filter by offer category"
+          example: "restaurant"
+        - name: search
           in: query
           schema:
             type: string
-          description: Filter by category ID
-        - name: start_date
+          description: "Search by keywords in title or description"
+          example: "discount"
+        - name: sort
           in: query
           schema:
             type: string
-            format: date
-          description: Filter by start date (YYYY-MM-DD)
-        - name: end_date
+            enum: [created_at, expiry_date, discount_value]
+            default: created_at
+          description: "Sorting field"
+          example: "discount_value"
+        - name: sort_direction
           in: query
           schema:
             type: string
-            format: date
-          description: Filter by end date (YYYY-MM-DD)
+            enum: [asc, desc]
+            default: desc
+          description: "Sorting direction"
+          example: "desc"
       responses:
         200:
           description: "Available offers retrieved successfully"
@@ -123,71 +141,58 @@ paths:
                           properties:
                             _id:
                               type: string
-                              example: "60f7b0b9e6b5f42b8c912345"
+                              example: "507f1f77bcf86cd799439011"
                             title:
                               type: string
-                              example: "20% Off at Coffee Shop"
+                              example: "50% Off at Restaurant XYZ"
                             description:
                               type: string
-                              example: "Get 20% off your purchase at Coffee Shop"
-                            posterImage:
-                              type: string
-                              example: "https://example.com/images/offer.jpg"
-                            merchantId:
+                              example: "Get 50% off on all menu items"
+                            merchant:
                               type: object
                               properties:
                                 _id:
                                   type: string
-                                  example: "60f7b0b9e6b5f42b8c912345"
+                                  example: "507f1f77bcf86cd799439022"
                                 name:
                                   type: string
-                                  example: "Coffee Shop"
+                                  example: "Restaurant XYZ"
                                 logo:
                                   type: string
-                                  example: "https://example.com/images/logo.jpg"
-                            couponCategoryId:
-                              type: object
-                              properties:
-                                _id:
-                                  type: string
-                                  example: "60f7b0b9e6b5f42b8c912345"
-                                name:
-                                  type: string
-                                  example: "Food & Beverages"
-                            type:
+                                  example: "https://example.com/logo.png"
+                            category:
                               type: string
-                              enum: ["PRE_GENERATED", "DYNAMIC", "ONE_TIME_LINK"]
-                              example: "PRE_GENERATED"
-                            discountDetails:
-                              type: object
-                              properties:
-                                type:
-                                  type: string
-                                  enum: ["PERCENTAGE", "FIXED"]
-                                  example: "PERCENTAGE"
-                                value:
-                                  type: number
-                                  example: 20
-                            validityPeriod:
-                              type: object
-                              properties:
-                                startDate:
-                                  type: string
-                                  format: date-time
-                                  example: "2023-01-01T00:00:00.000Z"
-                                endDate:
-                                  type: string
-                                  format: date-time
-                                  example: "2023-12-31T23:59:59.000Z"
-                            eligibility:
-                              type: object
-                              properties:
-                                eligible:
-                                  type: boolean
-                                  example: true
-                                reason:
-                                  type: string
-                                  example: null
+                              example: "restaurant"
+                            discount_type:
+                              type: string
+                              enum: [percentage, fixed]
+                              example: "percentage"
+                            discount_value:
+                              type: number
+                              example: 50
+                            start_date:
+                              type: string
+                              format: date-time
+                              example: "2024-01-01T00:00:00Z"
+                            expiry_date:
+                              type: string
+                              format: date-time
+                              example: "2024-12-31T23:59:59Z"
+                            is_featured:
+                              type: boolean
+                              example: true
+                            terms_conditions:
+                              type: string
+                              example: "Valid on weekdays only. Cannot be combined with other offers."
+                            image:
+                              type: string
+                              example: "https://example.com/offer-image.jpg"
+                            claim_count:
+                              type: number
+                              example: 120
+                            total_available:
+                              type: number
+                              example: 500
                       pagination:
                         type: object
                         properties:
@@ -203,53 +208,47 @@ paths:
                           total_pages:
                             type: integer
                             example: 5
+                      categories:
+                        type: array
+                        items:
+                          type: string
+                        example: ["restaurant", "retail", "entertainment", "travel"]
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key or customer ID"
         500:
-          description: "Internal server error"
+          description: "Internal Server Error"
 
   /merchant-offers/{offer_id}:
     get:
-      summary: Get offer details
+      summary: Get specific merchant offer details
       description: |
         # Description
         Retrieves detailed information about a specific merchant offer.
         
         # Features
         - Complete offer details
-        - Eligibility check with transaction details (optional)
-        
-        # Path Parameters
-        - offer_id: The ID of the offer to retrieve
-        
-        # Query Parameters
-        - transaction_value: Transaction amount for eligibility check
-        - payment_method: Payment method for eligibility check
+        - Merchant information
+        - Terms and conditions
+        - Eligibility information
+        - Redemption instructions
         
         # Example Usage
         ```javascript
-        GET /merchant-offers/60f7b0b9e6b5f42b8c912345?transaction_value=100&payment_method=Khedmah-Pay
+        GET /merchant-offers/507f1f77bcf86cd799439011
         ```
       tags:
         - SDK Merchant Offers
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       parameters:
         - name: offer_id
           in: path
           required: true
           schema:
             type: string
-          description: Offer ID
-        - name: transaction_value
-          in: query
-          schema:
-            type: number
-          description: Transaction amount for eligibility check
-        - name: payment_method
-          in: query
-          schema:
-            type: string
-            enum: ["Khedmah-Pay", "Khedmah-Wallet", "ALL"]
-          description: Payment method for eligibility check
+          description: "Offer ID"
+          example: "507f1f77bcf86cd799439011"
       responses:
         200:
           description: "Offer details retrieved successfully"
@@ -269,156 +268,159 @@ paths:
                     properties:
                       _id:
                         type: string
-                        example: "60f7b0b9e6b5f42b8c912345"
+                        example: "507f1f77bcf86cd799439011"
                       title:
                         type: string
-                        example: "20% Off at Coffee Shop"
+                        example: "50% Off at Restaurant XYZ"
                       description:
                         type: string
-                        example: "Get 20% off your purchase at Coffee Shop"
-                      posterImage:
-                        type: string
-                        example: "https://example.com/images/offer.jpg"
-                      merchantId:
+                        example: "Get 50% off on all menu items"
+                      merchant:
                         type: object
                         properties:
                           _id:
                             type: string
-                            example: "60f7b0b9e6b5f42b8c912345"
+                            example: "507f1f77bcf86cd799439022"
                           name:
                             type: string
-                            example: "Coffee Shop"
+                            example: "Restaurant XYZ"
                           logo:
                             type: string
-                            example: "https://example.com/images/logo.jpg"
-                      couponCategoryId:
-                        type: object
-                        properties:
-                          _id:
+                            example: "https://example.com/logo.png"
+                          address:
                             type: string
-                            example: "60f7b0b9e6b5f42b8c912345"
-                          name:
+                            example: "123 Main St, City"
+                          contact:
                             type: string
-                            example: "Food & Beverages"
-                      type:
+                            example: "+1234567890"
+                          website:
+                            type: string
+                            example: "https://example.com"
+                      category:
                         type: string
-                        enum: ["PRE_GENERATED", "DYNAMIC", "ONE_TIME_LINK"]
-                        example: "PRE_GENERATED"
-                      code:
+                        example: "restaurant"
+                      discount_type:
                         type: string
-                        example: "COFFEE20"
-                      status:
-                        type: string
-                        enum: ["UNUSED", "CLAIMED", "REDEEMED", "EXPIRED"]
-                        example: "UNUSED"
-                      validityPeriod:
-                        type: object
-                        properties:
-                          startDate:
-                            type: string
-                            format: date-time
-                            example: "2023-01-01T00:00:00.000Z"
-                          endDate:
-                            type: string
-                            format: date-time
-                            example: "2023-12-31T23:59:59.000Z"
-                      discountDetails:
-                        type: object
-                        properties:
-                          type:
-                            type: string
-                            enum: ["PERCENTAGE", "FIXED"]
-                            example: "PERCENTAGE"
-                          value:
-                            type: number
-                            example: 20
-                      redeemablePointsCount:
+                        enum: [percentage, fixed]
+                        example: "percentage"
+                      discount_value:
                         type: number
-                        example: 0
-                      termsAndConditions:
+                        example: 50
+                      start_date:
+                        type: string
+                        format: date-time
+                        example: "2024-01-01T00:00:00Z"
+                      expiry_date:
+                        type: string
+                        format: date-time
+                        example: "2024-12-31T23:59:59Z"
+                      is_featured:
+                        type: boolean
+                        example: true
+                      terms_conditions:
+                        type: string
+                        example: "Valid on weekdays only. Cannot be combined with other offers."
+                      redemption_instructions:
+                        type: string
+                        example: "Show this offer to the cashier at the time of payment"
+                      image:
+                        type: string
+                        example: "https://example.com/offer-image.jpg"
+                      gallery:
                         type: array
                         items:
                           type: string
-                        example: ["Valid on all items", "Cannot be combined with other offers"]
-                      redemptionInstructions:
-                        type: string
-                        example: "Show this code at checkout"
-                      redemptionUrl:
-                        type: string
-                        example: "https://example.com/redeem"
+                        example: ["https://example.com/image1.jpg", "https://example.com/image2.jpg"]
+                      claim_count:
+                        type: number
+                        example: 120
+                      total_available:
+                        type: number
+                        example: 500
                       eligibility:
                         type: object
                         properties:
-                          eligible:
+                          is_eligible:
                             type: boolean
                             example: true
-                          reason:
+                          message:
                             type: string
-                            example: null
+                            example: "You are eligible for this offer"
+                          remaining_claims:
+                            type: number
+                            example: 380
+                          user_claimed:
+                            type: boolean
+                            example: false
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key or customer ID"
         404:
           description: "Offer not found"
         500:
-          description: "Internal server error"
+          description: "Internal Server Error"
 
   /merchant-offers/{offer_id}/check-eligibility:
     post:
       summary: Check offer eligibility
       description: |
         # Description
-        Checks whether the current user is eligible for a specific offer based on transaction details.
+        Check if the customer is eligible to claim a specific merchant offer.
         
         # Features
-        - Full eligibility check with transaction details
-        - Detailed eligibility response
-        
-        # Path Parameters
-        - offer_id: The ID of the offer to check eligibility for
-        
-        # Request Body
-        - transaction_value: Transaction amount
-        - payment_method: Payment method
+        - Eligibility validation based on customer status
+        - Validation based on offer availability
+        - Validation based on previous claims
+        - Custom eligibility rules evaluation
         
         # Example Usage
         ```javascript
-        POST /merchant-offers/60f7b0b9e6b5f42b8c912345/check-eligibility
+        POST /merchant-offers/507f1f77bcf86cd799439011/check-eligibility
         {
-          "transaction_value": 100,
-          "payment_method": "Khedmah-Pay"
+          "location": {
+            "latitude": 23.5880,
+            "longitude": 58.3829
+          },
+          "additional_data": {
+            "user_tier": "gold"
+          }
         }
         ```
       tags:
         - SDK Merchant Offers
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       parameters:
         - name: offer_id
           in: path
           required: true
           schema:
             type: string
-          description: Offer ID
+          description: "Offer ID"
+          example: "507f1f77bcf86cd799439011"
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - transaction_value
-                - payment_method
               properties:
-                transaction_value:
-                  type: number
-                  example: 100
-                  description: Transaction amount
-                payment_method:
-                  type: string
-                  enum: ["Khedmah-Pay", "Khedmah-Wallet", "ALL"]
-                  example: "Khedmah-Pay"
-                  description: Payment method
+                location:
+                  type: object
+                  properties:
+                    latitude:
+                      type: number
+                      example: 23.5880
+                    longitude:
+                      type: number
+                      example: 58.3829
+                additional_data:
+                  type: object
+                  example: {
+                    "user_tier": "gold"
+                  }
       responses:
         200:
-          description: "Offer eligibility checked successfully"
+          description: "Eligibility check completed successfully"
           content:
             application/json:
               schema:
@@ -429,72 +431,111 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Offer eligibility checked successfully"
+                    example: "Eligibility check completed successfully"
                   data:
                     type: object
                     properties:
-                      offer_id:
+                      is_eligible:
+                        type: boolean
+                        example: true
+                      message:
                         type: string
-                        example: "60f7b0b9e6b5f42b8c912345"
-                      eligibility:
+                        example: "You are eligible for this offer"
+                      offer:
                         type: object
                         properties:
-                          eligible:
-                            type: boolean
-                            example: true
-                          reason:
+                          _id:
                             type: string
-                            example: null
-        400:
-          description: "Missing required parameters"
+                            example: "507f1f77bcf86cd799439011"
+                          title:
+                            type: string
+                            example: "50% Off at Restaurant XYZ"
+                      remaining_claims:
+                        type: number
+                        example: 380
+                      user_claims:
+                        type: number
+                        example: 0
+                      max_claims_per_user:
+                        type: number
+                        example: 1
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key or customer ID"
         404:
           description: "Offer not found"
         500:
-          description: "Internal server error"
+          description: "Internal Server Error"
 
   /merchant-offers/claimed/list:
     get:
       summary: Get user's claimed offers
       description: |
         # Description
-        Retrieves a list of merchant offers claimed by the current user.
+        Retrieves a list of offers claimed by the authenticated customer.
         
         # Features
-        - List of claimed offers with pagination
-        - Filter by status
+        - Pagination support
+        - Status filtering (active/expired/redeemed)
+        - Sorting options
         
         # Query Parameters
         - page: Page number (default: 1)
         - limit: Items per page (default: 10)
-        - status: Filter by offer status
+        - status: Filter by status (active/expired/redeemed)
+        - sort: Sorting field (claimed_date, expiry_date)
+        - sort_direction: Sorting direction (asc, desc)
         
         # Example Usage
         ```javascript
-        GET /merchant-offers/claimed/list?page=1&limit=10&status=CLAIMED
+        // Get all claimed offers
+        GET /merchant-offers/claimed/list
+        
+        // Get claimed offers with filters
+        GET /merchant-offers/claimed/list?status=active&page=1&limit=20&sort=expiry_date&sort_direction=asc
         ```
       tags:
         - SDK Merchant Offers
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       parameters:
         - name: page
           in: query
           schema:
             type: integer
             default: 1
-          description: Page number
+          description: "Page number for pagination"
+          example: 1
         - name: limit
           in: query
           schema:
             type: integer
             default: 10
-          description: Number of items per page
+          description: "Number of items per page"
+          example: 10
         - name: status
           in: query
           schema:
             type: string
-            enum: ["UNUSED", "CLAIMED", "REDEEMED", "EXPIRED"]
-          description: Filter by offer status
+            enum: [active, expired, redeemed]
+          description: "Filter by status"
+          example: "active"
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [claimed_date, expiry_date]
+            default: claimed_date
+          description: "Sorting field"
+          example: "expiry_date"
+        - name: sort_direction
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: "Sorting direction"
+          example: "asc"
       responses:
         200:
           description: "Claimed offers retrieved successfully"
@@ -519,59 +560,58 @@ paths:
                           properties:
                             _id:
                               type: string
-                              example: "60f7b0b9e6b5f42b8c912345"
-                            title:
-                              type: string
-                              example: "20% Off at Coffee Shop"
-                            description:
-                              type: string
-                              example: "Get 20% off your purchase at Coffee Shop"
-                            posterImage:
-                              type: string
-                              example: "https://example.com/images/offer.jpg"
-                            merchantId:
+                              example: "507f1f77bcf86cd799439044"
+                            offer:
                               type: object
                               properties:
                                 _id:
                                   type: string
-                                  example: "60f7b0b9e6b5f42b8c912345"
-                                name:
+                                  example: "507f1f77bcf86cd799439011"
+                                title:
                                   type: string
-                                  example: "Coffee Shop"
-                                logo:
+                                  example: "50% Off at Restaurant XYZ"
+                                merchant:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                      example: "Restaurant XYZ"
+                                    logo:
+                                      type: string
+                                      example: "https://example.com/logo.png"
+                                discount_type:
                                   type: string
-                                  example: "https://example.com/images/logo.jpg"
-                            couponCategoryId:
-                              type: object
-                              properties:
-                                _id:
+                                  enum: [percentage, fixed]
+                                  example: "percentage"
+                                discount_value:
+                                  type: number
+                                  example: 50
+                                expiry_date:
                                   type: string
-                                  example: "60f7b0b9e6b5f42b8c912345"
-                                name:
+                                  format: date-time
+                                  example: "2024-12-31T23:59:59Z"
+                                image:
                                   type: string
-                                  example: "Food & Beverages"
-                            type:
+                                  example: "https://example.com/offer-image.jpg"
+                            claimed_date:
                               type: string
-                              enum: ["PRE_GENERATED", "DYNAMIC", "ONE_TIME_LINK"]
-                              example: "PRE_GENERATED"
-                            code:
+                              format: date-time
+                              example: "2024-03-15T10:30:00Z"
+                            redemption_date:
                               type: string
-                              example: "COFFEE20"
+                              format: date-time
+                              example: null
+                            claim_code:
+                              type: string
+                              example: "CLAIM123456"
                             status:
                               type: string
-                              enum: ["UNUSED", "CLAIMED", "REDEEMED", "EXPIRED"]
-                              example: "CLAIMED"
-                            validityPeriod:
-                              type: object
-                              properties:
-                                startDate:
-                                  type: string
-                                  format: date-time
-                                  example: "2023-01-01T00:00:00.000Z"
-                                endDate:
-                                  type: string
-                                  format: date-time
-                                  example: "2023-12-31T23:59:59.000Z"
+                              enum: [active, expired, redeemed]
+                              example: "active"
+                            expiry_date:
+                              type: string
+                              format: date-time
+                              example: "2024-12-31T23:59:59Z"
                       pagination:
                         type: object
                         properties:
@@ -588,6 +628,6 @@ paths:
                             type: integer
                             example: 2
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key or customer ID"
         500:
-          description: "Internal server error" 
+          description: "Internal Server Error" 

@@ -3,14 +3,13 @@ info:
   title: SDK Theme Settings API
   description: |
     # Overview
-    This API provides endpoints for retrieving theme settings for the SDK, including:
-    - Accessing color schemes, typography and spacing settings
-    - Getting active theme preset information
+    This API provides endpoints for retrieving theme settings for the loyalty system.
+    These settings are used to customize the appearance and branding of client applications.
     
     # Authentication
-    All endpoints require SDK authentication. Include your API key in the request header:
+    All endpoints require SDK authentication via the SDK API Key. Include your API key in the request header:
     ```
-    Authorization: Bearer your-api-key
+    sdk-api-key: your-api-key
     ```
     
     # Rate Limiting
@@ -32,7 +31,7 @@ info:
   version: 1.0.0
 tags:
   - name: SDK Theme Settings
-    description: SDK APIs for accessing theme settings
+    description: SDK APIs for retrieving theme and branding settings
 
 paths:
   /theme-settings:
@@ -40,13 +39,13 @@ paths:
       summary: Get theme settings
       description: |
         # Description
-        Retrieves the theme settings for the SDK application.
+        Retrieves the theme settings for the loyalty program, including colors, fonts, and branding elements.
         
         # Features
-        - Color scheme information (primary, secondary, accent, etc.)
-        - Typography settings (font family, base font size)
-        - Spacing and border radius configuration
-        - Active theme preset
+        - Complete theme settings
+        - Brand assets and images
+        - Color schemes
+        - Typography settings
         
         # Example Usage
         ```javascript
@@ -54,6 +53,8 @@ paths:
         ```
       tags:
         - SDK Theme Settings
+      security:
+        - ApiKeyAuth: []
       responses:
         200:
           description: "Theme settings retrieved successfully"
@@ -71,54 +72,115 @@ paths:
                   data:
                     type: object
                     properties:
-                      theme:
+                      _id:
+                        type: string
+                        example: "507f1f77bcf86cd799439011"
+                      colors:
                         type: object
                         properties:
-                          colors:
+                          primary:
+                            type: string
+                            example: "#3f51b5"
+                          secondary:
+                            type: string
+                            example: "#f50057"
+                          accent:
+                            type: string
+                            example: "#ff4081"
+                          background:
+                            type: string
+                            example: "#ffffff"
+                          text:
                             type: object
                             properties:
                               primary:
                                 type: string
-                                example: "#2B5C3F"
+                                example: "#212121"
                               secondary:
                                 type: string
-                                example: "#4CAF50"
-                              accent:
-                                type: string
-                                example: "#81C784"
+                                example: "#757575"
+                          success:
+                            type: string
+                            example: "#4caf50"
+                          warning:
+                            type: string
+                            example: "#ff9800"
+                          error:
+                            type: string
+                            example: "#f44336"
+                      typography:
+                        type: object
+                        properties:
+                          font_family:
+                            type: string
+                            example: "Roboto, sans-serif"
+                          heading_font:
+                            type: string
+                            example: "Montserrat, sans-serif"
+                          base_font_size:
+                            type: string
+                            example: "16px"
+                      logo:
+                        type: object
+                        properties:
+                          main:
+                            type: string
+                            format: uri
+                            example: "https://example.com/logo.png"
+                          light:
+                            type: string
+                            format: uri
+                            example: "https://example.com/logo-light.png"
+                          dark:
+                            type: string
+                            format: uri
+                            example: "https://example.com/logo-dark.png"
+                          favicon:
+                            type: string
+                            format: uri
+                            example: "https://example.com/favicon.ico"
+                      app_name:
+                        type: string
+                        example: "Loyalty Rewards"
+                      splash_screen:
+                        type: object
+                        properties:
+                          background_color:
+                            type: string
+                            example: "#3f51b5"
+                          logo:
+                            type: string
+                            format: uri
+                            example: "https://example.com/splash-logo.png"
+                      buttons:
+                        type: object
+                        properties:
+                          border_radius:
+                            type: string
+                            example: "4px"
+                          primary:
+                            type: object
+                            properties:
                               background:
                                 type: string
-                                example: "#FFFFFF"
+                                example: "#3f51b5"
                               text:
                                 type: string
-                                example: "#1F2937"
-                          typography:
+                                example: "#ffffff"
+                          secondary:
                             type: object
                             properties:
-                              fontFamily:
+                              background:
                                 type: string
-                                example: "Inter"
-                                enum: ["Inter", "Roboto", "Open Sans", "Lato", "Poppins"]
-                              baseFontSize:
+                                example: "#f50057"
+                              text:
                                 type: string
-                                example: "Medium (16px)"
-                                enum: ["Small (14px)", "Medium (16px)", "Large (18px)"]
-                          spacing:
-                            type: object
-                            properties:
-                              baseSpacing:
-                                type: string
-                                example: "Normal (16px)"
-                                enum: ["Compact (12px)", "Normal (16px)", "Relaxed (20px)"]
-                              borderRadius:
-                                type: string
-                                example: "Medium (8px)"
-                                enum: ["None (0px)", "Small (4px)", "Medium (8px)", "Large (12px)", "Extra Large (16px)"]
-                          preset:
-                            type: string
-                            example: "Default"
-                            enum: ["Default", "Ocean", "Sunset", "Custom"]
+                                example: "#ffffff"
+                      updated_at:
+                        type: string
+                        format: date-time
+                        example: "2024-03-01T10:30:00Z"
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key"
         500:
           description: "Internal Server Error" 

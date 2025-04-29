@@ -6,13 +6,13 @@ info:
     This API provides endpoints for managing customer loyalty points in the system. It allows customers to:
     - View their points history
     - Get points summary and statistics
-    - Track points expiry
     - View detailed points information
     
     # Authentication
-    All endpoints require SDK authentication. Include your API key in the request header:
+    All endpoints require SDK authentication via the SDK API Key and customer ID. Include these in your request headers:
     ```
-    Authorization: Bearer your-api-key
+    sdk-api-key: your-api-key
+    customer_id: CUSTOMER_ID
     ```
     
     # Rate Limiting
@@ -68,6 +68,9 @@ paths:
         ```
       tags:
         - SDK Loyalty Points
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       parameters:
         - name: page
           in: query
@@ -172,7 +175,9 @@ paths:
                             type: integer
                             example: 5
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key or customer ID"
+        500:
+          description: "Internal Server Error"
 
   /loyalty-points/summary:
     get:
@@ -202,6 +207,9 @@ paths:
         ```
       tags:
         - SDK Loyalty Points
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       parameters:
         - name: start_date
           in: query
@@ -255,7 +263,7 @@ paths:
                               count:
                                 type: integer
                                 example: 5
-                      summary_by_transaction_type:
+                      summary_by_type:
                         type: object
                         properties:
                           earn:
@@ -263,10 +271,10 @@ paths:
                             properties:
                               total_points:
                                 type: number
-                                example: 1000
+                                example: 1500
                               count:
                                 type: integer
-                                example: 10
+                                example: 15
                           redeem:
                             type: object
                             properties:
@@ -275,43 +283,45 @@ paths:
                                 example: 500
                               count:
                                 type: integer
-                                example: 5
+                                example: 3
                       expiry_summary:
                         type: array
                         items:
                           type: object
                           properties:
-                            _id:
+                            month:
                               type: string
-                              example: "2024-03"
-                            total_points:
+                              example: "2024-12"
+                            points:
                               type: number
-                              example: 1000
-                            count:
-                              type: integer
-                              example: 10
-                      total_points:
-                        type: object
-                        properties:
-                          total_active:
-                            type: number
-                            example: 1000
-                          total_expired:
-                            type: number
-                            example: 500
+                              example: 300
+                      total_active_points:
+                        type: number
+                        example: 1000
+                      total_expired_points:
+                        type: number
+                        example: 500
+                      total_earned_points:
+                        type: number
+                        example: 1500
+                      total_redeemed_points:
+                        type: number
+                        example: 500
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key or customer ID"
+        500:
+          description: "Internal Server Error"
 
   /loyalty-points/{points_id}:
     get:
       summary: Get specific points details
       description: |
         # Description
-        Retrieves detailed information about specific loyalty points.
+        Retrieves detailed information about a specific points entry.
         
         # Features
-        - Complete points information
-        - Transaction details
+        - Full points details
+        - Related transaction information
         - Expiry information
         
         # Example Usage
@@ -320,13 +330,16 @@ paths:
         ```
       tags:
         - SDK Loyalty Points
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       parameters:
         - name: points_id
           in: path
           required: true
           schema:
             type: string
-          description: "Unique points identifier"
+          description: "Points ID"
           example: "507f1f77bcf86cd799439011"
       responses:
         200:
@@ -362,9 +375,16 @@ paths:
                         type: string
                         format: date-time
                         example: "2024-03-20T10:00:00Z"
-                      transaction_id:
+                      customer_id:
+                        type: string
+                        description: "Related customer ID"
+                        example: "507f1f77bcf86cd799439022"
+                      transaction:
                         type: object
                         properties:
+                          _id:
+                            type: string
+                            example: "507f1f77bcf86cd799439033"
                           transaction_type:
                             type: string
                             example: "earn"
@@ -375,7 +395,15 @@ paths:
                           points:
                             type: number
                             example: 100
-        404:
-          description: "Points details not found"
+                          description:
+                            type: string
+                            example: "Purchase at Store A"
+                          reference_id:
+                            type: string
+                            example: "ORD-12345"
         401:
-          description: "Unauthorized" 
+          description: "Unauthorized - Invalid SDK API key or customer ID"
+        404:
+          description: "Points not found"
+        500:
+          description: "Internal Server Error" 

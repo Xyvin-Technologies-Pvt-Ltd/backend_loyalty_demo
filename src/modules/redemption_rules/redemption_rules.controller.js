@@ -348,7 +348,10 @@ exports.updateRedemptionStatus = async (req, res) => {
 exports.getRuleByAppId = async (req, res) => {
     try {
         const { appId } = req.params;
-        const rule = await RedemptionRules.findOne({ appType: appId });
+        const rule = await RedemptionRules.findOne({ appType: appId }).populate({
+            path: "tier_multipliers.tier_id",
+            select: "name _id"  
+        });
 
         if (!rule) {
             return response_handler(res, 404, "Redemption rule not found");

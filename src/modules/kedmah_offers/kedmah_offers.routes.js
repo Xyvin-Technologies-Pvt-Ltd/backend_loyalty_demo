@@ -37,7 +37,7 @@ router.get(
         description: "User viewed all Kedmah loyalty offers",
         targetModel: "KedmahOffers"
     }),
-    cacheMiddleware(60, cacheKeys.allKedmahOffers),
+    // cacheMiddleware(60, cacheKeys.allKedmahOffers),
     kedmah_offers_controller.list
 );
 

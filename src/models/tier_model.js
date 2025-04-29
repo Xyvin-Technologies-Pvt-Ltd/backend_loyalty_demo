@@ -2,13 +2,19 @@ const mongoose = require("mongoose");
 
 const tier_schema = new mongoose.Schema(
   {
-    name: { type: String, trim: true },
+    name: {
+      en: { type: String, trim: true },
+      ar: { type: String, trim: true },
+    },
     points_required: { type: Number, default: 0, trim: true },
     isActive: {
       type: Boolean,
       default: true,
     },
-    description: [{ type: String, trim: true }],
+    description: {
+      en: [{ type: String, trim: true }],
+      ar: [{ type: String, trim: true }],
+    },
   },
   { timestamps: true }
 );

@@ -44,7 +44,7 @@ router.get(
     description: "Admin viewed all point criteria",
     targetModel: "PointCriteria",
   }),
-  cacheMiddleware(0, cacheKeys.allPointCriteria),
+  // cacheMiddleware(0, cacheKeys.allPointCriteria),
   point_criteria_controller.list
 );
 

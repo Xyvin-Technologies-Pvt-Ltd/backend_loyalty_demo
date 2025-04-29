@@ -1,8 +1,14 @@
 const Joi = require("joi");
 
 const createPreGeneratedCoupons = Joi.object({
-  title: Joi.string().required(),
-  description: Joi.string().required(),
+  title: Joi.object({
+    en: Joi.string().required(),
+    ar: Joi.string().required().allow(""),
+  }),
+  description: Joi.object({
+    en: Joi.string().required(),
+    ar: Joi.string().required().allow(""),
+  }),
   posterImage: Joi.string().required(),
   code: Joi.string(),
   type:Joi.string(),
@@ -52,8 +58,14 @@ const createPreGeneratedCoupons = Joi.object({
 });
 
 const generateDynamicCoupon = Joi.object({
-  title: Joi.string().required(),
-  description: Joi.string().required(),
+  title: Joi.object({
+    en: Joi.string().required(),
+    ar: Joi.string().required(),
+  }),
+  description: Joi.object({
+    en: Joi.string().required(),
+    ar: Joi.string().required(),
+  }),
   posterImage: Joi.string().required(),
   merchantId: Joi.string().required(),
   appType: Joi.string().required(),
@@ -96,8 +108,14 @@ const generateDynamicCoupon = Joi.object({
 });
 
 const createOneTimeLink = Joi.object({
-  title: Joi.string().required(),
-  description: Joi.string().required(),
+  title: Joi.object({
+    en: Joi.string().required(),
+    ar: Joi.string().required(),
+  }),
+  description: Joi.object({
+    en: Joi.string().required(),
+    ar: Joi.string().required(),
+  }),
   posterImage: Joi.string().required(),
   merchantId: Joi.string().required(),
   appType: Joi.string().required(),

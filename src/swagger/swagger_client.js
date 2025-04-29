@@ -32,15 +32,20 @@ const swagger_sdk_definition = {
         name: "sdk-api-key",
         description: "API Key required for SDK authentication",
       },
-      customer_id: {
+      CustomerIdAuth: {
         type: "apiKey",
         in: "header",
         name: "customer_id",
         description: "Customer ID required for SDK authentication",
-      },
+      }
     },
   },
-  security: [{ ApiKeyAuth: ['da59906ea2e4ec1dfb371bccd197c71a44e64b5b3668ae8192527912d69f96f1'] }, { customer_id: ['CUST123456'] }],
+  security: [
+    { 
+      ApiKeyAuth: [], 
+      CustomerIdAuth: [] 
+    }
+  ],
 };
 
 const sdk_options = {

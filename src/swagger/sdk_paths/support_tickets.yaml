@@ -3,17 +3,18 @@ info:
   title: SDK Support Tickets API
   description: |
     # Overview
-    This API provides endpoints for managing customer support tickets in the loyalty system. It allows customers to:
-    - Create new support tickets
-    - View their support tickets
+    This API provides endpoints for managing customer support tickets in the loyalty system.
+    It allows customers to:
+    - Create support tickets
+    - View their tickets
     - Add messages to tickets
     - Close and reopen tickets
-    - Track ticket status and history
     
     # Authentication
-    All endpoints require SDK authentication. Include your API key in the request header:
+    All endpoints require SDK authentication via the SDK API Key and customer ID. Include these in your request headers:
     ```
-    Authorization: Bearer your-api-key
+    sdk-api-key: your-api-key
+    customer_id: CUSTOMER_ID
     ```
     
     # Rate Limiting
@@ -38,35 +39,42 @@ tags:
     description: SDK APIs for customer support ticket operations
 
 paths:
-  /support-tickets:
+  /support:
     post:
-      summary: Create a new support ticket
+      summary: Create new support ticket
       description: |
         # Description
         Creates a new support ticket for the authenticated customer.
         
         # Features
+        - Multiple category support
+        - Priority levels
+        - File attachments (optional)
         - Automatic ticket ID generation
-        - Category-based ticket classification
-        - Initial status set to "open"
-        - Default priority set to "medium"
         
-        # Validation Rules
-        - Subject is required
-        - Description is required
-        - Category must be one of: Points, Redemption, Technical, Account, Other
+        # Request Body
+        - subject: Ticket subject
+        - message: Initial message content
+        - category: Support category
+        - priority: Ticket priority level
+        - attachments: Optional file attachments
         
         # Example Usage
         ```javascript
-        POST /support-tickets
+        POST /support
         {
           "subject": "Points not credited",
-          "description": "I made a purchase but points were not credited to my account",
-          "category": "Points"
+          "message": "I made a purchase but my points were not credited to my account.",
+          "category": "points",
+          "priority": "medium",
+          "attachments": []
         }
         ```
       tags:
         - SDK Support Tickets
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       requestBody:
         required: true
         content:
@@ -75,22 +83,34 @@ paths:
               type: object
               required:
                 - subject
-                - description
+                - message
                 - category
               properties:
                 subject:
                   type: string
-                  description: "Brief description of the issue"
+                  description: "Ticket subject"
                   example: "Points not credited"
-                description:
+                message:
                   type: string
-                  description: "Detailed description of the issue"
-                  example: "I made a purchase but points were not credited to my account"
+                  description: "Initial message content"
+                  example: "I made a purchase but my points were not credited to my account."
                 category:
                   type: string
-                  enum: [Points, Redemption, Technical, Account, Other]
-                  description: "Category of the support ticket"
-                  example: "Points"
+                  description: "Support category"
+                  example: "points"
+                priority:
+                  type: string
+                  enum: [low, medium, high]
+                  default: medium
+                  description: "Ticket priority level"
+                  example: "medium"
+                attachments:
+                  type: array
+                  description: "Optional file attachments"
+                  items:
+                    type: string
+                    format: binary
+                  example: []
       responses:
         201:
           description: "Support ticket created successfully"
@@ -108,36 +128,84 @@ paths:
                   data:
                     type: object
                     properties:
+                      _id:
+                        type: string
+                        example: "507f1f77bcf86cd799439011"
                       ticket_id:
                         type: string
-                        description: "Unique ticket identifier"
-                        example: "TKT1234567890"
+                        example: "TKT-12345"
                       subject:
                         type: string
                         example: "Points not credited"
-                      description:
-                        type: string
-                        example: "I made a purchase but points were not credited to my account"
                       category:
                         type: string
-                        example: "Points"
+                        example: "points"
                       status:
                         type: string
+                        enum: [open, closed]
                         example: "open"
                       priority:
                         type: string
+                        enum: [low, medium, high]
                         example: "medium"
-                      createdAt:
+                      customer:
+                        type: object
+                        properties:
+                          _id:
+                            type: string
+                            example: "507f1f77bcf86cd799439022"
+                          name:
+                            type: string
+                            example: "John Doe"
+                      created_at:
                         type: string
                         format: date-time
-                        example: "2024-03-20T10:00:00Z"
+                        example: "2024-03-15T10:30:00Z"
+                      messages:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            content:
+                              type: string
+                              example: "I made a purchase but my points were not credited to my account."
+                            sender_type:
+                              type: string
+                              enum: [customer, support]
+                              example: "customer"
+                            created_at:
+                              type: string
+                              format: date-time
+                              example: "2024-03-15T10:30:00Z"
+                            attachments:
+                              type: array
+                              items:
+                                type: string
+                              example: []
         400:
-          description: "Invalid input data"
+          description: |
+            Bad Request
+            Possible reasons:
+            - Missing required fields
+            - Invalid category
+            - Invalid priority
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Missing required fields"
         401:
-          description: "Unauthorized"
-
+          description: "Unauthorized - Invalid SDK API key or customer ID"
+        500:
+          description: "Internal Server Error"
     get:
-      summary: Get all support tickets for the authenticated customer
+      summary: Get all tickets for authenticated customer
       description: |
         # Description
         Retrieves all support tickets for the authenticated customer with pagination and filtering options.
@@ -146,40 +214,30 @@ paths:
         - Pagination support
         - Status filtering
         - Category filtering
-        - Sorted by creation date (newest first)
-        - Includes assigned admin details
+        - Sorting options
         
         # Query Parameters
-        - status: Filter by ticket status
-        - category: Filter by ticket category
         - page: Page number (default: 1)
         - limit: Items per page (default: 10)
+        - status: Filter by ticket status (open/closed)
+        - category: Filter by ticket category
+        - sort: Sorting field (created_at, updated_at, priority)
+        - sort_direction: Sorting direction (asc, desc)
         
         # Example Usage
         ```javascript
         // Get all tickets
-        GET /support-tickets
+        GET /support
         
         // Get tickets with filters
-        GET /support-tickets?status=open&category=Points&page=1&limit=20
+        GET /support?status=open&category=points&page=1&limit=20&sort=created_at&sort_direction=desc
         ```
       tags:
         - SDK Support Tickets
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       parameters:
-        - name: status
-          in: query
-          schema:
-            type: string
-            enum: [open, in_progress, resolved, closed, reopened]
-          description: "Filter tickets by status"
-          example: "open"
-        - name: category
-          in: query
-          schema:
-            type: string
-            enum: [Points, Redemption, Technical, Account, Other]
-          description: "Filter tickets by category"
-          example: "Points"
         - name: page
           in: query
           schema:
@@ -194,9 +252,39 @@ paths:
             default: 10
           description: "Number of items per page"
           example: 10
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, closed, all]
+            default: all
+          description: "Filter by ticket status"
+          example: "open"
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: "Filter by ticket category"
+          example: "points"
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, updated_at, priority]
+            default: created_at
+          description: "Sorting field"
+          example: "created_at"
+        - name: sort_direction
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: "Sorting direction"
+          example: "desc"
       responses:
         200:
-          description: "Support tickets retrieved successfully"
+          description: "Tickets retrieved successfully"
           content:
             application/json:
               schema:
@@ -207,7 +295,7 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Support tickets fetched successfully"
+                    example: "Tickets retrieved successfully"
                   data:
                     type: object
                     properties:
@@ -216,74 +304,101 @@ paths:
                         items:
                           type: object
                           properties:
+                            _id:
+                              type: string
+                              example: "507f1f77bcf86cd799439011"
                             ticket_id:
                               type: string
-                              example: "TKT1234567890"
+                              example: "TKT-12345"
                             subject:
                               type: string
                               example: "Points not credited"
-                            description:
-                              type: string
-                              example: "I made a purchase but points were not credited to my account"
                             category:
                               type: string
-                              example: "Points"
+                              example: "points"
                             status:
                               type: string
+                              enum: [open, closed]
                               example: "open"
                             priority:
                               type: string
+                              enum: [low, medium, high]
                               example: "medium"
-                            assigned_to:
+                            last_message:
                               type: object
                               properties:
-                                name:
+                                content:
                                   type: string
-                                  example: "John Doe"
-                                email:
+                                  example: "I made a purchase but my points were not credited to my account."
+                                sender_type:
                                   type: string
-                                  example: "john@example.com"
-                            createdAt:
+                                  enum: [customer, support]
+                                  example: "customer"
+                                created_at:
+                                  type: string
+                                  format: date-time
+                                  example: "2024-03-15T10:30:00Z"
+                            created_at:
                               type: string
                               format: date-time
-                              example: "2024-03-20T10:00:00Z"
+                              example: "2024-03-15T10:30:00Z"
+                            updated_at:
+                              type: string
+                              format: date-time
+                              example: "2024-03-15T10:30:00Z"
+                            message_count:
+                              type: integer
+                              example: 1
                       pagination:
                         type: object
                         properties:
                           total:
                             type: integer
-                            example: 50
+                            example: 15
                           page:
                             type: integer
                             example: 1
                           limit:
                             type: integer
                             example: 10
-                          totalPages:
+                          total_pages:
                             type: integer
-                            example: 5
+                            example: 2
+                      categories:
+                        type: array
+                        items:
+                          type: string
+                        example: ["points", "account", "technical", "other"]
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key or customer ID"
+        500:
+          description: "Internal Server Error"
 
-  /support-tickets/{ticket_id}:
+  /support/{ticket_id}:
     get:
-      summary: Get specific support ticket details
+      summary: Get specific ticket details
       description: |
         # Description
-        Retrieves detailed information about a specific support ticket.
+        Retrieves detailed information about a specific support ticket, including all messages.
         
         # Features
-        - Complete ticket information
-        - Message history
-        - Assigned admin details
-        - Resolution notes
+        - Complete ticket details
+        - All ticket messages
+        - Attachment information
+        - Status history
+        
+        # Path Parameters
+        - ticket_id: Unique ticket identifier
         
         # Example Usage
         ```javascript
-        GET /support-tickets/TKT1234567890
+        GET /support/TKT-12345
         ```
       tags:
         - SDK Support Tickets
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       parameters:
         - name: ticket_id
           in: path
@@ -291,10 +406,10 @@ paths:
           schema:
             type: string
           description: "Unique ticket identifier"
-          example: "TKT1234567890"
+          example: "TKT-12345"
       responses:
         200:
-          description: "Support ticket details retrieved successfully"
+          description: "Ticket details retrieved successfully"
           content:
             application/json:
               schema:
@@ -305,99 +420,157 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Support ticket fetched successfully"
+                    example: "Ticket details retrieved successfully"
                   data:
                     type: object
                     properties:
+                      _id:
+                        type: string
+                        example: "507f1f77bcf86cd799439011"
                       ticket_id:
                         type: string
-                        example: "TKT1234567890"
+                        example: "TKT-12345"
                       subject:
                         type: string
                         example: "Points not credited"
-                      description:
-                        type: string
-                        example: "I made a purchase but points were not credited to my account"
                       category:
                         type: string
-                        example: "Points"
+                        example: "points"
                       status:
                         type: string
+                        enum: [open, closed]
                         example: "open"
                       priority:
                         type: string
+                        enum: [low, medium, high]
                         example: "medium"
-                      assigned_to:
+                      customer:
                         type: object
                         properties:
+                          _id:
+                            type: string
+                            example: "507f1f77bcf86cd799439022"
                           name:
                             type: string
                             example: "John Doe"
                           email:
                             type: string
                             example: "john@example.com"
+                      created_at:
+                        type: string
+                        format: date-time
+                        example: "2024-03-15T10:30:00Z"
+                      updated_at:
+                        type: string
+                        format: date-time
+                        example: "2024-03-15T10:30:00Z"
                       messages:
                         type: array
                         items:
                           type: object
                           properties:
-                            sender_type:
+                            _id:
                               type: string
-                              enum: [Customer, Admin]
-                              example: "Customer"
-                            message:
+                              example: "507f1f77bcf86cd799439033"
+                            content:
                               type: string
-                              example: "I need help with my points"
+                              example: "I made a purchase but my points were not credited to my account."
+                            sender:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  example: "John Doe"
+                                type:
+                                  type: string
+                                  enum: [customer, support]
+                                  example: "customer"
                             created_at:
                               type: string
                               format: date-time
-                              example: "2024-03-20T10:00:00Z"
-                      resolution_notes:
-                        type: string
-                        example: "Points credited after verification"
-                      resolved_at:
-                        type: string
-                        format: date-time
-                        example: "2024-03-21T15:00:00Z"
-                      closed_at:
-                        type: string
-                        format: date-time
-                        example: "2024-03-21T15:00:00Z"
-                      createdAt:
-                        type: string
-                        format: date-time
-                        example: "2024-03-20T10:00:00Z"
-        404:
-          description: "Support ticket not found"
+                              example: "2024-03-15T10:30:00Z"
+                            attachments:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  _id:
+                                    type: string
+                                    example: "507f1f77bcf86cd799439044"
+                                  filename:
+                                    type: string
+                                    example: "screenshot.jpg"
+                                  url:
+                                    type: string
+                                    example: "https://example.com/attachments/screenshot.jpg"
+                                  size:
+                                    type: number
+                                    example: 52428
+                                  mime_type:
+                                    type: string
+                                    example: "image/jpeg"
+                      status_history:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            status:
+                              type: string
+                              enum: [open, closed]
+                              example: "open"
+                            changed_at:
+                              type: string
+                              format: date-time
+                              example: "2024-03-15T10:30:00Z"
+                            changed_by:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  example: "John Doe"
+                                type:
+                                  type: string
+                                  enum: [customer, support]
+                                  example: "customer"
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key or customer ID"
+        404:
+          description: "Ticket not found"
+        500:
+          description: "Internal Server Error"
 
-  /support-tickets/{ticket_id}/messages:
+  /support/{ticket_id}/messages:
     post:
-      summary: Add message to support ticket
+      summary: Add message to ticket
       description: |
         # Description
         Adds a new message to an existing support ticket.
         
         # Features
-        - Message tracking
-        - Sender identification
-        - Timestamp recording
+        - Text message support
+        - File attachments (optional)
+        - Automatic timestamp
         
-        # Validation Rules
-        - Ticket must exist
-        - Ticket must not be closed
-        - Message is required
+        # Path Parameters
+        - ticket_id: Unique ticket identifier
+        
+        # Request Body
+        - message: Message content
+        - attachments: Optional file attachments
         
         # Example Usage
         ```javascript
-        POST /support-tickets/TKT1234567890/messages
+        POST /support/TKT-12345/messages
         {
-          "message": "Thank you for your response"
+          "message": "I still haven't received my points. The order number is #ORD-5678.",
+          "attachments": []
         }
         ```
       tags:
         - SDK Support Tickets
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       parameters:
         - name: ticket_id
           in: path
@@ -405,7 +578,7 @@ paths:
           schema:
             type: string
           description: "Unique ticket identifier"
-          example: "TKT1234567890"
+          example: "TKT-12345"
       requestBody:
         required: true
         content:
@@ -418,7 +591,14 @@ paths:
                 message:
                   type: string
                   description: "Message content"
-                  example: "Thank you for your response"
+                  example: "I still haven't received my points. The order number is #ORD-5678."
+                attachments:
+                  type: array
+                  description: "Optional file attachments"
+                  items:
+                    type: string
+                    format: binary
+                  example: []
       responses:
         200:
           description: "Message added successfully"
@@ -438,52 +618,93 @@ paths:
                     properties:
                       ticket_id:
                         type: string
-                        example: "TKT1234567890"
-                      messages:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            sender_type:
-                              type: string
-                              enum: [Customer, Admin]
-                              example: "Customer"
-                            message:
-                              type: string
-                              example: "Thank you for your response"
-                            created_at:
-                              type: string
-                              format: date-time
-                              example: "2024-03-20T11:00:00Z"
+                        example: "TKT-12345"
+                      new_message:
+                        type: object
+                        properties:
+                          _id:
+                            type: string
+                            example: "507f1f77bcf86cd799439033"
+                          content:
+                            type: string
+                            example: "I still haven't received my points. The order number is #ORD-5678."
+                          sender:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                                example: "John Doe"
+                              type:
+                                type: string
+                                enum: [customer, support]
+                                example: "customer"
+                          created_at:
+                            type: string
+                            format: date-time
+                            example: "2024-03-16T11:45:00Z"
+                          attachments:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                _id:
+                                  type: string
+                                  example: "507f1f77bcf86cd799439044"
+                                filename:
+                                  type: string
+                                  example: "screenshot.jpg"
+                                url:
+                                  type: string
+                                  example: "https://example.com/attachments/screenshot.jpg"
+                                size:
+                                  type: number
+                                  example: 52428
+                                mime_type:
+                                  type: string
+                                  example: "image/jpeg"
+                      updated_at:
+                        type: string
+                        format: date-time
+                        example: "2024-03-16T11:45:00Z"
         400:
-          description: "Cannot add message to closed ticket"
-        404:
-          description: "Support ticket not found"
+          description: "Message content is required"
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key or customer ID"
+        404:
+          description: "Ticket not found"
+        500:
+          description: "Internal Server Error"
 
-  /support-tickets/{ticket_id}/close:
+  /support/{ticket_id}/close:
     post:
-      summary: Close support ticket
+      summary: Close ticket
       description: |
         # Description
-        Closes an existing support ticket.
+        Closes an open support ticket.
         
         # Features
-        - Status update
-        - Closure timestamp
-        - Validation checks
+        - Status update to closed
+        - Optional closing message
+        - Status history tracking
         
-        # Validation Rules
-        - Ticket must exist
-        - Ticket must not be already closed
+        # Path Parameters
+        - ticket_id: Unique ticket identifier
+        
+        # Request Body
+        - closing_message: Optional message explaining why the ticket is being closed
         
         # Example Usage
         ```javascript
-        POST /support-tickets/TKT1234567890/close
+        POST /support/TKT-12345/close
+        {
+          "closing_message": "My issue has been resolved. Thank you for your help."
+        }
         ```
       tags:
         - SDK Support Tickets
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       parameters:
         - name: ticket_id
           in: path
@@ -491,10 +712,20 @@ paths:
           schema:
             type: string
           description: "Unique ticket identifier"
-          example: "TKT1234567890"
+          example: "TKT-12345"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                closing_message:
+                  type: string
+                  description: "Optional message explaining why the ticket is being closed"
+                  example: "My issue has been resolved. Thank you for your help."
       responses:
         200:
-          description: "Support ticket closed successfully"
+          description: "Ticket closed successfully"
           content:
             application/json:
               schema:
@@ -505,49 +736,82 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Support ticket closed successfully"
+                    example: "Ticket closed successfully"
                   data:
                     type: object
                     properties:
                       ticket_id:
                         type: string
-                        example: "TKT1234567890"
-                      status:
+                        example: "TKT-12345"
+                      new_status:
                         type: string
                         example: "closed"
                       closed_at:
                         type: string
                         format: date-time
-                        example: "2024-03-20T12:00:00Z"
-        400:
-          description: "Ticket is already closed"
-        404:
-          description: "Support ticket not found"
+                        example: "2024-03-16T12:30:00Z"
+                      new_message:
+                        type: object
+                        properties:
+                          _id:
+                            type: string
+                            example: "507f1f77bcf86cd799439033"
+                          content:
+                            type: string
+                            example: "My issue has been resolved. Thank you for your help."
+                          sender:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                                example: "John Doe"
+                              type:
+                                type: string
+                                enum: [customer, support]
+                                example: "customer"
+                          created_at:
+                            type: string
+                            format: date-time
+                            example: "2024-03-16T12:30:00Z"
         401:
-          description: "Unauthorized"
+          description: "Unauthorized - Invalid SDK API key or customer ID"
+        404:
+          description: "Ticket not found"
+        409:
+          description: "Ticket is already closed"
+        500:
+          description: "Internal Server Error"
 
-  /support-tickets/{ticket_id}/reopen:
+  /support/{ticket_id}/reopen:
     post:
-      summary: Reopen closed support ticket
+      summary: Reopen ticket
       description: |
         # Description
         Reopens a previously closed support ticket.
         
         # Features
-        - Status update
-        - Closure timestamp removal
-        - Validation checks
+        - Status update to open
+        - Optional reopening message
+        - Status history tracking
         
-        # Validation Rules
-        - Ticket must exist
-        - Ticket must be closed
+        # Path Parameters
+        - ticket_id: Unique ticket identifier
+        
+        # Request Body
+        - reopening_message: Optional message explaining why the ticket is being reopened
         
         # Example Usage
         ```javascript
-        POST /support-tickets/TKT1234567890/reopen
+        POST /support/TKT-12345/reopen
+        {
+          "reopening_message": "The issue has occurred again."
+        }
         ```
       tags:
         - SDK Support Tickets
+      security:
+        - ApiKeyAuth: []
+        - CustomerIdAuth: []
       parameters:
         - name: ticket_id
           in: path
@@ -555,10 +819,20 @@ paths:
           schema:
             type: string
           description: "Unique ticket identifier"
-          example: "TKT1234567890"
+          example: "TKT-12345"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reopening_message:
+                  type: string
+                  description: "Optional message explaining why the ticket is being reopened"
+                  example: "The issue has occurred again."
       responses:
         200:
-          description: "Support ticket reopened successfully"
+          description: "Ticket reopened successfully"
           content:
             application/json:
               schema:
@@ -569,24 +843,48 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Support ticket reopened successfully"
+                    example: "Ticket reopened successfully"
                   data:
                     type: object
                     properties:
                       ticket_id:
                         type: string
-                        example: "TKT1234567890"
-                      status:
+                        example: "TKT-12345"
+                      new_status:
                         type: string
-                        example: "reopened"
-                      closed_at:
+                        example: "open"
+                      reopened_at:
                         type: string
                         format: date-time
-                        nullable: true
-                        example: null
-        400:
-          description: "Ticket is not closed"
-        404:
-          description: "Support ticket not found"
+                        example: "2024-03-17T14:15:00Z"
+                      new_message:
+                        type: object
+                        properties:
+                          _id:
+                            type: string
+                            example: "507f1f77bcf86cd799439033"
+                          content:
+                            type: string
+                            example: "The issue has occurred again."
+                          sender:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                                example: "John Doe"
+                              type:
+                                type: string
+                                enum: [customer, support]
+                                example: "customer"
+                          created_at:
+                            type: string
+                            format: date-time
+                            example: "2024-03-17T14:15:00Z"
         401:
-          description: "Unauthorized" 
+          description: "Unauthorized - Invalid SDK API key or customer ID"
+        404:
+          description: "Ticket not found"
+        409:
+          description: "Ticket is already open"
+        500:
+          description: "Internal Server Error" 
