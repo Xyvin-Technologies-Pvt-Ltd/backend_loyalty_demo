@@ -4,7 +4,7 @@ const triggerServicesSchema = new mongoose.Schema(
   {
     title: {
       en: { type: String, required: true, unique: true },
-      ar: { type: String, required: true },
+      ar: { type: String },
     },
     icon: {
       type: String,
@@ -12,7 +12,7 @@ const triggerServicesSchema = new mongoose.Schema(
     },
     description: {
       en: { type: String, required: true },
-      ar: { type: String, required: true },
+      ar: { type: String },
     },
     triggerEvent: [
       {

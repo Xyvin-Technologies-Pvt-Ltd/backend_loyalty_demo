@@ -4,11 +4,11 @@ const couponCodeSchema = new mongoose.Schema({
     // Basic identification
     title: {
      en: { type: String, required: true },
-     ar: { type: String, required: true },
+     ar: { type: String },
     },
     description: {
         en: { type: String, required: true },
-        ar: { type: String, required: true },
+        ar: { type: String },
     },
     posterImage: {
         type: String,  // URL to the image

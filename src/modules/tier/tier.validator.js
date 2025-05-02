@@ -3,7 +3,7 @@ const Joi = require("joi");
 exports.create_tier = Joi.object({
   name: Joi.object({
     en: Joi.string().required(),
-    ar: Joi.string().required(),
+    ar: Joi.string().required().allow(""),
   }).required(),
   points_required: Joi.number().required(),
   description: Joi.object({
@@ -15,7 +15,7 @@ exports.create_tier = Joi.object({
 
 exports.update_tier = Joi.object({
   name: Joi.object({
-    en: Joi.string(),
+    en: Joi.string().allow(""),
     ar: Joi.string(),
   }),
   points_required: Joi.number(),
