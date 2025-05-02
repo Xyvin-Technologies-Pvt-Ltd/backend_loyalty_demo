@@ -10,8 +10,21 @@ const createPreGeneratedCoupons = Joi.object({
     ar: Joi.string().required().allow(""),
   }),
   posterImage: Joi.string().required(),
-  code: Joi.string(),
+  code: Joi.alternatives().try(
+    Joi.array().items(
+      Joi.object({
+        pin: Joi.string().required(),
+        value: Joi.string()
+      })
+    ),
+    Joi.string()
+  ).optional(),
+  
+  
   type:Joi.string(),
+  numberOfCodes: Joi.number(),
+  codes: Joi.array().items(Joi.string()),
+  redemptionUrl: Joi.string(),
   merchantId: Joi.string().required(),
   couponCategoryId: Joi.string().allow(null),
   validityPeriod: Joi.object({
@@ -67,6 +80,7 @@ const generateDynamicCoupon = Joi.object({
     ar: Joi.string().required(),
   }),
   posterImage: Joi.string().required(),
+
   merchantId: Joi.string().required(),
   appType: Joi.string().required(),
   couponCategoryId: Joi.string().allow(null),

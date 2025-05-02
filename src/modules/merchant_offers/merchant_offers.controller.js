@@ -22,6 +22,7 @@ exports.createCoupon = async (req, res) => {
       couponCategoryId,
       type,
       code,
+      numberOfCodes,
       validityPeriod,
       discountDetails,
       redeemablePointsCount,
@@ -53,19 +54,13 @@ exports.createCoupon = async (req, res) => {
       );
     }
 
-    const coupon = new CouponCode({
+    const couponData = {
       title,
       description,
       posterImage,
       merchantId,
       couponCategoryId,
-      numberOfCodes: numberOfCodes || 1,
       type,
-      //create dynamic  codes based on number of codes in array
-      code:
-        type === "DYNAMIC"
-          ? Array.from({ length: numberOfCodes }, () => uuidv4().substring(0, 4))
-          : code,
       validityPeriod,
       discountDetails,
       redeemablePointsCount,
@@ -76,8 +71,16 @@ exports.createCoupon = async (req, res) => {
       redemptionInstructions,
       redemptionUrl,
       linkData,
-    });
-
+    };
+    if (type === "DYNAMIC") {
+      couponData.code = Array.from({ length: numberOfCodes }, () => ({
+        pin: uuidv4().substring(0, 4),
+        isRedeemed: false,
+      }));
+    } else if (type === "PRE_GENERATED") {
+      couponData.code = [{ pin: code, isRedeemed: false }];
+    }
+    const coupon = new CouponCode(couponData);
     await coupon.save();
     return response_handler(
       res,
@@ -95,7 +98,7 @@ exports.createCoupon = async (req, res) => {
 // Create bulk coupons with pre-generated codes
 exports.createBulkCoupons = async (req, res) => {
   try {
-    const { error } = validateCouponCreation(req.body);
+    const { error } = createPreGeneratedCoupons.validate(req.body);
     if (error) {
       return response_handler(res, 400, false, error.details[0].message);
     }
@@ -134,7 +137,7 @@ exports.createBulkCoupons = async (req, res) => {
       merchantId,
       couponCategoryId,
       type: "PRE_GENERATED",
-      code,
+      code: [{ pin: code, isRedeemed: false }],
       validityPeriod,
       discountDetails,
       redeemablePointsCount,
