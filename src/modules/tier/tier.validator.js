@@ -15,8 +15,8 @@ exports.create_tier = Joi.object({
 
 exports.update_tier = Joi.object({
   name: Joi.object({
-    en: Joi.string().allow(""),
-    ar: Joi.string(),
+    en: Joi.string(),
+    ar: Joi.string().allow(""),
   }),
   points_required: Joi.number(),
   description: Joi.object({
