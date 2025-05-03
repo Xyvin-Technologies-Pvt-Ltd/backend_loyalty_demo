@@ -18,14 +18,14 @@ exports.create = async (req, res) => {
     const event = await TriggerEvent.findById(req.body.eventType);
     const service = await TriggerServices.findById(req.body.serviceType);
 
-    let uniqueCode = generateUniqueCode(event.name, service.title);
+    let uniqueCode = generateUniqueCode(event.name.en, service.title.en);
 
     //check if unique_code already exists
     const existingCriteria = await Criteria.findOne({
       unique_code: uniqueCode,
     });
     if (existingCriteria) {
-      uniqueCode = generateUniqueCode(event.name, service.title);
+      uniqueCode = generateUniqueCode(event.name.en, service.title);
     }
 
     req.body.unique_code = uniqueCode;
