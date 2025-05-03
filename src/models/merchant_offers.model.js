@@ -346,7 +346,7 @@ couponCodeSchema.methods.checkEligibility = async function (customer, transactio
 };
 
 // Indexes for faster queries
-couponCodeSchema.index({ code: 1 });
+// couponCodeSchema.index({ code: 1 });
 couponCodeSchema.index({ merchantId: 1, isActive: 1 });
 couponCodeSchema.index({ 'validityPeriod.startDate': 1, 'validityPeriod.endDate': 1 });
 couponCodeSchema.index({ 'eligibilityCriteria.tiers': 1 });
