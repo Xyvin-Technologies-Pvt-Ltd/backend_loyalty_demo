@@ -8,65 +8,45 @@ on:
 jobs:
   deploy-backend:
     name: Deploy Backend to VPN Server
-    runs-on: ubuntu-latest
+    runs-on: self-hosted 
 
     steps:
-      - name: Checkout repository
+      # Step 1: Checkout the repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy via SSH with Password
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          password: ${{ secrets.SERVER_PASSWORD }}
-          port: 22
-          script: |
-            set -e
+      # Step 2: Set up Docker and deploy the backend
+      - name: Use .env and deploy with Docker
+        run: |
+          set -e  # Fail if any command fails
 
-            # Define variables
-            PROJECT_DIR=loyalty-backend
-            ENV_FILE_PATH=/home/ubuntu/loyalty/.env/.env.production
-            IMAGE_NAME=loyalty-backend-img
-            CONTAINER_NAME=loyalty-backend-container
+          # Define the environment file path
+          ENV_FILE_PATH=/home/loyalty/loyalty/.env/.env.production
 
-            # Install git and docker if missing
-            if ! command -v git &> /dev/null; then
-              sudo apt update && sudo apt install -y git
-            fi
+          # Check if the .env file exists on the server
+          if [ -f "$ENV_FILE_PATH" ]; then
+            echo "✅ .env file found at $ENV_FILE_PATH"
+            cp $ENV_FILE_PATH .env
+          else
+            echo "❌ .env file not found at $ENV_FILE_PATH"
+            exit 1
+          fi
 
-            if ! command -v docker &> /dev/null; then
-              curl -fsSL https://get.docker.com | sh
-              sudo usermod -aG docker $USER
-              newgrp docker
-            fi
+          # Step 3: Build Docker image
+          echo "🛠️ Building Docker image..."
+          docker build -t loyalty-backend-img .
 
-            # Clone or update repo
-            if [ -d $PROJECT_DIR ]; then
-              cd $PROJECT_DIR && git pull origin main
-            else
-              git clone https://github.com/${{ github.repository }} $PROJECT_DIR
-              cd $PROJECT_DIR
-            fi
+          # Step 4: Stop and remove any existing container
+          echo "🛑 Stopping and removing existing container..."
+          docker rm -f loyalty-backend-container || true
 
-            # Copy the environment file from the server path
-            if [ -f "$ENV_FILE_PATH" ]; then
-              cp $ENV_FILE_PATH .env
-            else
-              echo "❌ .env file not found at $ENV_FILE_PATH"
-              exit 1
-            fi
+          # Step 5: Run the Docker container
+          echo "🚀 Starting Docker container..."
+          docker run -d \
+            --name loyalty-backend-container \
+            --restart always \
+            -p 3000:3000 \
+            --env-file .env \
+            loyalty-backend-img
 
-            # Build Docker image
-            docker build -t $IMAGE_NAME .
-
-            # Stop and remove existing container
-            docker rm -f $CONTAINER_NAME || true
-
-            # Run Docker container
-            docker run -d \
-              --name $CONTAINER_NAME \
-              --restart always \
-              -p 3000:3000 \
-              --env-file .env \
-              $IMAGE_NAME
+          echo "✅ Deployment complete!"
