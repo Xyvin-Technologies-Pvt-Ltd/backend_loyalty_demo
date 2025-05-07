@@ -8,27 +8,24 @@ on:
 jobs:
   deploy-backend:
     name: Deploy Backend to VPN Server
-    runs-on: self-hosted # Runs on your self-hosted runner inside the VPN
+    runs-on: self-hosted
 
     steps:
-      # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Run run.sh on the server (remotely via SSH)
       - name: Run run.sh on the server
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SERVER_IP }} # Use the server IP from your secrets
-          username: ${{ secrets.SERVER_USER }} # SSH username from secrets
-          password: ${{ secrets.SERVER_PASSWORD }} # SSH password from secrets
-          port: 22 # SSH port (default is 22)
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: 22
           script: |
             echo "Running the custom script on the server..."
             cd /path/to/your/script/directory
             ./run.sh  # Ensure the script is executable (`chmod +x run.sh`)
 
-      # Step 3: Set up Docker and deploy the backend
       - name: Use .env and deploy with Docker
         run: |
           set -e  # Fail if any command fails
@@ -45,15 +42,12 @@ jobs:
             exit 1
           fi
 
-          # Step 4: Build Docker image
           echo "🛠️ Building Docker image..."
           docker build -t loyalty-backend-img .
 
-          # Step 5: Stop and remove any existing container
           echo "🛑 Stopping and removing existing container..."
           docker rm -f loyalty-backend-container || true
 
-          # Step 6: Run the Docker container
           echo "🚀 Starting Docker container..."
           docker run -d \
             --name loyalty-backend-container \
