@@ -3,43 +3,117 @@ const Transaction = require("../../../models/transaction_model");
 const response_handler = require("../../../helpers/response_handler");
 const { logger } = require("../../../middlewares/logger");
 const loyaltyPointsController = require("../../loyalty_points_core/loyalty_points.controller");
+const Customer = require("../../../models/customer_model");
 
-exports.calculatePoints = async (req, res) => {
+
+//process a loyalty point earning event from user based on trigger event, trigger service, app type , user tier, condition etc
+// By processing loyalty event, we mean that the user has earned loyalty points based on a certain event, service, app type, tier, condition etc  
+// This is the main function that will be used to process the loyalty event
+exports.process_loyalty_event = async (req, res) => {
     try {
-        const {
-            unique_code,
-            transaction_value,
-            payment_method,
-            reference_id,
-            app_type,
-            metadata
-        } = req.body;
-
-        // Validate required fields
-        if (!unique_code || !transaction_value || !payment_method || !app_type) {
-            return response_handler(res, 400, "Missing required fields", null);
+      const {
+        criteria_code,
+        paymentMethod,
+        customerId,
+        transactionValue,
+        metadata,
+        reference_id,
+        app_type
+      } = req.body;
+  
+      // Find the customer
+      const customer = await Customer.findById(customerId);
+      if (!customer) {
+        return response_handler(res, 400, "Customer not found");
+      }
+  
+      // Find the point criteria using our static method
+      const pointCriteria = await Criteria.findMatchingCriteria(
+        criteria_code    );
+  
+      if (!pointCriteria) {
+        return response_handler(
+          res,
+          404,
+          "No point criteria found for this event"
+        );
+      }
+  
+      // Use our new optimized method to check eligibility - no need to fetch transactions first!
+      const eligibilityCheck = await pointCriteria.checkEligibilityOptimized(
+        paymentMethod,
+        transactionValue,
+        customerId
+      );
+  
+      if (!eligibilityCheck.eligible) {
+        return response_handler(
+          res,
+          400,
+          eligibilityCheck.message,
+          { details: eligibilityCheck.details }
+        );
+      }
+  
+      // Calculate points using our new method
+      const pointsToAward = eligibilityCheck.points;
+  
+      // Fetch expiry rules & calculate expiry date
+      const expiryDate = await PointsExpirationRules.calculateExpiryDate(
+        customer.tier
+      );
+  
+      // Create a transaction
+      const transaction = await Transaction.create({
+        customer_id: customerId,
+        transaction_type: "earn",
+        points: pointsToAward,
+        transaction_id: uuidv4(),
+        point_criteria: pointCriteria._id,
+        payment_method: paymentMethod,
+        status: "pending",
+        metadata: metadata,
+        app_type: app_type,
+        reference_id: reference_id,
+      });
+  
+      // Add the points to the customer's loyalty points
+      await LoyaltyPoints.create({
+        customer_id: customerId,
+        points: pointsToAward,
+        expiryDate: expiryDate,
+        transaction_id: transaction._id,
+      });
+  
+      // Update customer's total points
+      await Customer.findByIdAndUpdate(
+        customerId,
+        {
+          $inc: { total_points: pointsToAward },
+        },
+        { new: true }
+      );
+  
+      // Update the transaction status
+      await Transaction.findByIdAndUpdate(transaction._id, {
+        status: "success",
+      });
+  
+      return response_handler(
+        res,
+        200,
+        "Loyalty points processed successfully",
+        {
+          pointsAwarded: pointsToAward,
+          calculationDetails: eligibilityCheck.details
         }
-
-        // Call the core process_loyalty_event function
-        const result = await loyaltyPointsController.process_loyalty_event({
-            body: {
-                unique_code,
-                paymentMethod: payment_method,
-                customerId: req.user._id,
-                transactionValue: transaction_value,
-                metadata: metadata || {},
-                reference_id,
-                app_type
-            }
-        }, res);
-
-        return result;
+      );
     } catch (error) {
-        logger.error(`Error calculating points: ${error.message}`);
-        return response_handler(res, 500, error.message, null);
+      console.error("Process loyalty event error:", error);
+      return response_handler(res, 500, error.message);
     }
-};
-
+  };
+  
 exports.getPointCalculationDetails = async (req, res) => {
     try {
         const {

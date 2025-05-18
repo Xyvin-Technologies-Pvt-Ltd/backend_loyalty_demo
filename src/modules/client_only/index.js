@@ -9,9 +9,9 @@ const merchantOffersRoutes = require("./merchant_offers/merchant_offers.routes")
 const supportRoutes = require("./support_tickets/support_tickets.routes");
 const themeSettingsRoutes = require("./theme_settings/theme_settings.routes");
 const transactionRoutes = require("./transactions/transactions.routes");
+const authRoutes = require("./auth/auth.routes");
 
-
-
+router.use("/auth", authRoutes);
 router.use("/customer", customerRoutes);
 router.use("/point-criteria", pointCriteriaRoutes);
 router.use("/loyalty-points", loyaltyPointsRoutes);//

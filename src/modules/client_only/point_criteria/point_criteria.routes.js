@@ -16,7 +16,7 @@ router.post("/process", auditMiddleware.captureResponse(),auditMiddleware.sdkAct
     description: "Process loyalty event and calculate points",
     targetModel: "PointCriteria",
     details: (req) => req.body,
-}), pointCriteriaController.calculatePoints );
+}), pointCriteriaController.process_loyalty_event );
 
 
 // Check customer eligibility based on usage history

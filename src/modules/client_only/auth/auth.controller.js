@@ -1,6 +1,6 @@
 const { logger } = require("../../../middlewares/logger");
 const response_handler = require("../../../helpers/response_handler");
-const Customer = require("../../../models/customer");
+const Customer = require("../../../models/customer_model"); 
 const { v4: uuidv4 } = require("uuid");
 const Tier = require("../../../models/tier_model");
 const ReferralProgramRule = require("../../../models/referral_program_rule_model");

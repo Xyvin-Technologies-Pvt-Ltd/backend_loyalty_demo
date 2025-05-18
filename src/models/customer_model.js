@@ -13,6 +13,7 @@ const customer_schema = new mongoose.Schema(
     referral_code: {
       type: String,
       unique: true,
+      required: false,
     },
     coins: {
       type: Number,

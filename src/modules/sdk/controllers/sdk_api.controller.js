@@ -172,3 +172,42 @@ exports.getUserProfile = async (req, res) => {
         return response_handler(res, 500, `Internal Server Error: ${error.message}`);
     }
 }; 
+
+exports.register = async (req, res) => {
+    try {
+        const { name, email, phone, referral_code,customer_id } = req.body;
+
+        const user = await Customer.findOne({ email:email,customer_id:customer_id });
+        if (user) {
+            return response_handler(res, 200, "User already exists");
+        }
+        const newUser = new Customer({
+            name,
+            email,
+            phone,
+            referral_code,
+            customer_id
+        });
+        await newUser.save();
+        return response_handler(res, 201, "User registered successfully", newUser); 
+    } catch (error) {
+        logger.error(`SDK API error: ${error.message}`, { stack: error.stack });
+        return response_handler(res, 500, `Internal Server Error: ${error.message}`);
+    }
+};  
+
+//earn points
+exports.earnPoints = async (req, res) => {
+    try {
+        const { user_id, points, type, merchant, note, provider, app } = req.body;
+        const user = await Customer.findById(user_id);
+        if (!user) {
+            return response_handler(res, 404, "User not found");
+        }
+        user.points += points;
+        await user.save();
+    } catch (error) {
+        logger.error(`SDK API error: ${error.message}`, { stack: error.stack });
+        return response_handler(res, 500, `Internal Server Error: ${error.message}`);
+    }
+}   

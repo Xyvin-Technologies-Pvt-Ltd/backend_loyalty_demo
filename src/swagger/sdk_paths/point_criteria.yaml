@@ -1,41 +1,22 @@
 openapi: 3.0.0
 info:
-  title: SDK Point Criteria API
+  title: Point Criteria API
   description: |
     # Overview
-    This API provides endpoints for managing point criteria in the loyalty system. It allows:
+    This API provides endpoints for managing point criteria and processing loyalty events in the system. It allows:
     - Processing loyalty events and calculating earned points
     - Checking customer eligibility
-    - Previewing point calculation details
-    - Getting information about supported payment methods
-    
-    # Authentication
-    All endpoints require SDK authentication via the SDK API Key and customer ID. Include these in your request headers:
-    ```
-    sdk-api-key: your-api-key
-    customer_id: CUSTOMER_ID
-    ```
-    
-    # Rate Limiting
-    - 100 requests per minute per API key
-    - 1000 requests per hour per API key
-    
-    # Error Handling
-    All endpoints follow a consistent error response format:
-    ```json
-    {
-      "status": false,
-      "message": "Error description",
-      "error": {
-        "code": "ERROR_CODE",
-        "details": {}
-      }
-    }
-    ```
+    - Managing point criteria rules
+
+    # Features
+    - Point calculation based on criteria
+    - Transaction recording
+    - Customer balance updates
+    - Expiry date calculation
   version: 1.0.0
 tags:
-  - name: SDK Point Criteria
-    description: SDK APIs for point criteria and calculation operations
+  - name: Point Criteria
+    description: APIs for point criteria and calculation operations
 
 paths:
   /point-criteria/process:
@@ -43,42 +24,43 @@ paths:
       summary: Process loyalty event and calculate points
       description: |
         # Description
-        Process a loyalty event (like purchase, referral, etc.) and calculate earned points based on active criteria.
-        
+        Process a loyalty event and calculate earned points based on active criteria.
+
         # Features
-        - Point calculation based on multiple criteria
-        - Rule-based point multiplication
+        - Point calculation based on criteria
         - Transaction recording
         - Customer balance update
-        
+        - Expiry date calculation
+
         # Request Body
-        - event_type: Type of loyalty event (purchase, referral, etc.)
-        - amount: Transaction amount (for purchase events)
-        - payment_method: Payment method used (for purchase events)
-        - reference_id: External reference ID for the transaction
+        - criteria_code: Code identifying the point criteria to apply
+        - paymentMethod: Payment method used
+        - customerId: ID of the customer
+        - transactionValue: Value of the transaction
         - metadata: Additional event-specific data
-        
+        - reference_id: External reference ID for the transaction
+        - app_type: Type of application
+
         # Example Usage
         ```javascript
         POST /point-criteria/process
         {
-          "event_type": "purchase",
-          "amount": 100.50,
-          "payment_method": "credit_card",
-          "reference_id": "ORD-12345",
+          "criteria_code": "PURCHASE_100",
+          "paymentMethod": "credit_card",
+          "customerId": "507f1f77bcf86cd799439011",
+          "transactionValue": 100.50,
           "metadata": {
             "store_id": "STORE-001",
             "items": [
               {"id": "PROD-001", "price": 50.25, "quantity": 2}
             ]
-          }
+          },
+          "reference_id": "ORD-12345",
+          "app_type": "Khedmah Delivery"
         }
         ```
       tags:
-        - SDK Point Criteria
-      security:
-        - ApiKeyAuth: []
-        - CustomerIdAuth: []
+        - Point Criteria
       requestBody:
         required: true
         content:
@@ -86,37 +68,44 @@ paths:
             schema:
               type: object
               required:
-                - event_type
+                - criteria_code
+                - paymentMethod
+                - customerId
+                - transactionValue
                 - reference_id
+                - app_type
               properties:
-                event_type:
+                criteria_code:
                   type: string
-                  description: "Type of loyalty event"
-                  example: "purchase"
-                amount:
-                  type: number
-                  description: "Transaction amount (for purchase events)"
-                  example: 100.50
-                payment_method:
+                  description: "Code identifying the point criteria to apply"
+                  example: "PURCHASE_100"
+                paymentMethod:
                   type: string
-                  description: "Payment method used (for purchase events)"
+                  description: "Payment method used"
                   example: "credit_card"
+                customerId:
+                  type: string
+                  description: "ID of the customer"
+                  example: "507f1f77bcf86cd799439011"
+                transactionValue:
+                  type: number
+                  description: "Value of the transaction"
+                  example: 100.50
+                metadata:
+                  type: object
+                  description: "Additional event-specific data"
+                  example: { "store_id": "STORE-001", "items": [{ "id": "PROD-001", "price": 50.25, "quantity": 2 }] }
                 reference_id:
                   type: string
                   description: "External reference ID for the transaction"
                   example: "ORD-12345"
-                metadata:
-                  type: object
-                  description: "Additional event-specific data"
-                  example: {
-                    "store_id": "STORE-001",
-                    "items": [
-                      {"id": "PROD-001", "price": 50.25, "quantity": 2}
-                    ]
-                  }
+                app_type:
+                  type: string
+                  description: "Type of application"
+                  example: "Khedmah Delivery"
       responses:
         200:
-          description: "Loyalty event processed successfully"
+          description: "Loyalty points processed successfully"
           content:
             application/json:
               schema:
@@ -127,64 +116,24 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Loyalty event processed successfully"
+                    example: "Loyalty points processed successfully"
                   data:
                     type: object
                     properties:
-                      points_earned:
+                      pointsAwarded:
                         type: number
                         example: 125
-                      transaction_id:
-                        type: string
-                        example: "507f1f77bcf86cd799439011"
-                      criteria_applied:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            _id:
-                              type: string
-                              example: "507f1f77bcf86cd799439022"
-                            name:
-                              type: string
-                              example: "Standard Purchase Points"
-                            points:
-                              type: number
-                              example: 100
-                            description:
-                              type: string
-                              example: "Base points for purchase"
-                      bonus_applied:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            _id:
-                              type: string
-                              example: "507f1f77bcf86cd799439033"
-                            name:
-                              type: string
-                              example: "Credit Card Bonus"
-                            multiplier:
-                              type: number
-                              example: 1.25
-                            bonus_points:
-                              type: number
-                              example: 25
-                            description:
-                              type: string
-                              example: "25% bonus for credit card payment"
-                      new_points_balance:
-                        type: number
-                        example: 1125
+                      calculationDetails:
+                        type: object
+                        description: "Details of the point calculation"
+                        example: { "basePoints": 100, "bonusPoints": 25, "criteriaApplied": "PURCHASE_100" }
         400:
           description: |
             Bad Request
             Possible reasons:
-            - Invalid event type
-            - Missing required fields
-            - Invalid amount format
-            - Invalid or duplicate reference ID
+            - Customer not found
+            - Invalid criteria code
+            - Customer not eligible for points
           content:
             application/json:
               schema:
@@ -195,11 +144,39 @@ paths:
                     example: false
                   message:
                     type: string
-                    example: "Invalid event type"
-        401:
-          description: "Unauthorized - Invalid SDK API key or customer ID"
+                    example: "Customer not eligible for points"
+                  data:
+                    type: object
+                    properties:
+                      details:
+                        type: object
+                        description: "Additional error details"
+        404:
+          description: "No point criteria found for this event"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "No point criteria found for this event"
         500:
           description: "Internal Server Error"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Error processing loyalty event"
 
   /point-criteria/check-eligibility:
     get:
@@ -207,15 +184,15 @@ paths:
       description: |
         # Description
         Check if a customer is eligible for earning points based on their usage history and loyalty program rules.
-        
+
         # Features
         - Frequency limit validation
         - Daily/weekly/monthly limit validation
         - Customer-specific rule validation
-        
+
         # Query Parameters
         - event_type: Type of loyalty event to check eligibility for
-        
+
         # Example Usage
         ```javascript
         GET /point-criteria/check-eligibility?event_type=purchase
@@ -293,17 +270,17 @@ paths:
       description: |
         # Description
         Calculate potential points for a hypothetical event without actually processing it or updating customer balance.
-        
+
         # Features
         - Preview point calculation
         - View applicable criteria and bonuses
         - No database changes
-        
+
         # Query Parameters
         - event_type: Type of loyalty event
         - amount: Transaction amount (for purchase events)
         - payment_method: Payment method used (for purchase events)
-        
+
         # Example Usage
         ```javascript
         GET /point-criteria/calculate-details?event_type=purchase&amount=100.50&payment_method=credit_card
@@ -409,12 +386,12 @@ paths:
       description: |
         # Description
         Retrieve a list of supported payment methods for point earnings, including any bonuses associated with each method.
-        
+
         # Features
         - List of supported payment methods
         - Bonus information for each method
         - Active status indication
-        
+
         # Example Usage
         ```javascript
         GET /point-criteria/payment-methods
@@ -464,4 +441,4 @@ paths:
         401:
           description: "Unauthorized - Invalid SDK API key or customer ID"
         500:
-          description: "Internal Server Error" 
+          description: "Internal Server Error"

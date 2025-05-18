@@ -1,75 +1,51 @@
 openapi: 3.0.0
 info:
-  title: SDK Authentication API
+  title: Customer Authentication API
   description: |
     # Overview
     This API provides endpoints for customer authentication in the loyalty system.
-    
-    # Authentication
-    All endpoints require SDK authentication via the SDK API Key. Include your API key in the request header:
-    ```
-    sdk-api-key: your-api-key
-    ```
-    
-    # Rate Limiting
-    - 5 registration attempts per minute per IP
-    - 20 registration attempts per hour per IP
-    
-    # Error Handling
-    All endpoints follow a consistent error response format:
-    ```json
-    {
-      "status": false,
-      "message": "Error description",
-      "error": {
-        "code": "ERROR_CODE",
-        "details": {}
-      }
-    }
-    ```
+
+    # Features
+    - Customer registration with validation
+    - Tier assignment
+    - Device tracking
+    - Notification preferences management
   version: 1.0.0
 tags:
-  - name: SDK Authentication
-    description: SDK APIs for customer authentication
+  - name: Customer Authentication
+    description: APIs for customer authentication and registration
 
 paths:
-  /customer/register:
+  /register:
     post:
       summary: Register a new customer
       description: |
         # Description
-        Register a new customer in the loyalty system.
-        
+        Register a new customer in the loyalty system with comprehensive validation and features.
+
         # Features
-        - Basic profile creation
-        - Referral system integration
+        - Basic profile creation with validation
         - Tier assignment
         - Device tracking
         - Notification preferences
-        
+
         # Validation Rules
         - Email must be unique
         - Phone number must be unique
         - Customer ID must be unique
         - Required fields must be provided
         - Device type must be one of: android, ios, web
-        
-        # Referral System
-        - If referral code is provided, points are awarded based on active referral rules
-        - Referrer is tracked for future rewards
-        
+
         # Example Usage
         ```javascript
-        POST /customer/register
+        POST /register
         {
           "name": "John Doe",
           "email": "john@example.com",
           "phone": "+1234567890",
           "customer_id": "CUST-001",
-          "password": "securepassword",
           "device_type": "android",
           "device_token": "device-token-123",
-          "referral_code": "REF-123",
           "app_type": ["Khedmah Delivery"],
           "notification_preferences": {
             "email": true,
@@ -79,9 +55,7 @@ paths:
         }
         ```
       tags:
-        - SDK Authentication
-      security:
-        - ApiKeyAuth: []
+        - Customer Authentication
       requestBody:
         required: true
         content:
@@ -93,7 +67,6 @@ paths:
                 - email
                 - phone
                 - customer_id
-                - password
               properties:
                 name:
                   type: string
@@ -108,15 +81,11 @@ paths:
                   type: string
                   description: "Unique phone number"
                   example: "+1234567890"
-                password:
-                  type: string
-                  format: password
-                  description: "Customer's password"
-                  example: "securepassword"
                 customer_id:
                   type: string
                   description: "Unique customer identifier"
                   example: "CUST-001"
+              
                 device_type:
                   type: string
                   enum: [android, ios, web]
@@ -126,15 +95,12 @@ paths:
                   type: string
                   description: "Device token for push notifications"
                   example: "device-token-123"
-                referral_code:
-                  type: string
-                  description: "Optional referral code from another customer"
-                  example: "REF-123"
+    
                 app_type:
                   type: array
                   items:
                     type: string
-                  description: "App types the customer is registered for"  
+                  description: "App types the customer is registered for"
                   example: ["Khedmah Delivery"]
                 notification_preferences:
                   type: object
@@ -154,9 +120,7 @@ paths:
                       example: true
       responses:
         200:
-          description: |
-            Customer registered successfully.
-            Response includes customer details (excluding sensitive information).
+          description: "Customer registered successfully"
           content:
             application/json:
               schema:
@@ -195,18 +159,9 @@ paths:
                         type: string
                         description: "Current tier ID"
                         example: "507f1f77bcf86cd799439012"
-                      referral_code:
-                        type: string
-                        description: "Customer's unique referral code"
-                        example: "REF-456"
-                      referred_by:
-                        type: string
-                        description: "ID of the customer who referred this customer"
-                        example: "507f1f77bcf86cd799439013"
-                      user_referer_count:
-                        type: number
-                        description: "Number of successful referrals"
-                        example: 0
+               
+                  
+                  
                       status:
                         type: boolean
                         description: "Customer account status"
@@ -272,6 +227,8 @@ paths:
                   message:
                     type: string
                     example: "Email already registered"
+                  data:
+                    type: null
         404:
           description: "Basic tier not found"
           content:
@@ -285,6 +242,8 @@ paths:
                   message:
                     type: string
                     example: "Basic tier not found"
+                  data:
+                    type: null
         500:
           description: "Internal Server Error"
           content:
@@ -297,4 +256,7 @@ paths:
                     example: false
                   message:
                     type: string
-                    example: "Registration failed" 
+                    example: "Registration failed"
+                  data:
+                    type: object
+                    description: "Error details"

@@ -9,6 +9,14 @@ const { createAuditMiddleware } = require("../../audit");
 // Create audit middleware for the sdk module
 const sdkAudit = createAuditMiddleware("sdk");
 
+
+//new registration route
+router.post("/register",sdkAudit.sdkAction("register", {
+    description: "SDK registered a new user",
+    targetModel: "User",
+    details: req => req.body
+}), sdkApiController.register);
+
 /**
  * @route   GET /api/sdk/users/:user_id/points
  * @desc    Get user points balance
