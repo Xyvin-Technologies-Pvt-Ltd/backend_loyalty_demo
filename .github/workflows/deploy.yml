@@ -1,4 +1,4 @@
-name: Deploy Loyalty Backend
+name: CBS Loyalty Backend
 
 on:
   push:

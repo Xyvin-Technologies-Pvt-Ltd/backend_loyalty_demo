@@ -19,6 +19,7 @@ const customer_schema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+ 
     referred_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Customer",
@@ -39,10 +40,11 @@ const customer_schema = new mongoose.Schema(
       },
     ],
     //for notification
-    device_token: [{ type: String, trim: true, unique: true }], //multiple device token
+    device_token: [{ type: String, trim: true, default: null }], //multiple device token
     device_type: {
       type: String,
       enum: ["android", "ios", "web"],
+      default: null,
       // required: true,
     },
     notification_preferences: {
@@ -64,7 +66,6 @@ customer_schema.index({ customer_id: 1 });
 customer_schema.index({ email: 1 });
 customer_schema.index({ phone: 1 });
 customer_schema.index({ app_type: 1 });
-// customer_schema.index({ referral_code: 1 });
 
 
 module.exports = Customer;

@@ -221,7 +221,7 @@ pointsCriteriaSchema.methods.checkTransactionLimitsAggregated = async function (
     const aggregationResult = await Transaction.aggregate([
       {
         $match: {
-          customer_id: mongoose.Types.ObjectId(customerId),
+          customer_id: new mongoose.Types.ObjectId(customerId),
           point_criteria: this._id,
           status: "success",
           transaction_type: "earn",
@@ -459,6 +459,104 @@ pointsCriteriaSchema.statics.getSupportedPaymentMethods = async function () {
 // Add indexes for better query performance
 pointsCriteriaSchema.index({ eventType: 1, serviceType: 1, appType: 1 });
 pointsCriteriaSchema.index({ isActive: 1 });
+
+// New method to check criteria usage from transaction metadata
+pointsCriteriaSchema.methods.checkCriteriaUsageFromMetadata = async function (
+  customerId
+) {
+  try {
+    const now = new Date();
+
+    // Calculate start dates
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - 7);
+
+    const startOfMonth = new Date(now);
+    startOfMonth.setDate(1);
+
+    const Transaction = mongoose.model("Transaction");
+
+    // Aggregate to count criteria usage from metadata.items
+    const aggregationResult = await Transaction.aggregate([
+      {
+        $match: {
+          customer_id: new mongoose.Types.ObjectId(customerId),
+          status: "completed",
+          transaction_type: "earn",
+          "metadata.items": { $exists: true },
+        },
+      },
+      {
+        $unwind: "$metadata.items",
+      },
+      {
+        $match: {
+          "metadata.items.criteria_code": this.unique_code,
+        },
+      },
+      {
+        $facet: {
+          weeklyCount: [
+            { $match: { createdAt: { $gte: startOfWeek } } },
+            { $count: "count" },
+          ],
+          monthlyCount: [
+            { $match: { createdAt: { $gte: startOfMonth } } },
+            { $count: "count" },
+          ],
+        },
+      },
+    ]);
+
+    // Extract counts from aggregation result
+    const weeklyCount = aggregationResult[0].weeklyCount[0]?.count || 0;
+    const monthlyCount = aggregationResult[0].monthlyCount[0]?.count || 0;
+
+    // Check against limits
+    if (
+      this.conditions.maxTransactions.weekly !== null &&
+      weeklyCount >= this.conditions.maxTransactions.weekly
+    ) {
+      return {
+        withinLimits: false,
+        message: `Weekly usage limit exceeded for criteria ${this.unique_code}`,
+        currentCount: weeklyCount,
+        limit: this.conditions.maxTransactions.weekly,
+        criteria_code: this.unique_code,
+      };
+    }
+
+    if (
+      this.conditions.maxTransactions.monthly !== null &&
+      monthlyCount >= this.conditions.maxTransactions.monthly
+    ) {
+      return {
+        withinLimits: false,
+        message: `Monthly usage limit exceeded for criteria ${this.unique_code}`,
+        currentCount: monthlyCount,
+        limit: this.conditions.maxTransactions.monthly,
+        criteria_code: this.unique_code,
+      };
+    }
+
+    return {
+      withinLimits: true,
+      weeklyCount,
+      monthlyCount,
+      weeklyLimit: this.conditions.maxTransactions.weekly,
+      monthlyLimit: this.conditions.maxTransactions.monthly,
+      criteria_code: this.unique_code,
+    };
+  } catch (error) {
+    console.error("Error checking criteria usage from metadata:", error);
+    // Default to allowing the transaction if there's an error
+    return {
+      withinLimits: true,
+      error: error.message,
+      criteria_code: this.unique_code,
+    };
+  }
+};
 
 const PointsCriteria = mongoose.model("PointsCriteria", pointsCriteriaSchema);
 

@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-
+const { v4: uuidv4 } = require('uuid');
 const transaction_schema = new mongoose.Schema(
   {
     customer_id: {
@@ -24,6 +24,7 @@ const transaction_schema = new mongoose.Schema(
       type: String,
       unique: true,
       required: true,
+      default: uuidv4(),
     },
 
 
@@ -34,7 +35,7 @@ const transaction_schema = new mongoose.Schema(
     },
     payment_method: {
       type: String,
-      enum: ["Khedmah-site", "KhedmahPay-Wallet"], // Separate logic for Khedmah & KhedmahPay
+ // Separate logic for Khedmah & KhedmahPay
       default: null,
     },
    

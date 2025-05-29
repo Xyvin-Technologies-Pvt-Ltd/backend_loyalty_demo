@@ -1,4 +1,4 @@
-name: Deploy Loyalty Backend
+name: UAT Loyalty Backend
 
 on:
   push:

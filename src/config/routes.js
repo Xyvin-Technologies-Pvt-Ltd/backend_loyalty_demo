@@ -46,6 +46,9 @@ const kedmah_offers_routes = require("../modules/kedmah_offers/kedmah_offers.rou
 //upload routes
 const upload_routes = require("../modules/upload/upload.routes");
 
+
+//new-kedmah-sdk-route 
+const new_kedmah_sdk_routes = require("../modules/new_kedmah_sdk/new_kedmah_sdk.routes");
 // Helper function to create separate swagger setup handlers
 const useSchema =
   (schema, options) =>
@@ -130,6 +133,9 @@ function registerRoutes(app, basePath) {
 
   //client only routes
   app.use(`${basePath}/client`, client_only_routes);
+
+  //new-kedmah-sdk-route 
+  app.use(`${basePath}/kedmah-sdk`, new_kedmah_sdk_routes);
 }
 
 module.exports = registerRoutes;

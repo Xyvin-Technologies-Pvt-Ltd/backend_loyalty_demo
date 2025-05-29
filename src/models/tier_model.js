@@ -15,6 +15,16 @@ const tier_schema = new mongoose.Schema(
       en: [{ type: String, trim: true }],
       ar: [{ type: String, trim: true }],
     },
+    tier_point_multiplier: [
+      {
+        appType: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "AppType",
+          required: true,
+        },
+        multiplier: { type: Number, required: true, default: 1 },
+      },
+    ],
   },
   { timestamps: true }
 );
