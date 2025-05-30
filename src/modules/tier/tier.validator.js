@@ -11,6 +11,12 @@ exports.create_tier = Joi.object({
     ar: Joi.array().items(Joi.string()).required(),
   }),
   isActive: Joi.boolean(),
+  tier_point_multiplier: Joi.array().items(
+    Joi.object({
+      appType: Joi.string().required(),
+      multiplier: Joi.number().required(),
+    })
+  ),
 });
 
 exports.update_tier = Joi.object({
@@ -24,4 +30,10 @@ exports.update_tier = Joi.object({
     ar: Joi.array().items(Joi.string()),
   }),
   isActive: Joi.boolean(),
+  tier_point_multiplier: Joi.array().items(
+    Joi.object({
+      appType: Joi.string(),
+      multiplier: Joi.number(),
+    })
+  ),
 });

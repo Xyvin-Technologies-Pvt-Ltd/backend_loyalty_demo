@@ -26,7 +26,11 @@ exports.create = async (req, res) => {
 
 exports.list = async (req, res) => {
   try {
-    const tiers = await Tier.find();
+       const tiers = await Tier.find()
+      .populate({
+        path: "tier_point_multiplier.appType",
+        select: "name" 
+      });
     return response_handler(res, 200, "Tiers fetched successfully!", tiers);
   } catch (error) {
     return response_handler(
