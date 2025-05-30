@@ -42,7 +42,7 @@ const client_only_routes = require("../modules/client_only/index");
 //Offers routes
 const merchant_offers_routes = require("../modules/merchant_offers/merchant_offers.routes");
 const kedmah_offers_routes = require("../modules/kedmah_offers/kedmah_offers.routes");
-
+const payment_method_routes = require("../modules/payment_method/payment_method.router");
 //upload routes
 const upload_routes = require("../modules/upload/upload.routes");
 
@@ -133,6 +133,9 @@ function registerRoutes(app, basePath) {
 
   //client only routes
   app.use(`${basePath}/client`, client_only_routes);
+
+  //payment method routes
+  app.use(`${basePath}/payment-method`, payment_method_routes); 
 
   //new-kedmah-sdk-route 
   app.use(`${basePath}/kedmah-sdk`, new_kedmah_sdk_routes);
