@@ -138,7 +138,7 @@ function registerRoutes(app, basePath) {
   app.use(`${basePath}/payment-method`, payment_method_routes); 
 
   //new-kedmah-sdk-route 
-  app.use(`${basePath}/kedmah-sdk`, new_kedmah_sdk_routes);
+  app.use(`${basePath}/khedmah-sdk`, new_kedmah_sdk_routes);
 }
 
 module.exports = registerRoutes;
