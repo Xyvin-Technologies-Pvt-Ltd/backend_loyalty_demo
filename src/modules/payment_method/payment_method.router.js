@@ -13,41 +13,59 @@ const {
 
 const paymentMethodAudit = createAuditMiddleware("payment_method");
 
-// router.use(authorizePermission());
-
-router.get("/",  paymentMethodAudit.dataAccess("view_payment_methods", {
+router.get(
+  "/",
+  paymentMethodAudit.dataAccess("view_payment_methods", {
     description: "User viewed payment methods",
     targetModel: "PaymentMethod",
-}), cacheMiddleware(60, cacheKeys.allPaymentMethods), payment_method_controller.getPaymentMethods);        
+  }),
+  cacheMiddleware(5, cacheKeys.allPaymentMethods),
+  payment_method_controller.getPaymentMethods
+);
 
-
-//create payment method
-router.post("/",  paymentMethodAudit.captureResponse(), paymentMethodAudit.adminAction("create_payment_method", {
+router.post(
+  "/",
+  paymentMethodAudit.captureResponse(),
+  paymentMethodAudit.adminAction("create_payment_method", {
     description: "User created a payment method",
-    targetModel: "PaymentMethod",   
-}), payment_method_controller.createPaymentMethod, cacheInvalidationMiddleware(cacheKeys.allPaymentMethods));     
+    targetModel: "PaymentMethod",
+  }),
+  payment_method_controller.createPaymentMethod,
+  cacheInvalidationMiddleware(cacheKeys.allPaymentMethods)
+);
 
-//update payment method
-router.put("/:id",  paymentMethodAudit.captureResponse(), paymentMethodAudit.adminAction("update_payment_method", {
+router.put(
+  "/:id",
+  paymentMethodAudit.captureResponse(),
+  paymentMethodAudit.adminAction("update_payment_method", {
     description: "User updated a payment method",
     targetModel: "PaymentMethod",
-}), payment_method_controller.updatePaymentMethod, cacheInvalidationMiddleware(cacheKeys.allPaymentMethods)); 
+  }),
+  payment_method_controller.updatePaymentMethod,
+  cacheInvalidationMiddleware(cacheKeys.allPaymentMethods),
+  cacheInvalidationMiddleware(cacheKeys.paymentMethodById)
+);
 
-//delete payment method
-router.delete("/:id",  paymentMethodAudit.captureResponse(), paymentMethodAudit.adminAction("delete_payment_method", {
+router.delete(
+  "/:id",
+  paymentMethodAudit.captureResponse(),
+  paymentMethodAudit.adminAction("delete_payment_method", {
     description: "User deleted a payment method",
     targetModel: "PaymentMethod",
-}), payment_method_controller.deletePaymentMethod, cacheInvalidationMiddleware(cacheKeys.allPaymentMethods)); 
+  }),
+  payment_method_controller.deletePaymentMethod,
+  cacheInvalidationMiddleware(cacheKeys.allPaymentMethods),
+  cacheInvalidationMiddleware(cacheKeys.paymentMethodById)
+);
 
-//get payment method by id
-router.get("/:id",  paymentMethodAudit.dataAccess("view_payment_method", {
+router.get(
+  "/:id",
+  paymentMethodAudit.dataAccess("view_payment_method", {
     description: "User viewed a payment method",
     targetModel: "PaymentMethod",
-}), cacheMiddleware(60, cacheKeys.allPaymentMethods), payment_method_controller.getPaymentMethodById);
-
-
-
-
+  }),
+  cacheMiddleware(5, cacheKeys.paymentMethodById), 
+  payment_method_controller.getPaymentMethodById
+);
 
 module.exports = router;
-

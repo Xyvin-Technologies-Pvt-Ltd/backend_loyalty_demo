@@ -34,7 +34,7 @@ router.get(
     description: "Admin viewed all coupon categories",
     targetModel: "CouponCategory",
   }),
-  cacheMiddleware(60, cacheKeys.allCouponCategories),
+  cacheMiddleware(6, cacheKeys.allCouponCategories),
   getAllCouponCategories
 );
 

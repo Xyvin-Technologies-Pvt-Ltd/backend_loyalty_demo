@@ -9,8 +9,13 @@ const {
 } = require("./coupon_brand.controllers");
 const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
-const { cacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
-const { cacheMiddleware, cacheKeys } = require("../../middlewares/redis_cache/cache.middleware");
+const {
+  cacheInvalidationMiddleware,
+} = require("../../middlewares/redis_cache/cache_invalidation.middleware");
+const {
+  cacheMiddleware,
+  cacheKeys,
+} = require("../../middlewares/redis_cache/cache.middleware");
 
 const couponBrandAudit = createAuditMiddleware("coupon_brand");
 
@@ -58,7 +63,10 @@ router.put(
     description: "Admin updated a coupon brand",
     targetModel: "CouponBrand",
   }),
-  cacheInvalidationMiddleware(cacheKeys.allCouponBrands, cacheKeys.couponBrandById),
+  cacheInvalidationMiddleware(
+    cacheKeys.allCouponBrands,
+    cacheKeys.couponBrandById
+  ),
   updateCouponBrand
 );
 
@@ -70,7 +78,10 @@ router.delete(
     description: "Admin deleted a coupon brand",
     targetModel: "CouponBrand",
   }),
-  cacheInvalidationMiddleware(cacheKeys.allCouponBrands, cacheKeys.couponBrandById),
+  cacheInvalidationMiddleware(
+    cacheKeys.allCouponBrands,
+    cacheKeys.couponBrandById
+  ),
   deleteCouponBrand
 );
 
