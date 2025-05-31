@@ -3,8 +3,8 @@ const router = express.Router();
 const tier_controller = require("./tier.controller");
 const { authorizePermission } = require('../../middlewares/auth/auth');
 const { createAuditMiddleware } = require("../audit");
-const { cacheMiddleware, cacheKeys } = require("../../middlewares/redis_cache/cache.middleware");   
-const { cacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
+const { cacheMiddleware, cacheKeys,cachePatterns } = require("../../middlewares/redis_cache/cache.middleware");   
+const { cacheInvalidationMiddleware,enhancedCacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
 // Create audit middleware for the tier module
 const tierAudit = createAuditMiddleware("tier");
 
@@ -25,7 +25,10 @@ router.post(
       return null;
     }
   }),
-  cacheInvalidationMiddleware(cacheKeys.allTiers, cacheKeys.tierById),
+  enhancedCacheInvalidationMiddleware(
+    { pattern: cachePatterns.allTiers }, // Clear all tiers cache (all query variations)
+    cacheKeys.tierById
+  ),
   tier_controller.create
 );
 
@@ -68,7 +71,10 @@ router.put(
       return null;
     }
   }),
-  cacheInvalidationMiddleware(cacheKeys.allTiers, cacheKeys.tierById),
+  enhancedCacheInvalidationMiddleware(
+    { pattern: cachePatterns.allTiers }, // Clear all tiers cache (all query variations)
+    cacheKeys.tierById
+  ),
   tier_controller.update_tier
 );
 
@@ -79,7 +85,10 @@ router.delete(
     targetModel: "Tier",
     targetId: (req) => req.params.id
   }),
-  cacheInvalidationMiddleware(cacheKeys.allTiers, cacheKeys.tierById),
+  enhancedCacheInvalidationMiddleware(
+    { pattern: cachePatterns.allTiers }, // Clear all tiers cache (all query variations)
+    cacheKeys.tierById
+  ),
   tier_controller.delete_tier
 );
 

@@ -3,8 +3,8 @@ const router = express.Router();
 const merchant_offers_controller = require('./merchant_offers.controller');
 const { authorizePermission } = require('../../middlewares/auth/auth');
 const { createAuditMiddleware } = require('../audit');
-const { cacheInvalidationMiddleware } = require('../../middlewares/redis_cache/cache_invalidation.middleware');
-const { cacheMiddleware, cacheKeys } = require('../../middlewares/redis_cache/cache.middleware');
+const { cacheInvalidationMiddleware,enhancedCacheInvalidationMiddleware } = require('../../middlewares/redis_cache/cache_invalidation.middleware');
+const { cacheMiddleware, cacheKeys,cachePatterns } = require('../../middlewares/redis_cache/cache.middleware');
 
 // Create audit middleware for the merchant_offers module
 const couponAudit = createAuditMiddleware('merchant_offers');
@@ -22,7 +22,10 @@ router.post('/create',
         targetModel: 'CouponCode',
         details: req => req.body
     }),
-    cacheInvalidationMiddleware(cacheKeys.ALL_COUPONS),
+    enhancedCacheInvalidationMiddleware(
+        { pattern: cachePatterns.allCoupons }, // Clear all coupons cache (all query variations)
+        cacheKeys.allCoupons
+    ),
     merchant_offers_controller.createCoupon
 );
 
@@ -35,7 +38,10 @@ router.post('/bulk-create',
         targetModel: 'CouponCode',
         details: req => req.body
     }),
-    cacheInvalidationMiddleware(cacheKeys.ALL_COUPONS),
+    enhancedCacheInvalidationMiddleware(
+        { pattern: cachePatterns.allCoupons }, // Clear all coupons cache (all query variations)
+        cacheKeys.allCoupons
+    ),
     merchant_offers_controller.createBulkCoupons
 );
 
@@ -48,7 +54,10 @@ router.post('/create-link',
         targetModel: 'CouponCode',
         details: req => req.body
     }),
-    cacheInvalidationMiddleware(cacheKeys.ALL_COUPONS),
+    enhancedCacheInvalidationMiddleware(
+        { pattern: cachePatterns.allCoupons }, // Clear all coupons cache (all query variations)
+        cacheKeys.allCoupons
+    ),
     merchant_offers_controller.createOneTimeLinkCoupon
 );
 
@@ -98,7 +107,10 @@ router.put('/:couponId',
         targetId: req => req.params.couponId,
         details: req => req.body
     }),
-    cacheInvalidationMiddleware(cacheKeys.COUPON_DETAILS, req => req.params.couponId),
+    enhancedCacheInvalidationMiddleware(
+        { pattern: cachePatterns.allCoupons }, // Clear all coupons cache (all query variations)
+        cacheKeys.allCoupons
+    ),
     merchant_offers_controller.updateCoupon
 );
 
@@ -111,7 +123,10 @@ router.delete('/:couponId',
         targetModel: 'CouponCode',
         targetId: req => req.params.couponId
     }),
-    cacheInvalidationMiddleware(cacheKeys.COUPON_DETAILS, req => req.params.couponId),
+    enhancedCacheInvalidationMiddleware(
+        { pattern: cachePatterns.allCoupons }, // Clear all coupons cache (all query variations)
+        cacheKeys.allCoupons
+    ),
     merchant_offers_controller.deleteCoupon
 );  
 

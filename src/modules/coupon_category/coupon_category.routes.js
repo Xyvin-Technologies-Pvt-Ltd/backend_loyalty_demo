@@ -9,8 +9,8 @@ const {
 } = require("./coupon_category.controllers");
 const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
-const { cacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
-const { cacheMiddleware, cacheKeys } = require("../../middlewares/redis_cache/cache.middleware");
+const { cacheInvalidationMiddleware,enhancedCacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
+const { cacheMiddleware, cacheKeys,cachePatterns } = require("../../middlewares/redis_cache/cache.middleware");
 
 
 const couponCategoryAudit = createAuditMiddleware("coupon_category");
@@ -23,7 +23,11 @@ router.post(
     description: "Admin created a coupon category",
     targetModel: "CouponCategory",
   }),
-  cacheInvalidationMiddleware(cacheKeys.allCouponCategories, cacheKeys.couponCategoryById),
+  enhancedCacheInvalidationMiddleware(
+    { pattern: cachePatterns.allCouponCategories }, // Clear all coupon categories cache (all query variations)
+    cacheKeys.allCouponCategories,
+    cacheKeys.couponCategoryById
+  ),
   createCouponCategory
 );
 router.get(
@@ -58,7 +62,11 @@ router.put(
     description: "Admin updated a coupon category",
     targetModel: "CouponCategory",
   }),
-  cacheInvalidationMiddleware(cacheKeys.allCouponCategories, cacheKeys.couponCategoryById),
+  enhancedCacheInvalidationMiddleware(
+    { pattern: cachePatterns.allCouponCategories }, // Clear all coupon categories cache (all query variations)
+    cacheKeys.allCouponCategories,
+    cacheKeys.couponCategoryById
+  ),
   updateCouponCategory
 );
 
@@ -70,7 +78,11 @@ router.delete(
     description: "Admin deleted a coupon category",
     targetModel: "CouponCategory",
   }),
-  cacheInvalidationMiddleware(cacheKeys.allCouponCategories, cacheKeys.couponCategoryById),
+  enhancedCacheInvalidationMiddleware(
+    { pattern: cachePatterns.allCouponCategories }, // Clear all coupon categories cache (all query variations)
+    cacheKeys.allCouponCategories,
+    cacheKeys.couponCategoryById
+  ),
   deleteCouponCategory
 );
 

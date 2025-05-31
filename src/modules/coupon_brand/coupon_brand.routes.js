@@ -11,10 +11,12 @@ const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
 const {
   cacheInvalidationMiddleware,
+  enhancedCacheInvalidationMiddleware,
 } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
 const {
   cacheMiddleware,
   cacheKeys,
+  cachePatterns,
 } = require("../../middlewares/redis_cache/cache.middleware");
 
 const couponBrandAudit = createAuditMiddleware("coupon_brand");
@@ -27,7 +29,10 @@ router.post(
     description: "Admin created a coupon brand",
     targetModel: "CouponBrand",
   }),
-  cacheInvalidationMiddleware(cacheKeys.allCouponBrands),
+  enhancedCacheInvalidationMiddleware(
+    { pattern: cachePatterns.allCouponBrands }, // Clear all coupon brands cache (all query variations)
+    cacheKeys.allCouponBrands,
+  ),
   createCouponBrand
 );
 
@@ -63,7 +68,8 @@ router.put(
     description: "Admin updated a coupon brand",
     targetModel: "CouponBrand",
   }),
-  cacheInvalidationMiddleware(
+  enhancedCacheInvalidationMiddleware(
+    { pattern: cachePatterns.allCouponBrands }, // Clear all coupon brands cache (all query variations)
     cacheKeys.allCouponBrands,
     cacheKeys.couponBrandById
   ),
@@ -78,7 +84,8 @@ router.delete(
     description: "Admin deleted a coupon brand",
     targetModel: "CouponBrand",
   }),
-  cacheInvalidationMiddleware(
+  enhancedCacheInvalidationMiddleware(
+    { pattern: cachePatterns.allCouponBrands }, // Clear all coupon brands cache (all query variations)
     cacheKeys.allCouponBrands,
     cacheKeys.couponBrandById
   ),

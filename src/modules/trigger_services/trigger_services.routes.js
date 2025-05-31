@@ -3,8 +3,8 @@ const router = express.Router();
 const { createTriggerServices, updateTriggerServices, deleteTriggerServices, getAllTriggerServices, getTriggerServicesById, getTriggerServicesByEventId } = require('./trigger_services.controller');
 const { authorizePermission } = require('../../middlewares/auth/auth');
 const { createAuditMiddleware } = require("../audit");
-const { cacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
-const { cacheMiddleware, cacheKeys } = require("../../middlewares/redis_cache/cache.middleware");
+const { cacheInvalidationMiddleware,enhancedCacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware"); 
+const { cacheMiddleware, cacheKeys,cachePatterns } = require("../../middlewares/redis_cache/cache.middleware");
 
 
 const triggerServicesAudit = createAuditMiddleware("trigger_services");
@@ -19,7 +19,10 @@ router.post('/', triggerServicesAudit.captureResponse(), triggerServicesAudit.ad
     targetModel: "TriggerServices",
     details: req => req.body
 }),
-    cacheInvalidationMiddleware(cacheKeys.allTriggerServices, cacheKeys.triggerServicesById),
+    enhancedCacheInvalidationMiddleware(
+        { pattern: cachePatterns.allTriggerServices }, // Clear all trigger services cache (all query variations)
+        cacheKeys.triggerServicesById
+      ),
     createTriggerServices
 );
 
@@ -28,7 +31,7 @@ router.get('/', triggerServicesAudit.adminAction("get_all_trigger_services", {
     targetModel: "TriggerServices",
     details: req => req.body
 }),
-    cacheMiddleware(60, cacheKeys.allTriggerServices),
+    cacheMiddleware(60, cacheKeys.allTriggerServices),  
     getAllTriggerServices
 );
 
@@ -46,7 +49,10 @@ router.put('/:id', triggerServicesAudit.captureResponse(), triggerServicesAudit.
     targetModel: "TriggerServices",
     details: req => req.params
 }),
-    cacheInvalidationMiddleware(cacheKeys.allTriggerServices, cacheKeys.triggerServicesById),
+    enhancedCacheInvalidationMiddleware(
+        { pattern: cachePatterns.allTriggerServices }, // Clear all trigger services cache (all query variations)
+        cacheKeys.triggerServicesById
+      ),
     updateTriggerServices
 );
 
@@ -55,7 +61,10 @@ router.delete('/:id', triggerServicesAudit.captureResponse(), triggerServicesAud
     targetModel: "TriggerServices",
     details: req => req.params
 }),
-    cacheInvalidationMiddleware(cacheKeys.allTriggerServices, cacheKeys.triggerServicesById),
+    enhancedCacheInvalidationMiddleware(
+        { pattern: cachePatterns.allTriggerServices }, // Clear all trigger services cache (all query variations)
+        cacheKeys.triggerServicesById
+      ),
     deleteTriggerServices
 );
 

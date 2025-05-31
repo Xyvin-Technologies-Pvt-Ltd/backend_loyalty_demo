@@ -3,8 +3,8 @@ const router = express.Router();
 const kedmah_offers_controller = require("./kedmah_offers.controller");
 const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
-const { cacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
-const { cacheMiddleware, cacheKeys } = require("../../middlewares/redis_cache/cache.middleware");
+const { cacheInvalidationMiddleware,enhancedCacheInvalidationMiddleware } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
+const { cacheMiddleware, cacheKeys,cachePatterns } = require("../../middlewares/redis_cache/cache.middleware");
 const { kedmahOffersValidationSchema, validateOfferEligibility } = require("./kedmah_offers.validator");
 
 // Create audit middleware for the kedmah_offers module
@@ -26,7 +26,11 @@ router.post(
             return null;
         }
     }),
-    cacheInvalidationMiddleware(cacheKeys.allKedmahOffers, cacheKeys.kedmahOfferById),
+    enhancedCacheInvalidationMiddleware(
+        { pattern: cachePatterns.allKedmahOffers }, // Clear all kedmah offers cache (all query variations)
+        cacheKeys.allKedmahOffers,
+        cacheKeys.kedmahOfferById
+    ),
     kedmah_offers_controller.create
 );
 
@@ -69,7 +73,11 @@ router.put(
             return null;
         }
     }),
-    cacheInvalidationMiddleware(cacheKeys.allKedmahOffers, cacheKeys.kedmahOfferById),
+    enhancedCacheInvalidationMiddleware(
+        { pattern: cachePatterns.allKedmahOffers }, // Clear all kedmah offers cache (all query variations)
+        cacheKeys.allKedmahOffers,
+        cacheKeys.kedmahOfferById
+    ),
     kedmah_offers_controller.update_offer
 );
 
@@ -82,7 +90,11 @@ router.delete(
         targetModel: "KedmahOffers",
         targetId: req => req.params.id
     }),
-    cacheInvalidationMiddleware(cacheKeys.allKedmahOffers, req => req.params.id),
+    enhancedCacheInvalidationMiddleware(
+        { pattern: cachePatterns.allKedmahOffers }, // Clear all kedmah offers cache (all query variations)
+        cacheKeys.allKedmahOffers,
+        cacheKeys.kedmahOfferById
+    ),
     kedmah_offers_controller.delete_offer
 );
 
@@ -117,7 +129,11 @@ router.post(
             return null;
         }
     }),
-    cacheInvalidationMiddleware(cacheKeys.allKedmahOffers, cacheKeys.kedmahOfferById),
+    enhancedCacheInvalidationMiddleware(
+        { pattern: cachePatterns.allKedmahOffers }, // Clear all kedmah offers cache (all query variations)
+        cacheKeys.allKedmahOffers,
+        cacheKeys.kedmahOfferById
+    ),
     kedmah_offers_controller.redeem_offer
 );
 
