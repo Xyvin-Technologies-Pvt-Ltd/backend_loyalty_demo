@@ -30,7 +30,7 @@ const cacheMiddleware = (ttl = 3600, keyGenerator = null) => {
 
       if (cachedData) {
         logger.debug("Cache hit", { key });
-        res.setHeader("X-Cache-Status", "HIT");  // Mark response as cached
+        res.setHeader("X-Cache-Status", "HIT"); // Mark response as cached
         return res.status(200).json(cachedData);
       }
 
@@ -89,25 +89,37 @@ const cacheKeys = {
   allCoinConversionRules: () => "cache:coin_conversion_rules",
 
   //all coupon categories
-  allCouponCategories: () => "cache:coupon_categories",
-
+  allCouponCategories: (req) => {
+    const queryString = new URLSearchParams(req.query).toString();
+    return `cache:coupon_categories:${queryString}`;
+  },
+  allPaymentMethods: (req) => {
+    const queryString = new URLSearchParams(req.query).toString();
+    return `cache:payment_methods:${queryString}`;
+  },
+  paymentMethodById: (req) => `cache:payment_method:${req.params.id}`,
   //coupon category by id
   couponCategoryById: (req) => `cache:coupon_category:${req.params.id}`,
-  
+
   //all coupon brands
-  allCouponBrands: () => "cache:coupon_brands",
+  allCouponBrands: (req) => {
+    const queryString = new URLSearchParams(req.query).toString();
+    return `cache:coupon_brands:${queryString}`;
+  },
 
   //coupon brand by id
   couponBrandById: (req) => `cache:coupon_brand:${req.params.id}`,
-  
+
   //all points expiration rules
   allPointsExpirationRules: () => "cache:points_expiration_rules",
 
   //points expiration rules by id
-  pointsExpirationRulesById: (req) => `cache:points_expiration_rules:${req.params.id}`,
+  pointsExpirationRulesById: (req) =>
+    `cache:points_expiration_rules:${req.params.id}`,
 
   //points expiration rules by user id
-  allPointsExpirationRulesByUser: (req) => `cache:points_expiration_rules:${req.params.user_id}`,
+  allPointsExpirationRulesByUser: (req) =>
+    `cache:points_expiration_rules:${req.params.user_id}`,
 
   //all point criteria
   allPointCriteria: () => "cache:point_criteria",
@@ -117,45 +129,54 @@ const cacheKeys = {
 
   //redeem rules
   allRedemptionRules: () => "cache:redemption_rules",
-  
+
   //redemption rules by id
   redemptionRulesById: (req) => `cache:redemption_rules:${req.params.id}`,
-  
+
   //redemption history by user id
-  redemptionHistoryByUser: (req) => `cache:redemption_history:${req.params.user_id}`,
+  redemptionHistoryByUser: (req) =>
+    `cache:redemption_history:${req.params.user_id}`,
 
   //all referral programs
   allReferralPrograms: () => "cache:referral_programs",
-  
+
   //all theme settings
   allThemeSettings: () => "cache:theme_settings",
 
   //all trigger events
-  allTriggerEvents: () => "cache:trigger_events",
+  allTriggerEvents: (req) => {
+    const queryString = new URLSearchParams(req.query).toString();
+    return `cache:trigger_events:${queryString}`;
+  },
 
   //trigger event by id
   triggerEventById: (req) => `cache:trigger_event:${req.params.id}`,
 
   //all trigger services
-  allTriggerServices: () => "cache:trigger_services",
+  allTriggerServices: (req) => {
+    const queryString = new URLSearchParams(req.query).toString();
+    return `cache:trigger_services:${queryString}`;
+  },
 
   //trigger service by id
   triggerServicesById: (req) => `cache:trigger_service:${req.params.id}`,
 
   //all trigger services by event id
-  allTriggerServicesByEventId: (req) => `cache:trigger_services:${req.params.event_id}`,
+  allTriggerServicesByEventId: (req) =>
+    `cache:trigger_services:${req.params.event_id}`,
 
   //trigger service by event id
-  triggerServiceByEventId: (req) => `cache:trigger_service:${req.params.event_id}`,
+  triggerServiceByEventId: (req) =>
+    `cache:trigger_service:${req.params.event_id}`,
 
   //all trigger services by event id
-  allTriggerServicesByEventId: (req) => `cache:trigger_services:${req.params.event_id}`,
-
+  allTriggerServicesByEventId: (req) =>
+    `cache:trigger_services:${req.params.event_id}`,
 
   //trigger service by event id
-  triggerServiceByEventId: (req) => `cache:trigger_service:${req.params.event_id}`,
-  
-  
+  triggerServiceByEventId: (req) =>
+    `cache:trigger_service:${req.params.event_id}`,
+
   // Custom key generator
   custom: (prefix) => (req) => {
     const id = req.params.id || "";
