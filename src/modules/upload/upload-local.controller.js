@@ -252,18 +252,15 @@ function handleSuccessfulUpload(req, res, fieldUsed) {
   }
 
   // File uploaded successfully
-  const fileUrl = `/uploads/${req.file.filename}`;
-
-
+  //find server adddress and add server address to the url
+  const serverAddress = req.protocol + "://" + req.get("host");
+  const fileUrl = serverAddress + `/uploads/${req.file.filename}`;
 
   res.status(200).json({
     success: true,
     message: "File uploaded successfully",
     data: {
- 
-      path: req.file.path,
-     
-      actualPath: path.resolve(req.file.path), // Show absolute path for debugging
+      url: fileUrl,
     },
   });
 }
