@@ -21,7 +21,6 @@ const createAppType = async (req, res) => {
 const getAllAppTypes = async (req, res) => {
     try {
         const appTypes = await AppType.find();
-        console.log(appTypes)
         return response_handler(res,200, 'App types fetched successfully',  appTypes);
     } catch (error) {
         return response_handler(res, 500, error.message, null);

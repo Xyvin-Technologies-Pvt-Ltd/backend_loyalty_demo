@@ -38,7 +38,6 @@ const storage = multer.diskStorage({
     const fileExtension = path.extname(file.originalname);
     const filename = file.fieldname + "-" + uniqueSuffix + fileExtension;
 
-    console.log(`📄 Generating filename: ${filename}`);
     cb(null, filename);
   },
 });
@@ -54,10 +53,8 @@ const fileFilter = (req, file, cb) => {
   ];
 
   if (allowedTypes.includes(file.mimetype)) {
-    console.log(`✅ File type accepted: ${file.mimetype}`);
     cb(null, true);
   } else {
-    console.log(`❌ File type rejected: ${file.mimetype}`);
     cb(
       new Error(
         `Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed. Received: ${file.mimetype}`

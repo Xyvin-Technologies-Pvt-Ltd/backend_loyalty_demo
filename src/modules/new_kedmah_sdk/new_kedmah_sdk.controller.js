@@ -246,7 +246,6 @@ const addPoints = async (req, res) => {
             const limitsCheck = await criteria.checkCriteriaUsageFromMetadata(
               customer._id
             );
-            console.log("limitsCheck", limitsCheck);
             if (!limitsCheck.withinLimits) {
               // Skip this criteria but continue with others
               skippedCriteria.push({

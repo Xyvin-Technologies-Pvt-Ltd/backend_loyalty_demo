@@ -60,7 +60,6 @@ const getAllSubAdmins = async (req, res) => {
 const getSubAdminById = async (req, res) => {
     try {
         const { id } = req.params;
-        console.log('id',id);
         const subAdmin = await SubAdmin.findById(id)
             .select('-password -passwordResetToken -passwordResetExpires')
             .populate('role', 'name description permissions');

@@ -22,7 +22,6 @@ const protect = async (req, res, next) => {
       req.admin_id = decoded.admin_id;
 
       //? Find the user in the database
-      console.log(req.admin_id);
       const admin = await Admin.findById(req.admin_id);
       if (!admin) {
         return response_handler(res, 401, "Admin not found.");
