@@ -10,11 +10,12 @@ const {
 const { authorizePermission } = require("../../middlewares/auth/auth");
 const { createAuditMiddleware } = require("../audit");
 const {
-  cacheInvalidationMiddleware,
+  enhancedCacheInvalidationMiddleware,
 } = require("../../middlewares/redis_cache/cache_invalidation.middleware");
 const {
   cacheMiddleware,
   cacheKeys,
+  cachePatterns,
 } = require("../../middlewares/redis_cache/cache.middleware");
 
 const triggerEventAudit = createAuditMiddleware("trigger_event");
@@ -29,8 +30,8 @@ router.post(
     targetModel: "TriggerEvent",
     details: (req) => req.body,
   }),
-  cacheInvalidationMiddleware(
-    cacheKeys.allTriggerEvents,
+  enhancedCacheInvalidationMiddleware(
+    { pattern: cachePatterns.allTriggerEvents }, // Clear all trigger events cache (all query variations)
     cacheKeys.triggerEventById,
     cacheKeys.triggerServiceByEventId
   ),
@@ -44,8 +45,8 @@ router.put(
     targetModel: "TriggerEvent",
     details: (req) => req.body,
   }),
-  cacheInvalidationMiddleware(
-    cacheKeys.allTriggerEvents,
+  enhancedCacheInvalidationMiddleware(
+    { pattern: cachePatterns.allTriggerEvents }, // Clear all trigger events cache (all query variations)
     cacheKeys.triggerEventById,
     cacheKeys.triggerServiceByEventId
   ),
@@ -59,8 +60,8 @@ router.delete(
     targetModel: "TriggerEvent",
     details: (req) => req.body,
   }),
-  cacheInvalidationMiddleware(
-    cacheKeys.allTriggerEvents,
+  enhancedCacheInvalidationMiddleware(
+    { pattern: cachePatterns.allTriggerEvents }, // Clear all trigger events cache (all query variations)
     cacheKeys.triggerEventById,
     cacheKeys.triggerServiceByEventId
   ),

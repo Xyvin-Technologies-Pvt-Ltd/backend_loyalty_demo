@@ -185,7 +185,24 @@ const cacheKeys = {
   },
 };
 
+/**
+ * Cache key patterns for invalidation using wildcards
+ * These patterns are used with clearCacheByPattern to clear multiple cache entries
+ */
+const cachePatterns = {
+  allCustomers: "cache:customers:*",
+  allCouponCategories: "cache:coupon_categories:*",
+  allCouponBrands: "cache:coupon_brands:*",
+  allPaymentMethods: "cache:payment_methods:*",
+  allTriggerEvents: "cache:trigger_events:*",
+  allTriggerServices: "cache:trigger_services:*",
+  allTriggerServicesByEventId: (eventId) => `cache:trigger_services:${eventId}`,
+  customerTransactions: (customerId) => `cache:customer:${customerId}:*`,
+  custom: (prefix) => `cache:${prefix}:*`,
+};
+
 module.exports = {
   cacheMiddleware,
   cacheKeys,
+  cachePatterns,
 };
