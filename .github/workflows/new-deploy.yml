@@ -44,6 +44,7 @@ jobs:
           echo "🚀 Starting Docker container..."
           docker run -d \
             --name loyalty-backend-container \
+            --network myapp-network \
             --restart always \
             -p 3000:3000 \
             --env-file .env \

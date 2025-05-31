@@ -4,15 +4,17 @@ const { authorizePermission } = require("../../middlewares/auth/auth");
 const multer = require("multer");
 const { uploadImage, updateImage, deleteImage } = require("./upload.controller");
 
-const upload = multer({ dest: "uploads/" }); // Temporary storage
-
+// Use memory storage
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.use(authorizePermission("UPLOAD_IMAGES"));
+
 // Upload image
 router.post("/image",
-    upload.single("image"),
-    uploadImage
+  upload.single("image"),
+  uploadImage
 );
+
 
 // Update image
 router.put("/image",
