@@ -255,6 +255,7 @@ function handleSuccessfulUpload(req, res, fieldUsed) {
   //find server adddress and add server address to the url
   const serverAddress = req.protocol + "://" + req.get("host");
   const fileUrl = serverAddress + `/uploads/${req.file.filename}`;
+  console.log(fileUrl);
 
   res.status(200).json({
     success: true,
