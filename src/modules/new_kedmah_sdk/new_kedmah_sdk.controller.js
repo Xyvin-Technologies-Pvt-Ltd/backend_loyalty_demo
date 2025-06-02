@@ -21,7 +21,6 @@ const registerCustomer = async (req, res) => {
     if (!customer_id) {
       return response_handler(res, 400, "customer_id is required");
     }
-
     // Check if customer already exists
     const existingCustomer = await Customer.findOne({ customer_id });
     if (existingCustomer) {
@@ -50,6 +49,10 @@ const registerCustomer = async (req, res) => {
     const referralCode = `REF${customer_id}${Date.now().toString().slice(-6)}`;
     // Find app type
     const appType = await AppType.findOne({ name: requested_by });
+
+    if (!appType) {
+      return response_handler(res, 400, "App type not found");
+    }
     // Create new customer
     const newCustomer = await Customer.create({
       customer_id,

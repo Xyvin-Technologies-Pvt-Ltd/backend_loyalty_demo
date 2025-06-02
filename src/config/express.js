@@ -47,8 +47,17 @@ function initializeExpress() {
   app.use(compression());
 
   // Enable Cross-Origin Resource Sharing (CORS)
-  app.use(cors());
-
+  app.use(
+    cors({
+      origin: [
+        "http://uat-loyalty.xyvin.com",
+        "http://localhost:3000",
+        "http://localhost:5473",
+        "http://api-uat-loyalty.xyvin.com",
+      ],
+      credentials: true, // if you need to allow cookies or auth headers
+    })
+  );
   // Parse JSON request bodies
   app.use(express.json());
 
