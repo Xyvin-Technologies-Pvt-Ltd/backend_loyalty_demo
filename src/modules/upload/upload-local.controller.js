@@ -68,7 +68,8 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // Increased to 10MB limit
+    fileSize: 50 * 1024 * 1024, // Increased to 50MB limit (matching Express body parser)
+    fieldSize: 50 * 1024 * 1024, // Field size limit
   },
   fileFilter: fileFilter,
 });
@@ -205,7 +206,7 @@ const uploadController = {
           directoryExists: exists,
           fileCount,
           totalSize: `${(totalSize / (1024 * 1024)).toFixed(2)} MB`,
-          maxFileSize: "10 MB",
+          maxFileSize: "50 MB",
           allowedTypes: [
             "image/jpeg",
             "image/jpg",

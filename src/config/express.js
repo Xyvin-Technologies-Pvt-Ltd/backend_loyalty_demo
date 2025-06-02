@@ -40,29 +40,46 @@ function getUploadPath() {
 function initializeExpress() {
   // Create Express application
   const app = express();
-  // Set security HTTP headers
-  app.use(helmet());
+
+  // Set security HTTP headers (BEFORE CORS)
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    })
+  );
 
   // Compress response bodies
   app.use(compression());
 
-  // Enable Cross-Origin Resource Sharing (CORS)
+  // Enable Cross-Origin Resource Sharing (CORS) - MUST BE EARLY
   app.use(
     cors({
       origin: [
         "http://uat-loyalty.xyvin.com",
         "http://localhost:3000",
-        "http://localhost:5473",
+        "http://localhost:5173",
         "http://api-uat-loyalty.xyvin.com",
       ],
       credentials: true, // if you need to allow cookies or auth headers
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "api-key",
+      ],
+      optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
     })
   );
-  // Parse JSON request bodies
-  app.use(express.json());
 
-  // Parse URL-encoded request body
-  app.use(express.urlencoded({ extended: true }));
+  // Handle preflight requests explicitly
+  app.options("*", cors());
+
+  // Parse JSON request bodies with increased size limit for file uploads metadata
+  app.use(express.json({ limit: "50mb" }));
+
+  // Parse URL-encoded request body with increased size limit
+  app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
   // Sanitize request data against XSS
   app.use(xss());
@@ -78,10 +95,16 @@ function initializeExpress() {
       `📁 Created upload directory for static serving: ${uploadPath}`
     );
   }
-app.use("/uploads", (req, res, next) => {
-  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-  next();
-});
+
+  // Configure uploads static serving with CORS headers
+  app.use("/uploads", (req, res, next) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    next();
+  });
+
   app.use(
     "/uploads",
     express.static(uploadPath, {
@@ -98,6 +121,16 @@ app.use("/uploads", (req, res, next) => {
 
   // Expose metrics endpoint
   app.get("/metrics", metricsEndpoint);
+
+  // CORS test endpoint for debugging
+  app.get("/cors-test", (req, res) => {
+    res.json({
+      success: true,
+      message: "CORS is working correctly",
+      origin: req.get("origin"),
+      timestamp: new Date().toISOString(),
+    });
+  });
 
   // Apply request logging middleware
   app.use(request_logger);
