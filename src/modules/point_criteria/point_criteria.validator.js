@@ -17,6 +17,7 @@ const pointsCriteriaValidationSchema = Joi.object({
       Joi.object({
         pointType: Joi.string().valid("percentage", "fixed").required(),
         pointRate: Joi.number().required(),
+        paymentMethod: Joi.string(),
       })
     )
     .min(1),
