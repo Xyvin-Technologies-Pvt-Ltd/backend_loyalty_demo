@@ -15,9 +15,8 @@ const pointsCriteriaValidationSchema = Joi.object({
   pointSystem: Joi.array()
     .items(
       Joi.object({
-        paymentMethod: Joi.string().valid("Khedmah-Pay", "Khedmah-Wallet"),
-        pointType: Joi.string().valid("percentage", "fixed"),
-        pointRate: Joi.number(),
+        pointType: Joi.string().valid("percentage", "fixed").required(),
+        pointRate: Joi.number().required(),
       })
     )
     .min(1),
