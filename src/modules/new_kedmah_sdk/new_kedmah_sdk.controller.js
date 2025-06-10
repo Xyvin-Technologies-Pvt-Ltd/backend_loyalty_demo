@@ -276,8 +276,9 @@ const addPoints = async (req, res) => {
 
             let itemPoints = 0;
             if (pointSystemEntry.pointType === "percentage") {
+            
               itemPoints =
-                Math.floor((price * pointSystemEntry.pointRate) / 100) || 0;
+                Math.floor((price * (pointSystemEntry.pointRate/100)) || 0);
             } else {
               // Fixed points
               itemPoints = pointSystemEntry.pointRate || 0;
@@ -341,8 +342,9 @@ const addPoints = async (req, res) => {
         }
       }
     );
+
     totalPointsAwarded =
-      Math.floor(totalPointsAwarded * (tierMultiplier || 1)) || 0;
+      Math.floor(totalPointsAwarded * (tierMultiplier.multiplier || 1)) || 0;
 
     // Ensure we have valid points before creating transaction
     if (
