@@ -82,7 +82,7 @@ router.post(
 );
 
 router.post(
-  "/cancel-redemption",
+  "/cancel-redeem-points",
   key_protect,
   validate(cancelRedemptionSchema),
   kedmahSdkAudit.dataModification("cancel_redemption", {
