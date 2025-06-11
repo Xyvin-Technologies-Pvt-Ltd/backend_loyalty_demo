@@ -96,8 +96,12 @@ pointsCriteriaSchema.methods.calculatePoints = function (
     };
   }
 
-  // Check if transaction value meets minimum requirement
-  if (transactionValue < this.conditions.transactionValueLimits.minValue) {
+  // Check if transaction value meets minimum requirement (0 or null means no minimum limit)
+  if (
+    this.conditions.transactionValueLimits.minValue != null &&
+    this.conditions.transactionValueLimits.minValue > 0 &&
+    transactionValue < this.conditions.transactionValueLimits.minValue
+  ) {
     return {
       success: false,
       message: "Transaction value is below the minimum required",
@@ -112,9 +116,10 @@ pointsCriteriaSchema.methods.calculatePoints = function (
   if (pointType === "percentage") {
     let applicableValue = transactionValue;
 
-    // If max value is set and transaction exceeds it, cap at max value
+    // If max value is set and transaction exceeds it, cap at max value (0 or null means no maximum limit)
     if (
       this.conditions.transactionValueLimits.maxValue !== null &&
+      this.conditions.transactionValueLimits.maxValue > 0 &&
       transactionValue > this.conditions.transactionValueLimits.maxValue
     ) {
       applicableValue = this.conditions.transactionValueLimits.maxValue;
@@ -167,9 +172,10 @@ pointsCriteriaSchema.methods.checkTransactionLimits = function (
     (tx) => new Date(tx.createdAt) >= startOfMonth
   ).length;
 
-  // Check weekly limits
+  // Check weekly limits (0 or null means no limit)
   if (
     this.conditions.maxTransactions.weekly !== null &&
+    this.conditions.maxTransactions.weekly > 0 &&
     weeklyTransactions >= this.conditions.maxTransactions.weekly
   ) {
     return {
@@ -180,9 +186,10 @@ pointsCriteriaSchema.methods.checkTransactionLimits = function (
     };
   }
 
-  // Check monthly limits
+  // Check monthly limits (0 or null means no limit)
   if (
     this.conditions.maxTransactions.monthly !== null &&
+    this.conditions.maxTransactions.monthly > 0 &&
     monthlyTransactions >= this.conditions.maxTransactions.monthly
   ) {
     return {
@@ -245,9 +252,10 @@ pointsCriteriaSchema.methods.checkTransactionLimitsAggregated = async function (
     const weeklyCount = aggregationResult[0].weeklyCount[0]?.count || 0;
     const monthlyCount = aggregationResult[0].monthlyCount[0]?.count || 0;
 
-    // Check against limits
+    // Check against limits (0 or null means no limit)
     if (
       this.conditions.maxTransactions.weekly !== null &&
+      this.conditions.maxTransactions.weekly > 0 &&
       weeklyCount >= this.conditions.maxTransactions.weekly
     ) {
       return {
@@ -260,6 +268,7 @@ pointsCriteriaSchema.methods.checkTransactionLimitsAggregated = async function (
 
     if (
       this.conditions.maxTransactions.monthly !== null &&
+      this.conditions.maxTransactions.monthly > 0 &&
       monthlyCount >= this.conditions.maxTransactions.monthly
     ) {
       return {
@@ -315,8 +324,12 @@ pointsCriteriaSchema.methods.checkEligibility = function (
     };
   }
 
-  // Check transaction value limits
-  if (transactionValue < this.conditions.transactionValueLimits.minValue) {
+  // Check transaction value limits (0 or null means no minimum limit)
+  if (
+    this.conditions.transactionValueLimits.minValue != null &&
+    this.conditions.transactionValueLimits.minValue > 0 &&
+    transactionValue < this.conditions.transactionValueLimits.minValue
+  ) {
     return {
       eligible: false,
       message: "Transaction value below minimum requirement",
@@ -385,8 +398,12 @@ pointsCriteriaSchema.methods.checkEligibilityOptimized = async function (
     };
   }
 
-  // Check transaction value limits
-  if (transactionValue < this.conditions.transactionValueLimits.minValue) {
+  // Check transaction value limits (0 or null means no minimum limit)
+  if (
+    this.conditions.transactionValueLimits.minValue != null &&
+    this.conditions.transactionValueLimits.minValue > 0 &&
+    transactionValue < this.conditions.transactionValueLimits.minValue
+  ) {
     return {
       eligible: false,
       message: "Transaction value below minimum requirement",
@@ -512,9 +529,10 @@ pointsCriteriaSchema.methods.checkCriteriaUsageFromMetadata = async function (
     const weeklyCount = aggregationResult[0].weeklyCount[0]?.count || 0;
     const monthlyCount = aggregationResult[0].monthlyCount[0]?.count || 0;
 
-    // Check against limits
+    // Check against limits (0 or null means no limit)
     if (
       this.conditions.maxTransactions.weekly !== null &&
+      this.conditions.maxTransactions.weekly > 0 &&
       weeklyCount >= this.conditions.maxTransactions.weekly
     ) {
       return {
@@ -528,6 +546,7 @@ pointsCriteriaSchema.methods.checkCriteriaUsageFromMetadata = async function (
 
     if (
       this.conditions.maxTransactions.monthly !== null &&
+      this.conditions.maxTransactions.monthly > 0 &&
       monthlyCount >= this.conditions.maxTransactions.monthly
     ) {
       return {

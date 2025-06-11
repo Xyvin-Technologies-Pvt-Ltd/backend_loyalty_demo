@@ -10,6 +10,7 @@ const RedemptionRules = require("../../models/redemption_rules_model");
 const LoyaltyPoints = require("../../models/loyalty_points_model");
 const PointsExpirationRules = require("../../models/points_expiration_rules_model");
 const jwt = require("jsonwebtoken");
+const { SafeTransaction } = require("../../helpers/transaction");
 /**
  * Register a new customer for the loyalty program
  */
@@ -132,8 +133,8 @@ const viewCustomer = async (req, res) => {
  * Add loyalty points based on transaction
  */
 const addPoints = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const transaction = new SafeTransaction();
+  const session = await transaction.start();
 
   try {
     const {
@@ -147,7 +148,7 @@ const addPoints = async (req, res) => {
 
     // Validate required fields
     if (!customer_id || !transaction_value || !transaction_id) {
-      await session.abortTransaction();
+      await transaction.abort();
       return response_handler(
         res,
         400,
@@ -160,7 +161,7 @@ const addPoints = async (req, res) => {
     }).session(session);
 
     if (existingTransaction) {
-      await session.abortTransaction();
+      await transaction.abort();
       return response_handler(res, 400, "Transaction already processed");
     }
 
@@ -169,7 +170,7 @@ const addPoints = async (req, res) => {
       .populate("tier")
       .session(session);
     if (!customer) {
-      await session.abortTransaction();
+      await transaction.abort();
       return response_handler(res, 404, "Customer not found");
     }
 
@@ -186,7 +187,7 @@ const addPoints = async (req, res) => {
     );
 
     if (missingCriteriaCodes.length > 0) {
-      await session.abortTransaction();
+      await transaction.abort();
       return response_handler(
         res,
         400,
@@ -211,7 +212,7 @@ const addPoints = async (req, res) => {
     }
 
     if (criteriaMissingPaymentMethod.length > 0) {
-      await session.abortTransaction();
+      await transaction.abort();
       const missingDetails = criteriaMissingPaymentMethod
         .map(
           (item) =>
@@ -249,6 +250,7 @@ const addPoints = async (req, res) => {
             const limitsCheck = await criteria.checkCriteriaUsageFromMetadata(
               customer._id
             );
+
             if (!limitsCheck.withinLimits) {
               // Skip this criteria but continue with others
               skippedCriteria.push({
@@ -262,7 +264,6 @@ const addPoints = async (req, res) => {
               );
               continue; // Skip to next criteria
             }
-
             // Calculate points based on point system
             const pointSystemEntry = criteria.pointSystem.find(
               (ps) => ps.paymentMethod === payment_method
@@ -274,37 +275,37 @@ const addPoints = async (req, res) => {
               continue; // Skip if payment method not supported for this criteria
             }
 
-            let itemPoints = 0;
-            if (pointSystemEntry.pointType === "percentage") {
-            
-              itemPoints =
-                Math.floor((price * (pointSystemEntry.pointRate/100)) || 0);
-            } else {
-              // Fixed points
-              itemPoints = pointSystemEntry.pointRate || 0;
-            }
-
+            //calculate points
             //check transaction value limit
+            //check minimum value irrespective of point type
 
             const { minValue, maxValue } =
               criteria.conditions.transactionValueLimits;
+            // Skip if price is below minimum (0 or null means no minimum limit)
+            if (minValue != null && minValue > 0 && price < minValue) {
+              console.log("minValue not met", minValue, price);
+              continue;
+            }
 
-            // Skip if price is below minimum
-            if (price < minValue) continue;
-
-            // Cap price at maxValue if valid and exceeded
-            if (
-              maxValue != null &&
-              maxValue !== 0 &&
-              maxValue !== "undefined" &&
-              !isNaN(maxValue) &&
-              price > maxValue
-            ) {
-              price = maxValue;
-              if (pointSystemEntry.pointType === "percentage") {
-                itemPoints =
-                  Math.floor((price * pointSystemEntry.pointRate) / 100) || 0;
+            //now calculate points based on point type
+            let itemPoints = 0;
+            if (pointSystemEntry.pointType === "percentage") {
+              // Cap price at maxValue if valid and exceeded (0 or null means no maximum limit)
+              if (
+                maxValue != null &&
+                maxValue > 0 &&
+                maxValue !== "undefined" &&
+                !isNaN(maxValue) &&
+                price > maxValue
+              ) {
+                price = maxValue;
               }
+
+              itemPoints = (price * pointSystemEntry.pointRate) / 100;
+              console.log("itemPoints", itemPoints);
+            } else {
+              //flat points
+              itemPoints = price * pointSystemEntry.pointRate;
             }
 
             // Ensure points is a valid number
@@ -323,7 +324,7 @@ const addPoints = async (req, res) => {
           }
         }
       } catch (error) {
-        await session.abortTransaction();
+        await transaction.abort();
         logger.error(`Error processing items: ${error.message}`, {
           stack: error.stack,
           body: req.body,
@@ -368,7 +369,8 @@ const addPoints = async (req, res) => {
       responseMessage = "All criteria have reached their usage limits";
       shouldCreateTransaction = false; // Don't create transaction for 0 points
     } else if (totalPointsAwarded === 0) {
-      responseMessage = "No points awarded - criteria conditions not met";
+      responseMessage =
+        "No points awarded due to criteria conditions not met or not enough price or points(less than 1)";
       shouldCreateTransaction = false;
     }
 
@@ -404,7 +406,7 @@ const addPoints = async (req, res) => {
 
       // Update customer points only if transaction was created successfully
       if (!newTransaction) {
-        await session.abortTransaction();
+        await transaction.abort();
         return response_handler(
           res,
           500,
@@ -425,7 +427,7 @@ const addPoints = async (req, res) => {
       );
 
       if (!updatedCustomer) {
-        await session.abortTransaction();
+        await transaction.abort();
         return response_handler(res, 500, "Failed to update customer points");
       }
 
@@ -497,7 +499,7 @@ const addPoints = async (req, res) => {
       }
     }
 
-    await session.commitTransaction();
+    await transaction.commit();
 
     // Prepare response data
     const responseData = {
@@ -523,7 +525,7 @@ const addPoints = async (req, res) => {
 
     return response_handler(res, 200, responseMessage, responseData);
   } catch (error) {
-    await session.abortTransaction();
+    await transaction.abort();
     logger.error(`Error adding points: ${error.message}`, {
       stack: error.stack,
       body: req.body,
@@ -534,7 +536,7 @@ const addPoints = async (req, res) => {
     });
     return response_handler(res, 500, "Internal server error");
   } finally {
-    session.endSession();
+    await transaction.end();
   }
 };
 
@@ -542,15 +544,15 @@ const addPoints = async (req, res) => {
  * Redeem loyalty points for purchase
  */
 const redeemPoints = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const transaction = new SafeTransaction();
+  const session = await transaction.start();
 
   try {
     const { customer_id, total_spent, requested_by, transaction_id } = req.body;
 
     // Validate required fields
     if (!customer_id || !total_spent || !transaction_id) {
-      await session.abortTransaction();
+      await transaction.abort();
       return response_handler(
         res,
         400,
@@ -564,23 +566,25 @@ const redeemPoints = async (req, res) => {
     }).session(session);
 
     if (existingTransaction) {
-      await session.abortTransaction();
+      await transaction.abort();
       return response_handler(res, 400, "Transaction already processed");
     }
 
     // Find customer
     const customer = await Customer.findOne({ customer_id }).session(session);
     if (!customer) {
-      await session.abortTransaction();
+      await transaction.abort();
       return response_handler(res, 404, "Customer not found");
     }
     // Calculate points to redeem (assuming 1 point = 1 currency unit)
     const pointsToRedeem = total_spent;
 
     // Get active redemption rules
-    const appType = await AppType.findOne({ name: requested_by}).session(session);
+    const appType = await AppType.findOne({ name: requested_by }).session(
+      session
+    );
     if (!appType) {
-      await session.abortTransaction();
+      await transaction.abort();
       return response_handler(res, 404, "App type/ requested by not found");
     }
     const redemptionRules = await RedemptionRules.findOne({
@@ -589,12 +593,12 @@ const redeemPoints = async (req, res) => {
     }).session(session);
 
     if (!redemptionRules) {
-     logger.info(`No redemption rules found for ${requested_by}`);
+      logger.info(`No redemption rules found for ${requested_by}`);
     }
     if (redemptionRules) {
       // Check minimum points requirement
       if (pointsToRedeem < redemptionRules.minimum_points_required) {
-        await session.abortTransaction();
+        await transaction.abort();
         return response_handler(
           res,
           400,
@@ -630,7 +634,7 @@ const redeemPoints = async (req, res) => {
         pointsRedeemedToday + pointsToRedeem >
         redemptionRules.maximum_points_per_day
       ) {
-        await session.abortTransaction();
+        await transaction.abort();
         return response_handler(
           res,
           400,
@@ -638,12 +642,11 @@ const redeemPoints = async (req, res) => {
         );
       }
       // Apply tier multiplier if exists
-     
     }
 
     // Check if customer has enough points
     if (customer.total_points < pointsToRedeem) {
-      await session.abortTransaction();
+      await transaction.abort();
       return response_handler(res, 400, "Insufficient points balance");
     }
 
@@ -675,13 +678,12 @@ const redeemPoints = async (req, res) => {
       {
         $inc: {
           total_points: -pointsToRedeem,
-          
         },
       },
       { new: true, session }
     );
 
-    await session.commitTransaction();
+    await transaction.commit();
 
     logger.info(`Points redeemed successfully: ${customer_id}`, {
       customer_id,
@@ -696,14 +698,14 @@ const redeemPoints = async (req, res) => {
       point_balance: updatedCustomer.total_points,
     });
   } catch (error) {
-    await session.abortTransaction();
+    await transaction.abort();
     logger.error(`Error redeeming points: ${error.message}`, {
       stack: error.stack,
       body: req.body,
     });
     return response_handler(res, 500, "Internal server error");
   } finally {
-    session.endSession();
+    await transaction.end();
   }
 };
 
@@ -711,15 +713,15 @@ const redeemPoints = async (req, res) => {
  * Cancel a previous point redemption
  */
 const cancelRedemption = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const transaction = new SafeTransaction();
+  const session = await transaction.start();
 
   try {
     const { customer_id, transaction_id } = req.body;
 
     // Validate required fields
     if (!customer_id || !transaction_id) {
-      await session.abortTransaction();
+      await transaction.abort();
       return response_handler(
         res,
         400,
@@ -736,13 +738,13 @@ const cancelRedemption = async (req, res) => {
       .session(session);
 
     if (!originalTransaction) {
-      await session.abortTransaction();
+      await transaction.abort();
       return response_handler(res, 404, "Redemption transaction not found");
     }
 
     // Verify customer matches
     if (originalTransaction.customer_id.customer_id !== customer_id) {
-      await session.abortTransaction();
+      await transaction.abort();
       return response_handler(
         res,
         400,
@@ -757,7 +759,7 @@ const cancelRedemption = async (req, res) => {
     }).session(session);
 
     if (existingCancellation) {
-      await session.abortTransaction();
+      await transaction.abort();
       return response_handler(res, 400, "Transaction already cancelled");
     }
 
@@ -790,7 +792,6 @@ const cancelRedemption = async (req, res) => {
       {
         $inc: {
           total_points: pointsToRestore,
-          
         },
       },
       { new: true, session }
@@ -853,7 +854,7 @@ const cancelRedemption = async (req, res) => {
       }
     }
 
-    await session.commitTransaction();
+    await transaction.commit();
 
     logger.info(`Redemption cancelled successfully: ${customer_id}`, {
       customer_id,
@@ -866,42 +867,47 @@ const cancelRedemption = async (req, res) => {
       point_balance: updatedCustomer.total_points,
     });
   } catch (error) {
-    await session.abortTransaction();
+    await transaction.abort();
     logger.error(`Error cancelling redemption: ${error.message}`, {
       stack: error.stack,
       body: req.body,
     });
     return response_handler(res, 500, "Internal server error");
   } finally {
-    session.endSession();
+    await transaction.end();
   }
 };
 
 const generateToken = async (req, res) => {
   try {
-  const { customer_id, requested_by } = req.body;
-  const appType = await AppType.findOne({ name: requested_by });
-  if (!appType) {
-    return response_handler(res, 404, "App type not found");
-  }
-  console.log(customer_id);
-  const customer = await Customer.findOne({ customer_id }).select("customer_id name email phone");
+    const { customer_id, requested_by } = req.body;
+    const appType = await AppType.findOne({ name: requested_by });
+    if (!appType) {
+      return response_handler(res, 404, "App type not found");
+    }
+    console.log(customer_id);
+    const customer = await Customer.findOne({ customer_id }).select(
+      "customer_id name email phone"
+    );
 
-  if (!customer) {
-    return response_handler(res, 404, "Customer not found");
-  }
+    if (!customer) {
+      return response_handler(res, 404, "Customer not found");
+    }
 
-  const token = jwt.sign({ customer_id }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
+    const token = jwt.sign({ customer_id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
-
-
-  const responseData = {
-    token,
-    customer_id: customer.customer_id,
-  };
-  return response_handler(res, 200, "Token generated successfully", responseData);
+    const responseData = {
+      token,
+      customer_id: customer.customer_id,
+    };
+    return response_handler(
+      res,
+      200,
+      "Token generated successfully",
+      responseData
+    );
   } catch (error) {
     logger.error(`Error generating token: ${error.message}`, {
       stack: error.stack,
@@ -912,8 +918,6 @@ const generateToken = async (req, res) => {
   }
 };
 
-
-
 module.exports = {
   registerCustomer,
   viewCustomer,
@@ -921,5 +925,4 @@ module.exports = {
   redeemPoints,
   cancelRedemption,
   generateToken,
-  
 };
