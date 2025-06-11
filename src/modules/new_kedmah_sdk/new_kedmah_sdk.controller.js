@@ -367,11 +367,11 @@ const addPoints = async (req, res) => {
       skippedCriteria.length > 0
     ) {
       responseMessage = "All criteria have reached their usage limits";
-      shouldCreateTransaction = false; // Don't create transaction for 0 points
+      shouldCreateTransaction = true; // Don't create transaction for 0 points
     } else if (totalPointsAwarded === 0) {
       responseMessage =
         "No points awarded due to criteria conditions not met or not enough price or points(less than 1)";
-      shouldCreateTransaction = false;
+      shouldCreateTransaction = true;
     }
 
     let newTransaction = null;
