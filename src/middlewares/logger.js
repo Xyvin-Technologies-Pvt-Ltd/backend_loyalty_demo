@@ -41,7 +41,7 @@ const get_user_info = (req) => {
   } else if (req.admin) {
     return `Admin: ${req.admin.name} (${req.admin.email})`;
   }
-  return "Unauthenticated Request";
+  return "Authenticated Request";
 };
 
 //? Middleware for logging incoming requests

@@ -528,6 +528,10 @@ const addPoints = async (req, res) => {
       stack: error.stack,
       body: req.body,
     });
+    logger.error(`Error adding points: ${error.message}`, {
+      stack: error.stack,
+      body: req.body,
+    });
     return response_handler(res, 500, "Internal server error");
   } finally {
     session.endSession();
