@@ -9,7 +9,7 @@ const AppType = require("../../models/app_type_model");
 const RedemptionRules = require("../../models/redemption_rules_model");
 const LoyaltyPoints = require("../../models/loyalty_points_model");
 const PointsExpirationRules = require("../../models/points_expiration_rules_model");
-
+const jwt = require("jsonwebtoken");
 /**
  * Register a new customer for the loyalty program
  */
@@ -873,10 +873,49 @@ const cancelRedemption = async (req, res) => {
   }
 };
 
+const generateToken = async (req, res) => {
+  try {
+  const { customer_id, requested_by } = req.body;
+  const appType = await AppType.findOne({ name: requested_by });
+  if (!appType) {
+    return response_handler(res, 404, "App type not found");
+  }
+  console.log(customer_id);
+  const customer = await Customer.findOne({ customer_id }).select("customer_id name email phone");
+
+  if (!customer) {
+    return response_handler(res, 404, "Customer not found");
+  }
+
+  const token = jwt.sign({ customer_id }, process.env.JWT_SECRET, {
+    expiresIn: "1h",
+  });
+
+
+
+  const responseData = {
+    token,
+    customer_id: customer.customer_id,
+  };
+  return response_handler(res, 200, "Token generated successfully", responseData);
+  } catch (error) {
+    logger.error(`Error generating token: ${error.message}`, {
+      stack: error.stack,
+      body: req.body,
+    });
+    console.log(error);
+    return response_handler(res, 500, "Internal server error");
+  }
+};
+
+
+
 module.exports = {
   registerCustomer,
   viewCustomer,
   addPoints,
   redeemPoints,
   cancelRedemption,
+  generateToken,
+  
 };

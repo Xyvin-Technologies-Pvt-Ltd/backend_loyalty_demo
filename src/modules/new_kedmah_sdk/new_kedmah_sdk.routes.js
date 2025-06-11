@@ -15,6 +15,8 @@ const {
 // Create audit middleware for the new Khedmah SDK module
 const kedmahSdkAudit = createAuditMiddleware("new_kedmah_sdk");
 
+router.post('/generate-token', key_protect, kedmah_sdk_controller.generateToken)
+
 router.post(
   "/register",
   key_protect,
