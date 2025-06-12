@@ -15,15 +15,20 @@ const {
 // Create audit middleware for the new Khedmah SDK module
 const kedmahSdkAudit = createAuditMiddleware("new_kedmah_sdk");
 
-router.post('/generate-token', key_protect, kedmah_sdk_controller.generateToken)
+router.post(
+  "/generate-token",
+  key_protect,
+  kedmah_sdk_controller.generateToken
+);
 
 router.post(
   "/register",
   key_protect,
   validate(registerCustomerSchema),
-  kedmahSdkAudit.dataModification("customer_registration", {
+  kedmahSdkAudit.sdkAction("customer_registration", {
     description: "Customer registration via Khedmah SDK",
     targetModel: "Customer",
+    logResponseBody: true,
     details: (req) => ({
       customer_id: req.body.customer_id,
       requested_by: req.body.requested_by,
@@ -37,8 +42,9 @@ router.post(
   "/customer",
   key_protect,
   validate(viewCustomerSchema),
-  kedmahSdkAudit.dataAccess("view_customer", {
+  kedmahSdkAudit.sdkAction("view_customer", {
     description: "View customer details via Khedmah SDK",
+    logResponseBody: true,
     details: (req) => ({
       customer_id: req.body.customer_id,
     }),
@@ -51,9 +57,10 @@ router.post(
   "/add-points",
   key_protect,
   validate(addPointsSchema),
-  kedmahSdkAudit.dataModification("add_points", {
+  kedmahSdkAudit.sdkAction("add_points", {
     description: "Add loyalty points via Khedmah SDK",
     targetModel: "Transaction",
+    logResponseBody: true,
     details: (req) => ({
       customer_id: req.body.customer_id,
       transaction_id: req.body.transaction_id,
@@ -69,9 +76,10 @@ router.post(
   "/redeem-points",
   key_protect,
   validate(redeemPointsSchema),
-  kedmahSdkAudit.dataModification("redeem_points", {
+  kedmahSdkAudit.sdkAction("redeem_points", {
     description: "Redeem loyalty points via Khedmah SDK",
     targetModel: "Transaction",
+    logResponseBody: true,
     details: (req) => ({
       customer_id: req.body.customer_id,
       transaction_id: req.body.transaction_id,
@@ -87,9 +95,10 @@ router.post(
   "/cancel-redeem-points",
   key_protect,
   validate(cancelRedemptionSchema),
-  kedmahSdkAudit.dataModification("cancel_redemption", {
+  kedmahSdkAudit.sdkAction("cancel_redemption", {
     description: "Cancel point redemption via Khedmah SDK",
     targetModel: "Transaction",
+    logResponseBody: true,
     details: (req) => ({
       customer_id: req.body.customer_id,
       transaction_id: req.body.transaction_id,

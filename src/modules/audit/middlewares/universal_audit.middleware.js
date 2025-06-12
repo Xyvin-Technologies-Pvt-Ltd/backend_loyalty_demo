@@ -9,21 +9,35 @@
 const AuditService = require("../services/audit.service");
 const { v4: uuidv4 } = require("uuid");
 const { auditConfig } = require("../../../config/audit");
+const { error } = require("winston");
+const Customer = require("../../../models/customer_model");
 
 /**
  * Get user information from the request
  * @param {Object} req - Express request object
  * @returns {Object} User information
  */
-const getUserInfo = (req) => {
+const getUserInfo = async (req) => {
     // Determine user type (regular user, admin, or SDK client)
-    const user = req.customer || req.admin || req.sdkClient;
+    const user = req.customer || req.admin || req.sdkClient || req.body.customer_id;
 
     if (!user) return { user: null, userModel: null, userName: null, userEmail: null };
 
-    const userModel = req.params.customer_id ? "Customer" : (req.admin ? "Admin" : "Customer");
-    const userName = user.name || user.username || user.clientName || null;
-    const userEmail = user.email || null;
+    const userModel = (req.params.customer_id|| req.body.customer_id) ? "Customer" : (req.admin ? "Admin" : "Customer");
+    let customer_details;
+    if(userModel=="Customer"){
+            try{
+                customer_details= await Customer.findOne({"customer_id":req.body.customer_id})
+                if( !customer_details) throw error
+           
+            }catch{
+                console.log("no user found")
+            }
+    }
+    const userName = user.name || user.username || user.clientName ||customer_details.name|| null;
+    const userEmail = user.email || customer_details.email|| null;
+
+    console.log('sadssda',userName,userEmail,userModel,user)
 
     return {
         user: user._id,
@@ -133,15 +147,15 @@ const auditRoute = (options = {}) => {
         const originalEnd = res.end;
 
         // Override the end method to capture response data
-        res.end = function (chunk, encoding) {
+        res.end = async function (chunk, encoding) {
             // Calculate response time
             const responseTime = Date.now() - startTime;
 
             // Get user info
-            const userInfo = getUserInfo(req);
+            const userInfo = await getUserInfo(req);
 
             // Get request info
-            const requestInfo = getRequestInfo(req);
+            const requestInfo = await getRequestInfo(req);
 
             // Determine action based on route or override
             const action = config.action || `${req.method} ${req.path.split("?")[0]}`;
