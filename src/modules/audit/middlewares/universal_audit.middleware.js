@@ -54,7 +54,6 @@ const getUserInfo = async (req) => {
     null;
   const userEmail = user.email || customer_details?.email || null;
 
-  console.log("sadssda", userName, userEmail, userModel, user);
 
   return {
     user: user._id,

@@ -300,8 +300,8 @@ const addPoints = async (req, res) => {
               ) {
                 price = maxValue;
               }
-
-              itemPoints = (price * pointSystemEntry.pointRate) / 100;
+                //?multiplying with 1000 as per kedmah request
+              itemPoints = (price * pointSystemEntry.pointRate*1000) / 100;
               console.log("itemPoints", itemPoints);
             } else {
               //flat points
@@ -343,9 +343,8 @@ const addPoints = async (req, res) => {
         }
       }
     );
-
     totalPointsAwarded =
-      Math.floor(totalPointsAwarded * (tierMultiplier.multiplier || 1)) || 0;
+      Math.ceil(totalPointsAwarded * (tierMultiplier.multiplier || 1)) || 0;
 
     // Ensure we have valid points before creating transaction
     if (

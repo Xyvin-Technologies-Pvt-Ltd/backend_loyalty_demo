@@ -589,7 +589,6 @@ class AuditService {
     if (!isAuditEnabled()) return null;
 
     try {
-      console.log('santise',data)
       const sanitizedData = sanitizeAuditData(data);
 
       const auditLog = {
