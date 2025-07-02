@@ -300,8 +300,8 @@ const addPoints = async (req, res) => {
               ) {
                 price = maxValue;
               }
-                //?multiplying with 1000 as per kedmah request
-              itemPoints = (price * pointSystemEntry.pointRate*1000) / 100;
+              //?multiplying with 1000 as per kedmah request
+              itemPoints = (price * pointSystemEntry.pointRate * 1000) / 100;
               console.log("itemPoints", itemPoints);
             } else {
               //flat points
@@ -917,6 +917,107 @@ const generateToken = async (req, res) => {
   }
 };
 
+/**
+ * Get customer transaction history
+ */
+const getTransactionHistory = async (req, res) => {
+  try {
+    const { customer_id, page = 1, limit = 20 } = req.body;
+
+    // Validate required fields
+    if (!customer_id) {
+      return response_handler(res, 400, "customer_id is required");
+    }
+
+    // Find customer
+    const customer = await Customer.findOne({ customer_id }).populate("tier");
+    if (!customer) {
+      return response_handler(res, 404, "Customer not found");
+    }
+
+    // Calculate skip for pagination
+    const skip = (page - 1) * limit;
+
+    // Get transactions with pagination
+    const transactions = await Transaction.find({ customer_id: customer._id })
+      .sort({ transaction_date: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    // Get total count for pagination
+    const totalCount = await Transaction.countDocuments({
+      customer_id: customer._id,
+    });
+
+    // Format transactions for frontend
+    const formattedTransactions = transactions.map((transaction) => {
+      const isEarned =
+        transaction.transaction_type === "earn" ||
+        (transaction.transaction_type === "adjust" && transaction.points > 0);
+
+      return {
+        id: transaction._id,
+        type: isEarned ? "earned" : "burned",
+        title: isEarned ? "Points Earned" : "Points Redeemed",
+        description: transaction.note || "Transaction",
+        points: Math.abs(transaction.points),
+        date: new Date(transaction.transaction_date).toLocaleDateString(
+          "en-GB",
+          {
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        ),
+        transaction_id: transaction.transaction_id,
+        status: transaction.status,
+      };
+    });
+
+    const responseData = {
+      customer: {
+        name: customer.name || "",
+        email: customer.email || "",
+        mobile: customer.phone || "",
+        point_balance: customer.total_points || 0,
+        customer_tier: customer.tier ? customer.tier.name : "Bronze",
+      },
+      transactions: formattedTransactions,
+      pagination: {
+        current_page: parseInt(page),
+        total_pages: Math.ceil(totalCount / limit),
+        total_count: totalCount,
+        per_page: parseInt(limit),
+        has_next: page * limit < totalCount,
+        has_prev: page > 1,
+      },
+    };
+
+    logger.info(`Transaction history retrieved: ${customer_id}`, {
+      customer_id,
+      page,
+      limit,
+      total_transactions: totalCount,
+    });
+
+    return response_handler(
+      res,
+      200,
+      "Transaction history retrieved successfully",
+      responseData
+    );
+  } catch (error) {
+    logger.error(`Error retrieving transaction history: ${error.message}`, {
+      stack: error.stack,
+      body: req.body,
+    });
+    return response_handler(res, 500, "Internal server error");
+  }
+};
+
 module.exports = {
   registerCustomer,
   viewCustomer,
@@ -924,4 +1025,5 @@ module.exports = {
   redeemPoints,
   cancelRedemption,
   generateToken,
+  getTransactionHistory,
 };

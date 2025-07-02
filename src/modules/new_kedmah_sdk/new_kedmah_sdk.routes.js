@@ -54,6 +54,23 @@ router.post(
 );
 
 router.post(
+  "/transaction-history",
+  key_protect,
+  validate(viewCustomerSchema),
+  kedmahSdkAudit.sdkAction("view_transaction_history", {
+    description: "View customer transaction history via Khedmah SDK",
+    logResponseBody: true,
+    details: (req) => ({
+      customer_id: req.body.customer_id,
+      page: req.body.page,
+      limit: req.body.limit,
+    }),
+  }),
+  kedmahSdkAudit.captureResponse(),
+  kedmah_sdk_controller.getTransactionHistory
+);
+
+router.post(
   "/add-points",
   key_protect,
   validate(addPointsSchema),
@@ -107,5 +124,7 @@ router.post(
   kedmahSdkAudit.captureResponse(),
   kedmah_sdk_controller.cancelRedemption
 );
+
+//transaction
 
 module.exports = router;

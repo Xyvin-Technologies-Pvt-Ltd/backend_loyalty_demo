@@ -59,7 +59,6 @@ function initializeExpress() {
         "http://localhost:3000",
         "http://localhost:5173",
         "http://api-uat-loyalty.xyvin.com",
-         "http://141.105.172.45:7733",
       ],
       credentials: true, // if you need to allow cookies or auth headers
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -68,6 +67,7 @@ function initializeExpress() {
         "Authorization",
         "X-Requested-With",
         "api-key",
+        "x-api-key"
       ],
       optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
     })
