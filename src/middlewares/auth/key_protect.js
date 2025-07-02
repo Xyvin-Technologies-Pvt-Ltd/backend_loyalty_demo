@@ -4,6 +4,7 @@ const key_protect = async (req, res, next) => {
   try {
     //? Check for API key
     const apiKey = req.headers["api-key"];
+    console.log(apiKey)
     if (!apiKey) {
       return response_handler(res, 401, "No API key provided.");
     }
