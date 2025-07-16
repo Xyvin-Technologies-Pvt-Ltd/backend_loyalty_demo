@@ -104,12 +104,22 @@ const viewCustomer = async (req, res) => {
       return response_handler(res, 404, "Customer not found");
     }
 
+    // Find next tier
+    const nextTier = await Tier.findOne({
+      minimum_points: { $gt: customer.total_points }
+    }).sort({ minimum_points: 1 });
+
     const responseData = {
       name: customer.name || "",
       email: customer.email || "",
       mobile: customer.phone || "",
       point_balance: customer.total_points || 0,
       customer_tier: customer.tier ? customer.tier.name : "Bronze",
+      next_tier: nextTier ? {
+        required_point: nextTier.minimum_points.toString(),
+        en: nextTier.name.en || nextTier.name,
+        ar: nextTier.name.ar || nextTier.name
+      } : null
     };
 
     logger.info(`Customer details retrieved: ${customer_id}`);
@@ -216,8 +226,7 @@ const addPoints = async (req, res) => {
       const missingDetails = criteriaMissingPaymentMethod
         .map(
           (item) =>
-            `${
-              item.criteria_code
+            `${item.criteria_code
             } (available: ${item.available_payment_methods.join(", ")})`
         )
         .join("; ");
@@ -387,9 +396,8 @@ const addPoints = async (req, res) => {
             points: totalPointsAwarded,
             payment_method: payment_method,
             status: "completed",
-            note: `Points earned via Khedmah SDK - ${
-              requested_by || "Khedmah SDK"
-            }`,
+            note: `Points earned via Khedmah SDK - ${requested_by || "Khedmah SDK"
+              }`,
             metadata: {
               items: transactionDetails,
               skipped_criteria: skippedCriteria, // Include skipped criteria info
@@ -658,9 +666,8 @@ const redeemPoints = async (req, res) => {
           transaction_type: "redeem",
           points: -pointsToRedeem,
           status: "completed",
-          note: `Points redeemed via Khedmah SDK - ${
-            requested_by || "Khedmah SDK"
-          }`,
+          note: `Points redeemed via Khedmah SDK - ${requested_by || "Khedmah SDK"
+            }`,
           metadata: {
             requested_by: requested_by || "Khedmah SDK",
             total_spent: total_spent,
