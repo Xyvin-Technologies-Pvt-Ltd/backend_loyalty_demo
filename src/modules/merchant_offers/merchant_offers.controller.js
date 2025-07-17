@@ -294,7 +294,7 @@ exports.getAllCoupons = async (req, res) => {
     if (type) {
       filter.type = type;
     }
-    const coupons = await CouponCode.find(filter)
+    const coupons = await CouponCode.find(filter).populate("merchantId")
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
