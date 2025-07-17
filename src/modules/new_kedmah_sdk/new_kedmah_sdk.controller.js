@@ -1038,6 +1038,15 @@ const getMerchantOffers = async (req, res) => {
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
 
+      //replace a string  like api-uat-loyalty.xyvin.com in image url with 141.105.172.45:7733/api
+      coupons.forEach(coupon => {
+        coupon.posterImage = coupon.posterImage.replace(
+          "http://api-uat-loyalty.xyvin.com/",
+          "http://141.105.172.45:7733/api/"
+        );
+      });
+      
+
     const total = await CouponCode.countDocuments();
 
     return response_handler(
@@ -1059,6 +1068,10 @@ const getCouponDetails = async (req, res) => {
   try {
     const { couponId } = req.params;
     const coupon = await CouponCode.findById(couponId);
+    coupon.posterImage = coupon.posterImage.replace(
+      "http://api-uat-loyalty.xyvin.com/",
+      "http://141.105.172.45:7733/api/"
+    );
     return response_handler(
       res,
       200,
