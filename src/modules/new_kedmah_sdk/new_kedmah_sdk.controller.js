@@ -106,8 +106,8 @@ const viewCustomer = async (req, res) => {
 
     // Find next tier
     const nextTier = await Tier.findOne({
-      minimum_points: { $gt: customer.total_points }
-    }).sort({ minimum_points: 1 });
+      points_required: { $gt: customer.total_points }
+    }).sort({ points_required: 1 });
 
     const responseData = {
       name: customer.name || "",
@@ -116,7 +116,7 @@ const viewCustomer = async (req, res) => {
       point_balance: customer.total_points || 0,
       customer_tier: customer.tier ? customer.tier.name : "Bronze",
       next_tier: nextTier ? {
-        required_point: nextTier.minimum_points.toString(),
+        required_point: nextTier.points_required.toString(),
         en: nextTier.name.en || nextTier.name,
         ar: nextTier.name.ar || nextTier.name
       } : null
