@@ -11,6 +11,7 @@ const LoyaltyPoints = require("../../models/loyalty_points_model");
 const PointsExpirationRules = require("../../models/points_expiration_rules_model");
 const jwt = require("jsonwebtoken");
 const { SafeTransaction } = require("../../helpers/transaction");
+const CouponCode = require("../../models/merchant_offers.model");
 /**
  * Register a new customer for the loyalty program
  */
@@ -1025,6 +1026,77 @@ const getTransactionHistory = async (req, res) => {
   }
 };
 
+const getMerchantOffers = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, type } = req.query;
+    const filter = {};
+    if (type) {
+      filter.type = type;
+    }
+    const coupons = await CouponCode.find(filter).populate("merchantId")
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await CouponCode.countDocuments();
+
+    return response_handler(
+      res,
+      200,
+      "All coupons retrieved successfully",
+      coupons,
+      total
+    );
+  } catch (error) {
+    console.error("Error retrieving all coupons:", error);
+    return response_handler(res, 500, false, "Error retrieving all coupons");
+  }
+};
+
+
+
+const getCouponDetails = async (req, res) => {
+  try {
+    const { couponId } = req.params;
+    const coupon = await CouponCode.findById(couponId);
+    return response_handler(
+      res,
+      200,
+      "Coupon details retrieved successfully",
+      coupon
+    );
+  } catch (error) {
+    console.error("Error retrieving coupon details:", error);
+    return response_handler(res, 500, false, "Error retrieving coupon details");
+  }
+};
+
+const redeemCoupon = async (req, res) => {
+  try {
+    const { couponId, customer_id ,pin} = req.body;
+    const coupon = await CouponCode.findById(couponId);
+    if (!coupon) {
+      return response_handler(res, 404, "Coupon not found");
+    }
+    if (coupon.pin && coupon.pin !== pin) {
+      return response_handler(res, 400, "Invalid pin");
+    }
+    if (coupon.isActive === false) {
+      return response_handler(res, 400, "Coupon is not active");
+    }
+    if (coupon.isExpired === true) {
+      return response_handler(res, 400, "Coupon has expired");
+    }
+    if (coupon.isRedeemed === true) {
+      return response_handler(res, 400, "Coupon has already been redeemed");
+    }
+  
+  } catch (error) {
+    console.error("Error redeeming coupon:", error);
+    return response_handler(res, 500, false, "Error redeeming coupon");
+  }
+};
+
 module.exports = {
   registerCustomer,
   viewCustomer,
@@ -1033,4 +1105,7 @@ module.exports = {
   cancelRedemption,
   generateToken,
   getTransactionHistory,
+  getMerchantOffers,
+  getCouponDetails,
+  redeemCoupon,
 };

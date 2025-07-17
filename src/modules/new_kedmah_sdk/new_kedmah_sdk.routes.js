@@ -125,6 +125,20 @@ router.post(
   kedmah_sdk_controller.cancelRedemption
 );
 
+router.get(
+  "/get-merchant-offers",
+  key_protect,
+  kedmah_sdk_controller.getMerchantOffers
+);
+
+router.get(
+  "/get-coupon-details/:couponId",
+  key_protect,
+  kedmah_sdk_controller.getCouponDetails
+);
+
+
+router.post("/redeem-coupon", key_protect, kedmah_sdk_controller.redeemCoupon);
 //transaction
 
 module.exports = router;
