@@ -6,7 +6,7 @@ const pointsExpirationRulesValidation = Joi.object({
     .min(1)
     .required()
     .default(12)
-    .description("Default expiry period in months"),
+    .description("Default expiry period in days"),
 
   appType: Joi.string().required(),
 
@@ -26,12 +26,12 @@ const pointsExpirationRulesValidation = Joi.object({
   ),
 
   expiry_notifications: Joi.object({
-    first_reminder: Joi.number().integer().min(1).required().default(30),
-    second_reminder: Joi.number().integer().min(1).required().default(15),
-    final_reminder: Joi.number().integer().min(1).required().default(7),
+    first_reminder: Joi.number().integer().default(30),
+    second_reminder: Joi.number().integer().default(15),
+    final_reminder: Joi.number().integer().default(7),
   }),
 
-  grace_period: Joi.number().integer().min(1).required().default(30),
+  grace_period: Joi.number().integer().default(30),
 
  
 });

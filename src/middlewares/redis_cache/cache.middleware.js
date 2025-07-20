@@ -69,6 +69,12 @@ const cacheKeys = {
     const queryString = new URLSearchParams(req.query).toString();
     return `cache:customers:${queryString}`;
   },
+   // All customers with query params
+   allDashboard: (req) => {
+    const queryString = new URLSearchParams(req.query).toString();
+    return `cache:dashboard:${queryString}`;
+  },
+
 
   // Transactions by customer ID
   customerTransactions: (req) => `cache:customer:${req.params.id}:transactions`,

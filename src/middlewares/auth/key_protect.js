@@ -8,14 +8,6 @@ const key_protect = async (req, res, next) => {
     // Use development API key if no environment variable is set
     const expectedApiKey = process.env.API_KEY || "dev-api-key-2024";
 
-    console.log("API Key Debug:", {
-      "api-key": req.headers["api-key"] ? "present" : "undefined",
-      "x-api-key": req.headers["x-api-key"] ? "present" : "undefined",
-      finalApiKey: apiKey ? "present" : "undefined",
-      expectedApiKey: expectedApiKey ? "present" : "undefined",
-      environment: process.env.NODE_ENV || "development",
-      usingFallback: !process.env.API_KEY,
-    });
 
     if (!apiKey) {
       return response_handler(

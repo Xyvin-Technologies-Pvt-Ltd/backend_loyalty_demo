@@ -120,7 +120,11 @@ const viewCustomer = async (req, res) => {
         required_point: nextTier.points_required.toString(),
         en: nextTier.name.en || nextTier.name,
         ar: nextTier.name.ar || nextTier.name
-      } : null
+      } : {
+        required_point: 0,
+        en: 'Maximum Level Reached',
+        ar: 'Maximum Level Reached'
+      }
     };
 
     logger.info(`Customer details retrieved: ${customer_id}`);
@@ -487,16 +491,17 @@ const addPoints = async (req, res) => {
 
       // Check for tier upgrade
       const availableTiers = await Tier.find({})
-        .sort({ minimum_points: 1 })
+        .sort({ points_required: 1 })
         .session(session);
       let newTier = customer.tier;
 
+
+
       for (const tier of availableTiers) {
-        if (updatedCustomer.total_points >= tier.minimum_points) {
+        if (updatedCustomer.total_points >= tier.points_required) {
           newTier = tier;
         }
       }
-
       // Update tier if changed
       if (newTier._id.toString() !== customer.tier._id.toString()) {
         await Customer.findByIdAndUpdate(

@@ -5,15 +5,15 @@ const points_expiration_rules_schema = new mongoose.Schema(
     default_expiry_period: {
       type: Number,
       required: true,
-      default: 12,
-      min: 1,
-      description: "Default expiry period in months",
+      default: 30,
+      min: 15,
+      description: "Default expiry period in days",
     },
     tier_extensions: [
       {
         _id:false,
         tier_id: { type: mongoose.Schema.Types.ObjectId, ref: "Tier" }, // Dynamic tiers
-        additional_months: { type: Number, required: true, min: 0, default: 0 },
+        additional_months: { type: Number, required: true, min: 0, default: 0 }, //it is days, not changing key for now
       },
     ],
     appType: { type: mongoose.Schema.Types.ObjectId, ref: "AppType" },
@@ -21,24 +21,20 @@ const points_expiration_rules_schema = new mongoose.Schema(
     expiry_notifications: {
       first_reminder: {
         type: Number,
-        required: true,
         default: 30,
       },
       second_reminder: {
         type: Number,
-        required: true,
         default: 15,
       },
       final_reminder: {
         type: Number,
-        required: true,
         default: 7,
       },
     },
     grace_period: {
       type: Number,
-      required: true,
-      default: 30,
+      default: 0,
     },
     is_active: {
       type: Boolean,
@@ -59,19 +55,26 @@ points_expiration_rules_schema.statics.getActiveRules = async function () {
 };
 
 // Calculate expiry date based on user's tier
-points_expiration_rules_schema.statics.calculateExpiryDate = async function ( tier_id) {
+points_expiration_rules_schema.statics.calculateExpiryDate = async function (tier_id, earnedAt = new Date()) {
   const rules = await this.getActiveRules();
-  if (!rules) return new Date(new Date().setMonth(new Date().getMonth() + 12)); // Default 12 months
+  if (!rules) {
+    // Default to 30 days from now if no rules
+    return new Date(earnedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+  }
 
-  let totalMonths = rules.default_expiry_period;
+  let totalDays = rules.default_expiry_period;
 
-  // Find if the given tier has an extension rule
+  // Check for tier-specific extension (also in days)
   const tierExtension = rules.tier_extensions.find(
     (t) => t.tier_id.toString() === tier_id.toString()
   );
-  if (tierExtension) totalMonths += tierExtension.additional_months;
+  if (tierExtension) {
+    totalDays += tierExtension.additional_months; // interpreted as additional days
+  }
 
-  return new Date(new Date().setMonth(new Date().getMonth() + totalMonths));
+  // Add days to the earnedAt timestamp
+  const expiryDate = new Date(earnedAt.getTime() + totalDays * 24 * 60 * 60 * 1000);
+  return expiryDate;
 };
 
 
