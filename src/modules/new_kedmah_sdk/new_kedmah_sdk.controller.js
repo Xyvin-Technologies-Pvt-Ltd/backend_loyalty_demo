@@ -1148,6 +1148,12 @@ const getCouponDetails = async (req, res) => {
       "http://api-uat-loyalty.xyvin.com/",
       "http://141.105.172.45:7733/api/"
     );
+    if (coupon?.merchantId?.image) {
+      coupon.merchantId.image = coupon.merchantId.image.replace(
+        "http://api-uat-loyalty.xyvin.com/",
+        "http://141.105.172.45:7733/api/"
+      );
+    }
     return response_handler(
       res,
       200,
