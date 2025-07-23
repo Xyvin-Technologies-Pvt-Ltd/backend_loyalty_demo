@@ -728,15 +728,15 @@ const addPoints = async (req, res) => {
       if (newTier._id.toString() !== customer.tier._id.toString()) {
         await Customer.findByIdAndUpdate(
           customer._id,
-          { tier: tierEvaluation.newTier._id },
+          { tier: newTier._id },
           { session }
         );
 
         logger.info(`Customer tier upgraded: ${customer_id}`, {
           customer_id,
           from_tier: customer.tier.name,
-          to_tier: tierEvaluation.newTier.name,
-          upgrade_details: tierEvaluation.upgradeDetails
+          to_tier: newTier.name,
+          upgrade_details: `Points-based upgrade: ${updatedCustomer.total_points} points`
         });
       }
     }

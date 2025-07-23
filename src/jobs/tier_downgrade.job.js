@@ -127,7 +127,7 @@ async function processPointsAndTiers() {
   const transaction = new SafeTransaction();
 
   try {
-    await transaction.startTransaction();
+    await transaction.start();
     const session = transaction.session;
 
     logger.info(
