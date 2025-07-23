@@ -130,13 +130,13 @@ router.get(
   key_protect,
   kedmah_sdk_controller.getMerchantOffers
 );
-
+router.get("/get-brands", key_protect, kedmah_sdk_controller.getCouponBrands);
+router.get("/get-categories", key_protect, kedmah_sdk_controller.getAllCategories);
 router.get(
   "/get-coupon-details/:couponId",
   key_protect,
   kedmah_sdk_controller.getCouponDetails
 );
-
 
 router.post("/redeem-coupon", key_protect, kedmah_sdk_controller.redeemCoupon);
 //transaction

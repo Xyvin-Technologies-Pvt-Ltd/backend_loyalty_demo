@@ -138,6 +138,8 @@ const evaluateAndUpgradeTier = async (customer, appType = null, session = null) 
   }
 };
 
+const CouponBrand = require("../../models/coupon_brand_model");
+const CouponCategory = require("../../models/coupon_category_model");
 /**
  * Register a new customer for the loyalty program
  */
@@ -233,7 +235,7 @@ const viewCustomer = async (req, res) => {
 
     // Find next tier
     const nextTier = await Tier.findOne({
-      points_required: { $gt: customer.total_points }
+      points_required: { $gt: customer.total_points },
     }).sort({ points_required: 1 });
 
     const responseData = {
@@ -242,15 +244,17 @@ const viewCustomer = async (req, res) => {
       mobile: customer.phone || "",
       point_balance: customer.total_points || 0,
       customer_tier: customer.tier ? customer.tier.name : "Bronze",
-      next_tier: nextTier ? {
-        required_point: nextTier.points_required.toString(),
-        en: nextTier.name.en || nextTier.name,
-        ar: nextTier.name.ar || nextTier.name
-      } : {
-        required_point: 0,
-        en: 'Maximum Level Reached',
-        ar: 'Maximum Level Reached'
-      }
+      next_tier: nextTier
+        ? {
+            required_point: nextTier.points_required.toString(),
+            en: nextTier.name.en || nextTier.name,
+            ar: nextTier.name.ar || nextTier.name,
+          }
+        : {
+            required_point: 0,
+            en: "Maximum Level Reached",
+            ar: "Maximum Level Reached",
+          },
     };
 
     logger.info(`Customer details retrieved: ${customer_id}`);
@@ -357,7 +361,8 @@ const addPoints = async (req, res) => {
       const missingDetails = criteriaMissingPaymentMethod
         .map(
           (item) =>
-            `${item.criteria_code
+            `${
+              item.criteria_code
             } (available: ${item.available_payment_methods.join(", ")})`
         )
         .join("; ");
@@ -527,8 +532,9 @@ const addPoints = async (req, res) => {
             points: totalPointsAwarded,
             payment_method: payment_method,
             status: "completed",
-            note: `Points earned via Khedmah SDK - ${requested_by || "Khedmah SDK"
-              }`,
+            note: `Points earned via Khedmah SDK - ${
+              requested_by || "Khedmah SDK"
+            }`,
             metadata: {
               items: transactionDetails,
               skipped_criteria: skippedCriteria, // Include skipped criteria info
@@ -615,16 +621,21 @@ const addPoints = async (req, res) => {
         }
       }
 
-      //? Check for tier upgrade using dynamic criteria
-      //! test
-      const appType = await AppType.findOne({ name: requested_by });
-      const tierEvaluation = await evaluateAndUpgradeTier(
-        { updatedCustomer, tier: customer.tier },
-        appType ? appType._id : null,
-        session
-      );
-      // Update tier if eligible for upgrade
-      if (tierEvaluation.upgraded) {
+      // Check for tier upgrade
+      const availableTiers = await Tier.find({})
+        .sort({ points_required: 1 })
+        .session(session);
+      let newTier = customer.tier;
+
+
+
+      for (const tier of availableTiers) {
+        if (updatedCustomer.total_points >= tier.points_required) {
+          newTier = tier;
+        }
+      }
+      // Update tier if changed
+      if (newTier._id.toString() !== customer.tier._id.toString()) {
         await Customer.findByIdAndUpdate(
           customer._id,
           { tier: tierEvaluation.newTier._id },
@@ -800,8 +811,9 @@ const redeemPoints = async (req, res) => {
           transaction_type: "redeem",
           points: -pointsToRedeem,
           status: "completed",
-          note: `Points redeemed via Khedmah SDK - ${requested_by || "Khedmah SDK"
-            }`,
+          note: `Points redeemed via Khedmah SDK - ${
+            requested_by || "Khedmah SDK"
+          }`,
           metadata: {
             requested_by: requested_by || "Khedmah SDK",
             total_spent: total_spent,
@@ -1160,24 +1172,26 @@ const getTransactionHistory = async (req, res) => {
 
 const getMerchantOffers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, type } = req.query;
+    const { page = 1, limit = 10, type, categoryId } = req.query;
     const filter = {};
     if (type) {
       filter.type = type;
     }
-    const coupons = await CouponCode.find(filter).populate("merchantId")
+    if (categoryId) filter.couponCategoryId = categoryId;
+    const coupons = await CouponCode.find(filter)
+      .populate("merchantId")
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
 
-    //replace a string  like api-uat-loyalty.xyvin.com in image url with 141.105.172.45:7733/api
-    coupons.forEach(coupon => {
-      coupon.posterImage = coupon.posterImage.replace(
-        "http://api-uat-loyalty.xyvin.com/",
-        "http://141.105.172.45:7733/api/"
-      );
-    });
-
+      //replace a string  like api-uat-loyalty.xyvin.com in image url with 141.105.172.45:7733/api
+      coupons.forEach(coupon => {
+        coupon.posterImage = coupon.posterImage.replace(
+          "http://api-uat-loyalty.xyvin.com/",
+          "http://141.105.172.45:7733/api/"
+        );
+      });
+      
 
     const total = await CouponCode.countDocuments();
 
@@ -1194,16 +1208,87 @@ const getMerchantOffers = async (req, res) => {
   }
 };
 
+const getCouponBrands = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skipCount = (page - 1) * limit;
 
+    const filter = {};
+
+    const couponBrands = await CouponBrand.find(filter)
+      .skip(skipCount)
+      .limit(limit)
+      .sort({ _id: -1 })
+      .lean();
+    couponBrands.forEach((brand) => {
+      brand.image = brand.image.replace(
+        "http://api-uat-loyalty.xyvin.com/",
+        "http://141.105.172.45:7733/api/"
+      );
+    });
+    const total_count = await CouponBrand.countDocuments();
+    return response_handler(
+      res,
+      200,
+      "Coupon brands retrieved successfully",
+      couponBrands,
+      total_count
+    );
+  } catch (error) {
+    return response_handler(res, 500, "Error retrieving coupon brands", error);
+  }
+};
+const getAllCategories = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skipCount = (page - 1) * limit;
+
+    const filter = {};
+    const couponCategories = await CouponCategory.find(filter)
+      .skip(skipCount)
+      .limit(limit)
+      .sort({ _id: -1 })
+      .lean();
+    couponCategories.forEach((category) => {
+      category.image = category.image.replace(
+        "http://api-uat-loyalty.xyvin.com/",
+        "http://141.105.172.45:7733/api/"
+      );
+    });
+    const total_count = await CouponCategory.countDocuments();
+    return response_handler(
+      res,
+      200,
+      "Coupon categories retrieved successfully",
+      couponCategories,
+      total_count
+    );
+  } catch (error) {
+    return response_handler(
+      res,
+      500,
+      "Error retrieving coupon categories",
+      error
+    );
+  }
+};
 
 const getCouponDetails = async (req, res) => {
   try {
     const { couponId } = req.params;
-    const coupon = await CouponCode.findById(couponId);
+    const coupon = await CouponCode.findById(couponId).populate("merchantId");
     coupon.posterImage = coupon.posterImage.replace(
       "http://api-uat-loyalty.xyvin.com/",
       "http://141.105.172.45:7733/api/"
     );
+    if (coupon?.merchantId?.image) {
+      coupon.merchantId.image = coupon.merchantId.image.replace(
+        "http://api-uat-loyalty.xyvin.com/",
+        "http://141.105.172.45:7733/api/"
+      );
+    }
     return response_handler(
       res,
       200,
@@ -1235,7 +1320,7 @@ const redeemCoupon = async (req, res) => {
     if (coupon.isRedeemed === true) {
       return response_handler(res, 400, "Coupon has already been redeemed");
     }
-
+  
   } catch (error) {
     console.error("Error redeeming coupon:", error);
     return response_handler(res, 500, false, "Error redeeming coupon");
@@ -1317,5 +1402,4 @@ module.exports = {
   getMerchantOffers,
   getCouponDetails,
   redeemCoupon,
-  evaluateCustomerTier,
 };
