@@ -17,6 +17,7 @@ const {
 const auth_routes = require("../modules/auth/auth.routes");
 const log_routes = require("../modules/log/log.routes");
 const tier_routes = require("../modules/tier/tier.routes");
+const tier_eligibility_routes = require("../modules/tier_eligibility/tier_eligibility.routes");
 const point_criteria_routes = require("../modules/point_criteria/point_criteria.routes");
 const role_routes = require("../modules/role/role.routes");
 const redemption_rules_routes = require("../modules/redemption_rules/redemption_rules.routes");
@@ -53,8 +54,8 @@ const new_kedmah_sdk_routes = require("../modules/new_kedmah_sdk/new_kedmah_sdk.
 // Helper function to create separate swagger setup handlers
 const useSchema =
   (schema, options) =>
-  (...args) =>
-    swaggerUi.setup(schema, options)(...args);
+    (...args) =>
+      swaggerUi.setup(schema, options)(...args);
 
 function registerRoutes(app, basePath) {
   // Define a route for the API root
@@ -95,6 +96,7 @@ function registerRoutes(app, basePath) {
   app.use(`${basePath}/auth`, auth_routes);
   app.use(`${basePath}/logs`, log_routes);
   app.use(`${basePath}/tier`, tier_routes);
+  app.use(`${basePath}/tier-eligibility`, tier_eligibility_routes);
   app.use(`${basePath}/point-criteria`, point_criteria_routes);
   app.use(`${basePath}/roles-settings`, role_routes);
   app.use(`${basePath}/redemption-rules`, redemption_rules_routes);
@@ -137,7 +139,7 @@ function registerRoutes(app, basePath) {
   app.use(`${basePath}/client`, client_only_routes);
 
   //payment method routes
-  app.use(`${basePath}/payment-method`, payment_method_routes); 
+  app.use(`${basePath}/payment-method`, payment_method_routes);
 
   //new-kedmah-sdk-route 
   app.use(`${basePath}/khedmah-sdk`, new_kedmah_sdk_routes);

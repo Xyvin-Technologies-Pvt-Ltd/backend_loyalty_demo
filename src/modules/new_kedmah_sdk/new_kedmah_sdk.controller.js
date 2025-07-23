@@ -12,6 +12,132 @@ const PointsExpirationRules = require("../../models/points_expiration_rules_mode
 const jwt = require("jsonwebtoken");
 const { SafeTransaction } = require("../../helpers/transaction");
 const CouponCode = require("../../models/merchant_offers.model");
+const TierEligibilityCriteria = require("../../models/tier_eligibility_criteria_model");
+
+/**
+ * Check tier eligibility based on dynamic criteria from TierEligibilityCriteria model
+ */
+const checkTierEligibility = async (customer, targetTier, appType = null, session = null) => {
+  try {
+    // Check if customer has crossed the minimum threshold
+
+    if (customer.total_points < targetTier.points_required) {
+      return {
+        eligible: false,
+        reason: `Insufficient points. Need ${targetTier.points_required} points, have ${customer.total_points}`
+      };
+    }
+
+    // Get dynamic criteria for this tier
+    const criteria = await TierEligibilityCriteria.getCriteriaForTier(targetTier._id, appType);
+
+    if (!criteria) {
+      return {
+        eligible: false,
+        reason: `No eligibility criteria configured for tier: ${targetTier.name.en || targetTier.name}`
+      };
+    }
+
+    console.log("Dynamic criteria found:", {
+      tier: targetTier.name,
+      net_earning_required: criteria.net_earning_required,
+      evaluation_period_days: criteria.evaluation_period_days,
+      consecutive_periods_required: criteria.consecutive_periods_required
+    });
+
+    // Use the model's validation method to check eligibility
+    const eligibilityResult = await criteria.validateCustomerEligibility(customer._id, session);
+
+    if (eligibilityResult.error) {
+      return {
+        eligible: false,
+        reason: `Error validating eligibility: ${eligibilityResult.error}`
+      };
+    }
+
+    return {
+      eligible: eligibilityResult.eligible,
+      reason: eligibilityResult.eligible
+        ? 'Tier upgrade eligible based on dynamic criteria'
+        : `Need ${criteria.net_earning_required} net points earned for ${criteria.consecutive_periods_required} consecutive periods of ${criteria.evaluation_period_days} days each. Currently qualified for ${eligibilityResult.details.consecutive_qualifying} periods.`,
+      details: {
+        ...eligibilityResult.details,
+        criteria_id: criteria._id,
+        tier_name: targetTier.name
+      }
+    };
+
+  } catch (error) {
+    logger.error(`Error checking tier eligibility: ${error.message}`, {
+      customer_id: customer.customer_id,
+      target_tier: targetTier.points_required,
+      error: error.stack
+    });
+    return { eligible: false, reason: 'Error checking tier eligibility' };
+  }
+};
+
+/**
+ * Evaluate and upgrade customer tier based on dynamic criteria
+ */
+const evaluateAndUpgradeTier = async (customer, appType = null, session = null) => {
+  try {
+    // Get all available tiers sorted by points required
+
+    let updatedCustomer = customer.updatedCustomer;
+    const availableTiers = await Tier.find({ isActive: true })
+      .sort({ points_required: 1 })
+      .session(session);
+
+    const customerTier = await Tier.findById(updatedCustomer.tier);
+    let newTier = customerTier;
+    let upgradeDetails = null;
+
+
+    // Check each tier higher than current tier
+    for (const tier of availableTiers) {
+      if (tier.points_required > customerTier.points_required) {
+        const eligibilityCheck = await checkTierEligibility(updatedCustomer, tier, appType, session);
+
+        if (eligibilityCheck.eligible) {
+          newTier = tier;
+          upgradeDetails = eligibilityCheck.details;
+
+          logger.info(`Tier upgrade approved for customer: ${updatedCustomer.customer_id}`, {
+            customer_id: updatedCustomer.customer_id,
+            from_tier: updatedCustomer.tier.name,
+            to_tier: tier.name,
+            points_required: tier.points_required,
+            current_points: updatedCustomer.total_points,
+            eligibility_details: eligibilityCheck.details
+          });
+        } else {
+          logger.info(`Tier upgrade not eligible for customer: ${updatedCustomer.customer_id}`, {
+            customer_id: updatedCustomer.customer_id,
+            target_tier: tier.name,
+            reason: eligibilityCheck.reason,
+            details: eligibilityCheck.details
+          });
+          break; // Stop checking higher tiers if current tier is not eligible
+        }
+      }
+    }
+
+    return {
+      upgraded: newTier._id.toString() !== updatedCustomer.tier._id.toString(),
+      newTier,
+      upgradeDetails
+    };
+
+  } catch (error) {
+    logger.error(`Error evaluating tier upgrade: ${error.message}`, {
+      customer_id: updatedCustomer.customer_id,
+      error: error.stack
+    });
+    return { upgraded: false, newTier: updatedCustomer.tier, upgradeDetails: null };
+  }
+};
+
 /**
  * Register a new customer for the loyalty program
  */
@@ -489,26 +615,28 @@ const addPoints = async (req, res) => {
         }
       }
 
-      // Check for tier upgrade
-      const availableTiers = await Tier.find({})
-        .sort({ points_required: 1 })
-        .session(session);
-      let newTier = customer.tier;
-
-
-
-      for (const tier of availableTiers) {
-        if (updatedCustomer.total_points >= tier.points_required) {
-          newTier = tier;
-        }
-      }
-      // Update tier if changed
-      if (newTier._id.toString() !== customer.tier._id.toString()) {
+      //? Check for tier upgrade using dynamic criteria
+      //! test
+      const appType = await AppType.findOne({ name: requested_by });
+      const tierEvaluation = await evaluateAndUpgradeTier(
+        { updatedCustomer, tier: customer.tier },
+        appType ? appType._id : null,
+        session
+      );
+      // Update tier if eligible for upgrade
+      if (tierEvaluation.upgraded) {
         await Customer.findByIdAndUpdate(
           customer._id,
-          { tier: newTier._id },
+          { tier: tierEvaluation.newTier._id },
           { session }
         );
+
+        logger.info(`Customer tier upgraded: ${customer_id}`, {
+          customer_id,
+          from_tier: customer.tier.name,
+          to_tier: tierEvaluation.newTier.name,
+          upgrade_details: tierEvaluation.upgradeDetails
+        });
       }
     }
 
@@ -598,7 +726,7 @@ const redeemPoints = async (req, res) => {
     );
     if (!appType) {
       await transaction.abort();
-      return response_handler(res, 404, "App type/ requested by not found");
+      return response_handler(res, 404, "App type requested by not found");
     }
     const redemptionRules = await RedemptionRules.findOne({
       is_active: true,
@@ -897,7 +1025,6 @@ const generateToken = async (req, res) => {
     if (!appType) {
       return response_handler(res, 404, "App type not found");
     }
-    console.log(customer_id);
     const customer = await Customer.findOne({ customer_id }).select(
       "customer_id name email phone"
     );
@@ -1043,14 +1170,14 @@ const getMerchantOffers = async (req, res) => {
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
 
-      //replace a string  like api-uat-loyalty.xyvin.com in image url with 141.105.172.45:7733/api
-      coupons.forEach(coupon => {
-        coupon.posterImage = coupon.posterImage.replace(
-          "http://api-uat-loyalty.xyvin.com/",
-          "http://141.105.172.45:7733/api/"
-        );
-      });
-      
+    //replace a string  like api-uat-loyalty.xyvin.com in image url with 141.105.172.45:7733/api
+    coupons.forEach(coupon => {
+      coupon.posterImage = coupon.posterImage.replace(
+        "http://api-uat-loyalty.xyvin.com/",
+        "http://141.105.172.45:7733/api/"
+      );
+    });
+
 
     const total = await CouponCode.countDocuments();
 
@@ -1091,7 +1218,7 @@ const getCouponDetails = async (req, res) => {
 
 const redeemCoupon = async (req, res) => {
   try {
-    const { couponId, customer_id ,pin} = req.body;
+    const { couponId, customer_id, pin } = req.body;
     const coupon = await CouponCode.findById(couponId);
     if (!coupon) {
       return response_handler(res, 404, "Coupon not found");
@@ -1108,10 +1235,74 @@ const redeemCoupon = async (req, res) => {
     if (coupon.isRedeemed === true) {
       return response_handler(res, 400, "Coupon has already been redeemed");
     }
-  
+
   } catch (error) {
     console.error("Error redeeming coupon:", error);
     return response_handler(res, 500, false, "Error redeeming coupon");
+  }
+};
+
+/**
+ * Evaluate existing customer for tier upgrade (Admin function)
+ */
+const evaluateCustomerTier = async (req, res) => {
+  try {
+    const { customer_id } = req.body;
+
+    if (!customer_id) {
+      return response_handler(res, 400, "customer_id is required");
+    }
+
+    // Find customer with tier information
+    const customer = await Customer.findOne({ customer_id }).populate("tier");
+    if (!customer) {
+      return response_handler(res, 404, "Customer not found");
+    }
+
+    // Evaluate tier eligibility
+    const tierEvaluation = await evaluateAndUpgradeTier(customer);
+
+    const responseData = {
+      customer_id: customer.customer_id,
+      current_tier: customer.tier.name,
+      current_points: customer.total_points,
+      tier_evaluation: {
+        eligible_for_upgrade: tierEvaluation.upgraded,
+        recommended_tier: tierEvaluation.newTier.name,
+        upgrade_details: tierEvaluation.upgradeDetails
+      }
+    };
+
+    // If eligible and upgrade requested, perform the upgrade
+    if (req.body.perform_upgrade && tierEvaluation.upgraded) {
+      await Customer.findByIdAndUpdate(customer._id, {
+        tier: tierEvaluation.newTier._id
+      });
+
+      responseData.upgrade_performed = true;
+      responseData.new_tier = tierEvaluation.newTier.name;
+
+      logger.info(`Admin tier upgrade performed: ${customer_id}`, {
+        customer_id,
+        from_tier: customer.tier.name,
+        to_tier: tierEvaluation.newTier.name,
+        admin_action: true
+      });
+    }
+
+    return response_handler(
+      res,
+      200,
+      "Tier evaluation completed",
+      responseData
+    );
+
+  } catch (error) {
+    logger.error(`Error evaluating customer tier: ${error.message}`, {
+      stack: error.stack,
+      body: req.body,
+    });
+    return response_handler(res, 500, "Internal server error");
   }
 };
 
@@ -1126,4 +1317,5 @@ module.exports = {
   getMerchantOffers,
   getCouponDetails,
   redeemCoupon,
+  evaluateCustomerTier,
 };
