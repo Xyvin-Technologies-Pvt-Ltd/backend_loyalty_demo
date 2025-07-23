@@ -13,6 +13,8 @@ const jwt = require("jsonwebtoken");
 const { SafeTransaction } = require("../../helpers/transaction");
 const CouponCode = require("../../models/merchant_offers.model");
 const TierEligibilityCriteria = require("../../models/tier_eligibility_criteria_model");
+const CouponBrand = require("../../models/coupon_brand_model");
+const CouponCategory = require("../../models/coupon_category_model");
 
 /**
  * Check tier eligibility based on dynamic criteria from TierEligibilityCriteria model
@@ -138,8 +140,7 @@ const evaluateAndUpgradeTier = async (customer, appType = null, session = null) 
   }
 };
 
-const CouponBrand = require("../../models/coupon_brand_model");
-const CouponCategory = require("../../models/coupon_category_model");
+
 /**
  * Register a new customer for the loyalty program
  */
@@ -1402,4 +1403,7 @@ module.exports = {
   getMerchantOffers,
   getCouponDetails,
   redeemCoupon,
+  getCouponBrands,
+  getAllCategories,
+  evaluateCustomerTier,
 };
