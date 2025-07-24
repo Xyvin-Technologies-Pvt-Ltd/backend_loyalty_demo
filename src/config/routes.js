@@ -54,8 +54,8 @@ const new_kedmah_sdk_routes = require("../modules/new_kedmah_sdk/new_kedmah_sdk.
 // Helper function to create separate swagger setup handlers
 const useSchema =
   (schema, options) =>
-    (...args) =>
-      swaggerUi.setup(schema, options)(...args);
+  (...args) =>
+    swaggerUi.setup(schema, options)(...args);
 
 function registerRoutes(app, basePath) {
   // Define a route for the API root
@@ -139,7 +139,7 @@ function registerRoutes(app, basePath) {
   app.use(`${basePath}/client`, client_only_routes);
 
   //payment method routes
-  app.use(`${basePath}/payment-method`, payment_method_routes);
+  app.use(`${basePath}/payment-method`, payment_method_routes); 
 
   //new-kedmah-sdk-route 
   app.use(`${basePath}/khedmah-sdk`, new_kedmah_sdk_routes);

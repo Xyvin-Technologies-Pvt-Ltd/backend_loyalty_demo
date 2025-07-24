@@ -325,10 +325,29 @@ const viewCustomer = async (req, res) => {
       return response_handler(res, 404, "Customer not found");
     }
 
-    // Find next tier
-    const nextTier = await Tier.findOne({
-      points_required: { $gt: customer.total_points },
-    }).sort({ points_required: 1 });
+    // Find next tier logic
+    let nextTier = null;
+    let pointsNeeded = 0;
+    
+    // Get all tiers sorted by points_required to find the maximum tier
+    const allTiers = await Tier.find({ isActive: true }).sort({ points_required: 1 });
+    
+    if (allTiers.length > 0) {
+      const maxTier = allTiers[allTiers.length - 1]; // Highest tier (highest points_required)
+      
+      // Check if customer is already at maximum tier
+      if (customer.tier._id.toString() === maxTier._id.toString()) {
+        nextTier = null; // Customer is at maximum tier
+      } else {
+        // Find the next tier (tier with higher points_required than current)
+        nextTier = allTiers.find(tier => tier.points_required > customer.tier.points_required);
+        
+        if (nextTier) {
+          // Calculate points needed for next tier
+          pointsNeeded = Math.max(0, nextTier.points_required - customer.total_points);
+        }
+      }
+    }
 
     const responseData = {
       name: customer.name || "",
@@ -338,15 +357,15 @@ const viewCustomer = async (req, res) => {
       customer_tier: customer.tier ? customer.tier.name : "Bronze",
       next_tier: nextTier
         ? {
-          required_point: nextTier.points_required.toString(),
+          required_point: pointsNeeded.toString(),
           en: nextTier.name.en || nextTier.name,
           ar: nextTier.name.ar || nextTier.name,
-        }
-        : {
-          required_point: 0,
-          en: "Maximum Level Reached",
-          ar: "Maximum Level Reached",
-        },
+        }: null
+        // : {
+        //   required_point: 0,
+        //   en: "Congratulations! You are a Gold Member",
+        //   ar: "تهانينا! أنت عضو ذهبي",
+        // },
     };
 
     logger.info(`Customer details retrieved: ${customer_id}`);
