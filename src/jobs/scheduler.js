@@ -1,5 +1,4 @@
 const { logger } = require("../middlewares/logger");
-const processExpiredPoints = require("./process_expired_points");
 const { processPointsAndTiers } = require("./tier_downgrade.job");
 
 /**
@@ -99,7 +98,6 @@ function initializeScheduledJobs() {
     logger.info("Initializing scheduled jobs");
 
     // Schedule expired points processing to run at 1:00 AM daily
-    scheduleDaily(processExpiredPoints, 1, 0);
 
     // Schedule points expiration and tier downgrade to run at midnight on first day of each month
     scheduleMonthly(processPointsAndTiers);
