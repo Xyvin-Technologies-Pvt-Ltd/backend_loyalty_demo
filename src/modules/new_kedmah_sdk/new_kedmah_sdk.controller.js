@@ -1306,12 +1306,12 @@ const getMerchantOffers = async (req, res) => {
         "http://141.105.172.45:7733/api/"
       );
     });
-    if (coupons?.merchantId?.image) {
-      coupons.merchantId.image = coupons.merchantId.image.replace(
-        "http://api-uat-loyalty.xyvin.com/",
-        "http://141.105.172.45:7733/api/"
-      );
-    }
+   coupons.forEach((coupon) => {
+     coupon.merchantId.image = coupon.merchantId.image.replace(
+       "http://api-uat-loyalty.xyvin.com/",
+       "http://141.105.172.45:7733/api/"
+     )
+   })
     const total = await CouponCode.countDocuments();
 
     return response_handler(
