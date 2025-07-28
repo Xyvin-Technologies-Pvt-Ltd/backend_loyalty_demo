@@ -1298,7 +1298,7 @@ const getMerchantOffers = async (req, res) => {
       .populate("merchantId")
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: 1 });
 
     //replace a string  like api-uat-loyalty.xyvin.com in image url with 141.105.172.45:7733/api
     coupons.forEach((coupon) => {
