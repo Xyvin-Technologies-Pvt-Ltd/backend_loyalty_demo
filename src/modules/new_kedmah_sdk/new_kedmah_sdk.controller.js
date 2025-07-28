@@ -1339,7 +1339,7 @@ const getCouponBrands = async (req, res) => {
     const couponBrands = await CouponBrand.find(filter)
       .skip(skipCount)
       .limit(limit)
-      .sort({ _id: -1 })
+      .sort({ _id: 1 })
       .lean();
     couponBrands.forEach((brand) => {
       brand.image = brand.image.replace(
@@ -1369,7 +1369,7 @@ const getAllCategories = async (req, res) => {
     const couponCategories = await CouponCategory.find(filter)
       .skip(skipCount)
       .limit(limit)
-      .sort({ _id: -1 })
+      .sort({ _id: 1 })
       .lean();
     couponCategories.forEach((category) => {
       category.image = category.image.replace(
