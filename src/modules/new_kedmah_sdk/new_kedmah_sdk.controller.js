@@ -386,6 +386,7 @@ const viewCustomer = async (req, res) => {
       next_tier: nextTier
         ? {
           required_point: pointsNeeded.toString(),
+          next_tier_point: nextTier.points_required.toString(),
           en: nextTier.name.en || nextTier.name,
           ar: nextTier.name.ar || nextTier.name,
         }: null
