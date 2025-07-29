@@ -1356,7 +1356,6 @@ const getCouponBrands = async (req, res) => {
       .limit(limit)
       .sort({ priority: -1 })
       .lean();
-
     couponBrands.forEach((brand) => {
       brand.image = brand.image.replace(
         "http://api-uat-loyalty.xyvin.com/",
@@ -1385,7 +1384,7 @@ const getAllCategories = async (req, res) => {
     const couponCategories = await CouponCategory.find(filter)
       .skip(skipCount)
       .limit(limit)
-      .sort({ priority: 1 })
+      .sort({ priority: -1 })
       .lean();
     couponCategories.forEach((category) => {
       category.image = category.image.replace(
