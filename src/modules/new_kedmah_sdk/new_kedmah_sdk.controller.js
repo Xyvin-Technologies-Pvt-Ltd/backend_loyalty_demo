@@ -1354,7 +1354,7 @@ const getCouponBrands = async (req, res) => {
     const couponBrands = await CouponBrand.find(filter)
       .skip(skipCount)
       .limit(limit)
-      .sort({ priority: 1 })
+      .sort({ priority: -1 })
       .lean();
 
     couponBrands.forEach((brand) => {
