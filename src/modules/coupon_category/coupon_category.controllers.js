@@ -15,7 +15,7 @@ exports.createCouponCategory = async (req, res) => {
     }
 
     const { title, description, image } = req.body;
-    const couponCategory = new CouponCategory({ title, description, image, priority: 0 });
+    const couponCategory = new CouponCategory({ title, description, image, priority });
     await couponCategory.save();
     return response_handler(
       res,
