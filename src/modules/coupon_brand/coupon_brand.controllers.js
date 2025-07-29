@@ -1,10 +1,9 @@
 const CouponBrand = require("../../models/coupon_brand_model");
 const response_handler = require("../../helpers/response_handler");
 const { createCouponBrand } = require("./coupon_brand.validators");
-const { filter } = require("compression");
 
 exports.createCouponBrand = async (req, res) => {
-  const { title, description, image } = req.body;
+  const { title, description, image , priority} = req.body;
 
   try {
     const { error } = createCouponBrand.validate(req.body);
@@ -16,7 +15,7 @@ exports.createCouponBrand = async (req, res) => {
         error.details[0].message
       );
     }
-    const couponBrand = new CouponBrand({ title, description, image });
+    const couponBrand = new CouponBrand({ title, description, image, priority });
     await couponBrand.save();
     return response_handler(
       res,
@@ -73,10 +72,10 @@ exports.getCouponBrandById = async (req, res) => {
 exports.updateCouponBrand = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, image } = req.body;
+    const { title, description, image, priority } = req.body;
     const couponBrand = await CouponBrand.findByIdAndUpdate(
       id,
-      { title, description, image },
+      { title, description, image, priority },
       { new: true }
     );
     return response_handler(

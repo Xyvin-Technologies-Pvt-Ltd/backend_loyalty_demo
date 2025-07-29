@@ -30,13 +30,16 @@ const redeemPointsFIFO = async (customer_id, pointsToRedeem, session) => {
     const validPoints = await LoyaltyPoints.find({
       customer_id,
       expiryDate: { $gte: new Date() },
-      status: 'active'
+      status: "active",
     })
       .sort({ expiryDate: 1 }) // Oldest points first (FIFO)
       .session(session);
 
     // Calculate total available points
-    const totalAvailablePoints = validPoints.reduce((sum, entry) => sum + entry.points, 0);
+    const totalAvailablePoints = validPoints.reduce(
+      (sum, entry) => sum + entry.points,
+      0
+    );
 
     // Check if customer has enough points
     if (totalAvailablePoints < pointsToRedeem) {
@@ -44,7 +47,7 @@ const redeemPointsFIFO = async (customer_id, pointsToRedeem, session) => {
         success: false,
         availablePoints: totalAvailablePoints,
         redeemedPoints: 0,
-        message: `Insufficient points. Available: ${totalAvailablePoints}, Requested: ${pointsToRedeem}`
+        message: `Insufficient points. Available: ${totalAvailablePoints}, Requested: ${pointsToRedeem}`,
       };
     }
 
@@ -64,9 +67,9 @@ const redeemPointsFIFO = async (customer_id, pointsToRedeem, session) => {
         await LoyaltyPoints.findByIdAndUpdate(
           pointEntry._id,
           {
-            status: 'redeemed',
+            status: "redeemed",
             redeemedAt: new Date(),
-            points: 0
+            points: 0,
           },
           { session }
         );
@@ -89,20 +92,19 @@ const redeemPointsFIFO = async (customer_id, pointsToRedeem, session) => {
       success: true,
       availablePoints: totalAvailablePoints,
       redeemedPoints: actualRedeemedPoints,
-      message: `Successfully redeemed ${actualRedeemedPoints} points using FIFO`
+      message: `Successfully redeemed ${actualRedeemedPoints} points using FIFO`,
     };
-
   } catch (error) {
     logger.error(`Error in FIFO point redemption: ${error.message}`, {
       customer_id,
       pointsToRedeem,
-      error: error.stack
+      error: error.stack,
     });
     return {
       success: false,
       availablePoints: 0,
       redeemedPoints: 0,
-      message: `Error during point redemption: ${error.message}`
+      message: `Error during point redemption: ${error.message}`,
     };
   }
 };
@@ -356,23 +358,30 @@ const viewCustomer = async (req, res) => {
     // Find next tier logic
     let nextTier = null;
     let pointsNeeded = 0;
-    
+
     // Get all tiers sorted by points_required to find the maximum tier
-    const allTiers = await Tier.find({ isActive: true }).sort({ points_required: 1 });
-    
+    const allTiers = await Tier.find({ isActive: true }).sort({
+      points_required: 1,
+    });
+
     if (allTiers.length > 0) {
       const maxTier = allTiers[allTiers.length - 1]; // Highest tier (highest points_required)
-      
+
       // Check if customer is already at maximum tier
       if (customer.tier._id.toString() === maxTier._id.toString()) {
         nextTier = null; // Customer is at maximum tier
       } else {
         // Find the next tier (tier with higher points_required than current)
-        nextTier = allTiers.find(tier => tier.points_required > customer.tier.points_required);
-        
+        nextTier = allTiers.find(
+          (tier) => tier.points_required > customer.tier.points_required
+        );
+
         if (nextTier) {
           // Calculate points needed for next tier
-          pointsNeeded = Math.max(0, nextTier.points_required - customer.total_points);
+          pointsNeeded = Math.max(
+            0,
+            nextTier.points_required - customer.total_points
+          );
         }
       }
     }
@@ -385,15 +394,16 @@ const viewCustomer = async (req, res) => {
       customer_tier: customer.tier ? customer.tier.name : "Bronze",
       next_tier: nextTier
         ? {
-          required_point: pointsNeeded.toString(),
-          en: nextTier.name.en || nextTier.name,
-          ar: nextTier.name.ar || nextTier.name,
-        }: null
-        // : {
-        //   required_point: 0,
-        //   en: "Congratulations! You are a Gold Member",
-        //   ar: "تهانينا! أنت عضو ذهبي",
-        // },
+            required_point: pointsNeeded.toString(),
+            en: nextTier.name.en || nextTier.name,
+            ar: nextTier.name.ar || nextTier.name,
+          }
+        : null,
+      // : {
+      //   required_point: 0,
+      //   en: "Congratulations! You are a Gold Member",
+      //   ar: "تهانينا! أنت عضو ذهبي",
+      // },
     };
 
     logger.info(`Customer details retrieved: ${customer_id}`);
@@ -500,7 +510,8 @@ const addPoints = async (req, res) => {
       const missingDetails = criteriaMissingPaymentMethod
         .map(
           (item) =>
-            `${item.criteria_code
+            `${
+              item.criteria_code
             } (available: ${item.available_payment_methods.join(", ")})`
         )
         .join("; ");
@@ -670,8 +681,9 @@ const addPoints = async (req, res) => {
             points: totalPointsAwarded,
             payment_method: payment_method,
             status: "completed",
-            note: `Points earned via Khedmah SDK - ${requested_by || "Khedmah SDK"
-              }`,
+            note: `Points earned via Khedmah SDK - ${
+              requested_by || "Khedmah SDK"
+            }`,
             metadata: {
               items: transactionDetails,
               skipped_criteria: skippedCriteria, // Include skipped criteria info
@@ -781,7 +793,7 @@ const addPoints = async (req, res) => {
           customer_id,
           from_tier: customer.tier.name,
           to_tier: newTier.name,
-          upgrade_details: `Points-based upgrade: ${updatedCustomer.total_points} points`
+          upgrade_details: `Points-based upgrade: ${updatedCustomer.total_points} points`,
         });
       }
     }
@@ -932,7 +944,11 @@ const redeemPoints = async (req, res) => {
     }
 
     // Use FIFO redemption logic
-    const fifoResult = await redeemPointsFIFO(customer._id, pointsToRedeem, session);
+    const fifoResult = await redeemPointsFIFO(
+      customer._id,
+      pointsToRedeem,
+      session
+    );
 
     if (!fifoResult.success) {
       await transaction.abort();
@@ -1306,12 +1322,12 @@ const getMerchantOffers = async (req, res) => {
         "http://141.105.172.45:7733/api/"
       );
     });
-   coupons.forEach((coupon) => {
-     coupon.merchantId.image = coupon.merchantId.image.replace(
-       "http://api-uat-loyalty.xyvin.com/",
-       "http://141.105.172.45:7733/api/"
-     )
-   })
+    coupons.forEach((coupon) => {
+      coupon.merchantId.image = coupon.merchantId.image.replace(
+        "http://api-uat-loyalty.xyvin.com/",
+        "http://141.105.172.45:7733/api/"
+      );
+    });
     const total = await CouponCode.countDocuments();
 
     return response_handler(
@@ -1338,8 +1354,9 @@ const getCouponBrands = async (req, res) => {
     const couponBrands = await CouponBrand.find(filter)
       .skip(skipCount)
       .limit(limit)
-      .sort({ _id: 1 })
+      .sort({ priority: 1 })
       .lean();
+
     couponBrands.forEach((brand) => {
       brand.image = brand.image.replace(
         "http://api-uat-loyalty.xyvin.com/",
@@ -1368,7 +1385,7 @@ const getAllCategories = async (req, res) => {
     const couponCategories = await CouponCategory.find(filter)
       .skip(skipCount)
       .limit(limit)
-      .sort({ _id: 1 })
+      .sort({ priority: 1 })
       .lean();
     couponCategories.forEach((category) => {
       category.image = category.image.replace(
@@ -1439,7 +1456,6 @@ const redeemCoupon = async (req, res) => {
     if (coupon.isRedeemed === true) {
       return response_handler(res, 400, "Coupon has already been redeemed");
     }
-
   } catch (error) {
     console.error("Error redeeming coupon:", error);
     return response_handler(res, 500, false, "Error redeeming coupon");

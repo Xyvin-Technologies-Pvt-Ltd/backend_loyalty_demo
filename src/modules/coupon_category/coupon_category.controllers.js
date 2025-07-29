@@ -15,7 +15,7 @@ exports.createCouponCategory = async (req, res) => {
     }
 
     const { title, description, image } = req.body;
-    const couponCategory = new CouponCategory({ title, description, image });
+    const couponCategory = new CouponCategory({ title, description, image, priority: 0 });
     await couponCategory.save();
     return response_handler(
       res,
@@ -82,10 +82,10 @@ exports.getCouponCategoryById = async (req, res) => {
 exports.updateCouponCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, image } = req.body;
+    const { title, description, image, priority } = req.body;
     const couponCategory = await CouponCategory.findByIdAndUpdate(
       id,
-      { title, description, image },
+      { title, description, image , priority},
       { new: true }
     );
     return response_handler(
