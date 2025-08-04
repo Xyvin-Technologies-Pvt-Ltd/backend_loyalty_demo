@@ -56,11 +56,11 @@ jobs:
           set -e
 
           echo "📦 Loading Docker image from tarball..."
-          docker load -i /home/ubuntu/${{ env.IMAGE_NAME }}.tar
+          sudo docker load -i /home/ubuntu/${{ env.IMAGE_NAME }}.tar
 
           echo "🧹 Cleaning old container (if exists)..."
-          docker stop ${{ env.CONTAINER_NAME }} || true
-          docker rm ${{ env.CONTAINER_NAME }} || true
+          sudo docker stop ${{ env.CONTAINER_NAME }} || true
+          sudo docker rm ${{ env.CONTAINER_NAME }} || true
 
           echo "📁 Ensuring upload and deploy directories exist..."
           mkdir -p ${{ env.UPLOADS_DIR }}
@@ -77,7 +77,7 @@ jobs:
           fi
 
           echo "🚀 Starting Docker container..."
-          docker run -d \
+          sudo docker run -d \
             --name ${{ env.CONTAINER_NAME }} \
             --network myapp-network \
             --restart always \
