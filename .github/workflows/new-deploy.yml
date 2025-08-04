@@ -41,13 +41,13 @@ jobs:
             mkdir -p /home/ubuntu/loyalty-backend
 
             echo "🛠️ Building Docker image..."
-            docker build -t loyalty-backend-img .
+             sudo docker build -t loyalty-backend-img .
 
             echo "🛑 Stopping and removing existing container..."
-            docker rm -f loyalty-backend-container || true
+            sudo docker rm -f loyalty-backend-container || true
 
             echo "🚀 Running container..."
-            docker run -d \
+            sudo docker run -d \
               --name loyalty-backend-container \
               --network myapp-network \
               --restart always \
