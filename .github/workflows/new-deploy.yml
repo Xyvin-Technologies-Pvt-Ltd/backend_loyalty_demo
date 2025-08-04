@@ -25,7 +25,7 @@ jobs:
           script: |
             set -e
 
-            cd /home/ubuntu/
+            cd /home/ubuntu/loyalty-backend 
 
             # Check for .env file
             ENV_FILE_PATH=/home/ubuntu/loyalty/.env/.env.production
@@ -38,7 +38,7 @@ jobs:
             fi
 
             echo "📁 Creating upload directory..."
-            mkdir -p /home/loyalty/loyalty-uploads
+            mkdir -p /home/ubuntu/loyalty-backend
 
             echo "🛠️ Building Docker image..."
             docker build -t loyalty-backend-img .
