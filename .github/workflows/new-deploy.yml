@@ -7,52 +7,53 @@ on:
 
 jobs:
   deploy-backend:
-    name: Deploy Backend to VPN Server
-    runs-on: self-hosted
+    name: Deploy Backend to AWS Lightsail Server
+    runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Docker and deploy the backend
-      - name: Use .env and deploy with Docker
-        run: |
-          set -e  # Fail if any command fails
+      - name: Deploy via SSH using Appleboy
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.REMOTE_HOST }}              
+          username: ${{ secrets.REMOTE_USER }}          
+          key: ${{ secrets.SSH_PRIVATE_KEY }}           
+          port: 22
 
-          # Define the environment file path
-          ENV_FILE_PATH=/home/loyalty/loyalty/.env/.env.production
+          script: |
+            set -e
 
-          # Check if the .env file exists on the server
-          if [ -f "$ENV_FILE_PATH" ]; then
-            echo "✅ .env file found at $ENV_FILE_PATH"
-            cp $ENV_FILE_PATH .env
-          else
-            echo "❌ .env file not found at $ENV_FILE_PATH"
-            exit 1
-          fi
+            cd /home/loyalty/
 
-          # Create persistent upload directory on host if it doesn't exist
-          echo "📁 Creating persistent upload directory..."
-          mkdir -p /home/loyalty/loyalty-uploads
+            # Check for .env file
+            ENV_FILE_PATH=/home/loyalty/.env/.env.production
+            if [ -f "$ENV_FILE_PATH" ]; then
+              echo "✅ .env file found at $ENV_FILE_PATH"
+              cp $ENV_FILE_PATH .env
+            else
+              echo "❌ .env file not found at $ENV_FILE_PATH"
+              exit 1
+            fi
 
-          # Step 3: Build Docker image
-          echo "🛠️ Building Docker image..."
-          docker build -t loyalty-backend-img .
+            echo "📁 Creating upload directory..."
+            mkdir -p /home/loyalty/loyalty-uploads
 
-          # Step 4: Stop and remove any existing container
-          echo "🛑 Stopping and removing existing container..."
-          docker rm -f loyalty-backend-container || true
+            echo "🛠️ Building Docker image..."
+            docker build -t loyalty-backend-img .
 
-          # Step 5: Run the Docker container with volume mount for uploads
-          echo "🚀 Starting Docker container with persistent storage..."
-          docker run -d \
-            --name loyalty-backend-container \
-            --network myapp-network \
-            --restart always \
-            -p 3000:3000 \
-            --env-file .env \
-            -v /home/loyalty/loyalty-uploads:/app/uploads \
-            loyalty-backend-img
+            echo "🛑 Stopping and removing existing container..."
+            docker rm -f loyalty-backend-container || true
 
-          echo "✅ Deployment complete with persistent file storage!"
+            echo "🚀 Running container..."
+            docker run -d \
+              --name loyalty-backend-container \
+              --network myapp-network \
+              --restart always \
+              -p 3000:3000 \
+              --env-file .env \
+              -v /home/loyalty/loyalty-uploads:/app/uploads \
+              loyalty-backend-img
+
+            echo "✅ Deployment completed!"
