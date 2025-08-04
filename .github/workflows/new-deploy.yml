@@ -28,7 +28,7 @@ jobs:
             cd /home/ubuntu/
 
             # Check for .env file
-            ENV_FILE_PATH=/home/loyalty/.env/.env.production
+            ENV_FILE_PATH=/home/ubuntu/loyalty/.env/.env.production
             if [ -f "$ENV_FILE_PATH" ]; then
               echo "✅ .env file found at $ENV_FILE_PATH"
               cp $ENV_FILE_PATH .env
