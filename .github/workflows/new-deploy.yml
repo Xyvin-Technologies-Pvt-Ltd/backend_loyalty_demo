@@ -12,78 +12,74 @@ jobs:
     env:
       IMAGE_NAME: loyalty-backend-img
       CONTAINER_NAME: loyalty-backend-container
-      DEPLOY_DIR: /home/ubuntu/loyalty-backend
       ENV_FILE_PATH: /home/ubuntu/loyalty/.env/.env.production
-      UPLOADS_DIR: /home/loyalty/loyalty-uploads
+      TMP_DIR: /home/ubuntu/tmp
+      TAR_FILE: loyalty-backend-img.tar
 
     steps:
+      # 📥 Step 1: Checkout Source Code
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    # 📥 Step 1: Checkout Source Code
-    - name: Checkout code
-      uses: actions/checkout@v3
+      # 🛠️ Step 2: Build Docker image in runner
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ env.IMAGE_NAME }} .
 
-    # 🛠️ Step 2: Build Docker image in runner
-    - name: Build Docker image
-      run: |
-        docker build -t ${{ env.IMAGE_NAME }} .
+      # 📦 Step 3: Save Docker image to .tar file
+      - name: Save Docker image as tarball
+        run: |
+          docker save -o ${{ env.TAR_FILE }} ${{ env.IMAGE_NAME }}
 
-    # 📦 Step 3: Save Docker image to .tar file
-    - name: Save Docker image as tarball
-      run: |
-        docker save -o ${{ env.IMAGE_NAME }}.tar ${{ env.IMAGE_NAME }}
+      # 📤 Step 4: Upload Docker image tarball to server (/tmp)
+      - name: Upload Docker image to server tmp dir
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          source: "${{ env.TAR_FILE }}"
+          target: "${{ env.TMP_DIR }}"
 
-    # 📤 Step 4: Copy Docker image tarball to server
-    - name: Upload Docker image to server
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        port: 22
-        source: "${{ env.IMAGE_NAME }}.tar"
-        target: "/home/ubuntu"
+      # 🚀 Step 5: SSH into server, load Docker image, run container, clean tar
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
 
-    # 🚀 Step 5: SSH into server and load + run Docker image
-    - name: Deploy on server
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        port: 22
+          script: |
+            set -e
 
-        script: |
-          set -e
+            echo "📁 Ensuring tmp directory exists..."
+            mkdir -p ${{ env.TMP_DIR }}
 
-          echo "📦 Loading Docker image from tarball..."
-          sudo docker load -i /home/ubuntu/${{ env.IMAGE_NAME }}.tar
+            echo "📦 Loading Docker image from tarball..."
+            sudo docker load -i ${{ env.TMP_DIR }}/${{ env.TAR_FILE }}
 
-          echo "🧹 Cleaning old container (if exists)..."
-          sudo docker stop ${{ env.CONTAINER_NAME }} || true
-          sudo docker rm ${{ env.CONTAINER_NAME }} || true
+            echo "🧹 Stopping and removing old container (if exists)..."
+            sudo docker stop ${{ env.CONTAINER_NAME }} || true
+            sudo docker rm ${{ env.CONTAINER_NAME }} || true
 
-          echo "📁 Ensuring upload and deploy directories exist..."
-          mkdir -p ${{ env.UPLOADS_DIR }}
-          mkdir -p ${{ env.DEPLOY_DIR }}
-          cd ${{ env.DEPLOY_DIR }}
+            echo "📄 Checking .env file..."
+            if [ ! -f "${{ env.ENV_FILE_PATH }}" ]; then
+              echo "❌ .env file not found at ${{ env.ENV_FILE_PATH }}"
+              exit 1
+            fi
 
-          echo "📄 Checking for .env file..."
-          if [ -f "${{ env.ENV_FILE_PATH }}" ]; then
-            cp ${{ env.ENV_FILE_PATH }} .env
-            echo "✅ .env copied."
-          else
-            echo "❌ .env file not found!"
-            exit 1
-          fi
+            echo "🚀 Running new container..."
+            sudo docker run -d \
+              --name ${{ env.CONTAINER_NAME }} \
+              --network myapp-network \
+              --restart always \
+              -p 3000:3000 \
+              --env-file ${{ env.ENV_FILE_PATH }} \
+              ${{ env.IMAGE_NAME }}
 
-          echo "🚀 Starting Docker container..."
-          sudo docker run -d \
-            --name ${{ env.CONTAINER_NAME }} \
-            --network myapp-network \
-            --restart always \
-            -p 3000:3000 \
-            --env-file .env \
-            -v ${{ env.UPLOADS_DIR }}:/app/uploads \
-            ${{ env.IMAGE_NAME }}
+            echo "🧼 Cleaning up tarball..."
+            rm -f ${{ env.TMP_DIR }}/${{ env.TAR_FILE }}
 
-          echo "✅ Deployment successful!"
+            echo "✅ Deployment complete!"
