@@ -75,7 +75,7 @@ jobs:
               --name ${{ env.CONTAINER_NAME }} \
               --network myapp-network \
               --restart always \
-              -p 3000:3000 \
+              -p 3002:3002 \
               --env-file ${{ env.ENV_FILE_PATH }} \
               ${{ env.IMAGE_NAME }}
 
