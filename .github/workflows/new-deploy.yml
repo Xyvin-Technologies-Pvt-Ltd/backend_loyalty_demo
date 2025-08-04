@@ -25,7 +25,7 @@ jobs:
           script: |
             set -e
 
-            cd /home/loyalty/
+            cd /home/ubuntu/
 
             # Check for .env file
             ENV_FILE_PATH=/home/loyalty/.env/.env.production
