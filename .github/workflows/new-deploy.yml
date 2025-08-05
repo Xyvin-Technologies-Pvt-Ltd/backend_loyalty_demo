@@ -1,4 +1,4 @@
-name: Loyalty Backend Deployment
+name: Loyalty Backend Deployment aws
 
 on:
   push:
