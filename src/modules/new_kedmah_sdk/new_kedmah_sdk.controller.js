@@ -16,6 +16,14 @@ const TierEligibilityCriteria = require("../../models/tier_eligibility_criteria_
 const CouponBrand = require("../../models/coupon_brand_model");
 const CouponCategory = require("../../models/coupon_category_model");
 
+/**
+ * FIFO Point Redemption Helper Function
+ * Redeems points using First-In-First-Out logic (oldest points first)
+ * @param {ObjectId} customer_id - Customer's MongoDB ObjectId
+ * @param {number} pointsToRedeem - Number of points to redeem
+ * @param {Object} session - MongoDB session for transaction
+ * @returns {Object} { success: boolean, availablePoints: number, redeemedPoints: number }
+ */
 const redeemPointsFIFO = async (customer_id, pointsToRedeem, session) => {
   try {
     // Get all valid (non-expired) loyalty points sorted by expiry date (oldest first)
@@ -935,11 +943,6 @@ const redeemPoints = async (req, res) => {
       // Apply tier multiplier if exists
     }
 
-    if (pointsToRedeem > customer.total_points) {
-      await transaction.abort();
-      return response_handler(res, 400, "Insufficient points");
-    }
-
     // Use FIFO redemption logic
     const fifoResult = await redeemPointsFIFO(
       customer._id,
@@ -963,28 +966,6 @@ const redeemPoints = async (req, res) => {
       { new: true, session }
     );
 
-    //add transaction
-    await Transaction.create(
-      [
-        {
-          customer_id: customer._id,
-          transaction_id: transaction_id,
-          transaction_type: "redeem",
-          points: fifoResult.redeemedPoints,
-          app_type: appType._id,
-          status: "completed",
-          note: `Points redeemed via Khedmah SDK - ${
-            requested_by || "Khedmah SDK"
-          }`,
-          metadata: {
-            original_amount: total_spent,
-          },
-          transaction_date: new Date(),
-        },
-      ],
-      { session }
-    );
-
     await transaction.commit();
 
     logger.info(`Points redeemed successfully: ${customer_id}`, {
@@ -1001,7 +982,6 @@ const redeemPoints = async (req, res) => {
     });
   } catch (error) {
     await transaction.abort();
-    console.log("error", error);
     logger.error(`Error redeeming points: ${error.message}`, {
       stack: error.stack,
       body: req.body,
@@ -1021,7 +1001,6 @@ const cancelRedemption = async (req, res) => {
 
   try {
     const { customer_id, transaction_id } = req.body;
-    console.log("cancelRedemption", req.body);
 
     // Validate required fields
     if (!customer_id || !transaction_id) {
@@ -1033,16 +1012,9 @@ const cancelRedemption = async (req, res) => {
       );
     }
 
-    const customer = await Customer.findOne({ customer_id }).session(session);
-    if (!customer) {
-      await transaction.abort();
-      return response_handler(res, 404, "Customer not found");
-    }
-
     // Find the original redemption transaction
     const originalTransaction = await Transaction.findOne({
       transaction_id: transaction_id,
-      customer_id: customer._id,
       transaction_type: "redeem",
     })
       .populate("customer_id")
@@ -1051,6 +1023,16 @@ const cancelRedemption = async (req, res) => {
     if (!originalTransaction) {
       await transaction.abort();
       return response_handler(res, 404, "Redemption transaction not found");
+    }
+
+    // Verify customer matches
+    if (originalTransaction.customer_id.customer_id !== customer_id) {
+      await transaction.abort();
+      return response_handler(
+        res,
+        400,
+        "Customer ID does not match transaction"
+      );
     }
 
     // Check if already cancelled
@@ -1169,7 +1151,6 @@ const cancelRedemption = async (req, res) => {
     });
   } catch (error) {
     await transaction.abort();
-    console.log("error", error);
     logger.error(`Error cancelling redemption: ${error.message}`, {
       stack: error.stack,
       body: req.body,
@@ -1334,24 +1315,20 @@ const getMerchantOffers = async (req, res) => {
     const filter = {};
     if (type) filter.type = type;
     if (categoryId) filter.couponCategoryId = categoryId;
-    if (search) {
-      filter["title.en"] = { $regex: search, $options: "i" };
+    if (search && search.trim()) {
+      const searchRegex = { $regex: search.trim(), $options: "i" };
+      filter.$or = [
+        { "title.en": searchRegex },
+        { "title.ar": searchRegex },
+        { "description.en": searchRegex },
+        { "description.ar": searchRegex },
+      ];
     }
 
     let allCoupons = await CouponCode.find(filter)
-      .populate({
-        path: "merchantId",
-        select: "title image",
-      })
+      .populate("merchantId")
       .sort({ createdAt: 1 });
 
-    if (search) {
-      allCoupons = allCoupons.filter((coupon) =>
-        coupon.merchantId?.title?.en
-          ?.toLowerCase()
-          .includes(search.toLowerCase())
-      );
-    }
 
     // Replace URLs
     allCoupons.forEach((coupon) => {
@@ -1369,7 +1346,6 @@ const getMerchantOffers = async (req, res) => {
       }
     });
 
-    // Sort by brand match
     let sortedCoupons = allCoupons;
     if (brandId) {
       sortedCoupons = allCoupons.sort((a, b) => {
@@ -1378,7 +1354,6 @@ const getMerchantOffers = async (req, res) => {
         return bIsBrand - aIsBrand;
       });
     }
-
     const total = sortedCoupons.length;
     const paginatedCoupons = sortedCoupons.slice(
       (page - 1) * limit,
