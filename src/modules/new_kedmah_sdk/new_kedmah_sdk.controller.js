@@ -1358,21 +1358,31 @@ const getCouponBrands = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skipCount = (page - 1) * limit;
+    const search = req.query.search || "";
 
     const filter = {};
+
+    if (search) {
+      filter["title.en"] = { $regex: search, $options: "i" }; // case-insensitive search
+    }
 
     const couponBrands = await CouponBrand.find(filter)
       .skip(skipCount)
       .limit(limit)
       .sort({ priority: -1 })
       .lean();
+
     couponBrands.forEach((brand) => {
-      brand.image = brand.image.replace(
-        "http://api-uat-loyalty.xyvin.com/",
-        "http://141.105.172.45:7733/api/"
-      );
+      if (brand.image) {
+        brand.image = brand.image.replace(
+          "http://api-uat-loyalty.xyvin.com/",
+          "http://141.105.172.45:7733/api/"
+        );
+      }
     });
-    const total_count = await CouponBrand.countDocuments();
+
+    const total_count = await CouponBrand.countDocuments(filter);
+
     return response_handler(
       res,
       200,
@@ -1384,25 +1394,37 @@ const getCouponBrands = async (req, res) => {
     return response_handler(res, 500, "Error retrieving coupon brands", error);
   }
 };
+
 const getAllCategories = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skipCount = (page - 1) * limit;
+    const search = req.query.search || "";
 
     const filter = {};
+
+    if (search) {
+      filter["title.en"] = { $regex: search, $options: "i" }; // Case-insensitive search on English title
+    }
+
     const couponCategories = await CouponCategory.find(filter)
       .skip(skipCount)
       .limit(limit)
       .sort({ priority: -1 })
       .lean();
+
     couponCategories.forEach((category) => {
-      category.image = category.image.replace(
-        "http://api-uat-loyalty.xyvin.com/",
-        "http://141.105.172.45:7733/api/"
-      );
+      if (category.image) {
+        category.image = category.image.replace(
+          "http://api-uat-loyalty.xyvin.com/",
+          "http://141.105.172.45:7733/api/"
+        );
+      }
     });
-    const total_count = await CouponCategory.countDocuments();
+
+    const total_count = await CouponCategory.countDocuments(filter);
+
     return response_handler(
       res,
       200,
