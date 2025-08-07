@@ -10,6 +10,7 @@ const createCouponBrand = Joi.object({
     ar: Joi.string().required().allow(""),
   }),
   image: Joi.string().required(),
+  priority: Joi.number(),
 });
 
 const updateCouponBrand = Joi.object({
@@ -22,6 +23,7 @@ const updateCouponBrand = Joi.object({
     ar: Joi.string().allow(""),
   }),
   image: Joi.string().required(),
+  priority: Joi.number(),
 });
 
 module.exports = {

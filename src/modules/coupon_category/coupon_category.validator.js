@@ -1,4 +1,4 @@
-const Joi = require('joi');
+const Joi = require("joi");
 
 const createCouponCategory = Joi.object({
   title: Joi.object({
@@ -10,6 +10,7 @@ const createCouponCategory = Joi.object({
     ar: Joi.string().required().allow(""),
   }),
   image: Joi.string().required(),
+  priority: Joi.number(),
 });
 
 const updateCouponCategory = Joi.object({
@@ -23,13 +24,10 @@ const updateCouponCategory = Joi.object({
   }),
   status: Joi.string().required(),
   image: Joi.string().required(),
+  priority: Joi.number(),
 });
 
 module.exports = {
   createCouponCategory,
   updateCouponCategory,
 };
-
-
-
-

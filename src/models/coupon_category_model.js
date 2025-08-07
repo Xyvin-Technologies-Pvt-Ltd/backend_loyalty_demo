@@ -13,6 +13,10 @@ const couponCategorySchema = new mongoose.Schema({
   image: {
     type: String,
   },
+  priority: {
+    type: Number,
+    default: 0,
+  },
 });
 
 const CouponCategory = mongoose.model("CouponCategory", couponCategorySchema);
