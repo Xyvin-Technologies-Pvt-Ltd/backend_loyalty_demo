@@ -1303,38 +1303,48 @@ const getTransactionHistory = async (req, res) => {
 
 const getMerchantOffers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, type, categoryId } = req.query;
+    const { page = 1, limit = 10, type, categoryId, brandId } = req.query;
     const filter = {};
-    if (type) {
-      filter.type = type;
-    }
+    if (type) filter.type = type;
     if (categoryId) filter.couponCategoryId = categoryId;
-    const coupons = await CouponCode.find(filter)
-      .populate("merchantId")
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
-      .sort({ createdAt: 1 });
 
-    //replace a string  like api-uat-loyalty.xyvin.com in image url with 141.105.172.45:7733/api
-    coupons.forEach((coupon) => {
-      coupon.posterImage = coupon.posterImage.replace(
-        "http://api-uat-loyalty.xyvin.com/",
-        "http://141.105.172.45:7733/api/"
-      );
+    const allCoupons = await CouponCode.find(filter)
+      .populate("merchantId")
+      .sort({ createdAt: 1 });
+    allCoupons.forEach((coupon) => {
+      if (coupon.posterImage) {
+        coupon.posterImage = coupon.posterImage.replace(
+          "http://api-uat-loyalty.xyvin.com/",
+          "http://141.105.172.45:7733/api/"
+        );
+      }
+      if (coupon.merchantId?.image) {
+        coupon.merchantId.image = coupon.merchantId.image.replace(
+          "http://api-uat-loyalty.xyvin.com/",
+          "http://141.105.172.45:7733/api/"
+        );
+      }
     });
-    coupons.forEach((coupon) => {
-      coupon.merchantId.image = coupon.merchantId.image.replace(
-        "http://api-uat-loyalty.xyvin.com/",
-        "http://141.105.172.45:7733/api/"
-      );
-    });
-    const total = await CouponCode.countDocuments();
+
+    let sortedCoupons = allCoupons;
+    if (brandId) {
+      sortedCoupons = allCoupons.sort((a, b) => {
+        const aIsBrand = a.merchantId?._id?.toString() === brandId;
+        const bIsBrand = b.merchantId?._id?.toString() === brandId;
+        return bIsBrand - aIsBrand;
+      });
+    }
+    const paginatedCoupons = sortedCoupons.slice(
+      (page - 1) * limit,
+      page * limit
+    );
+    const total = sortedCoupons.length;
 
     return response_handler(
       res,
       200,
       "All coupons retrieved successfully",
-      coupons,
+      paginatedCoupons,
       total
     );
   } catch (error) {
