@@ -16,14 +16,6 @@ const TierEligibilityCriteria = require("../../models/tier_eligibility_criteria_
 const CouponBrand = require("../../models/coupon_brand_model");
 const CouponCategory = require("../../models/coupon_category_model");
 
-/**
- * FIFO Point Redemption Helper Function
- * Redeems points using First-In-First-Out logic (oldest points first)
- * @param {ObjectId} customer_id - Customer's MongoDB ObjectId
- * @param {number} pointsToRedeem - Number of points to redeem
- * @param {Object} session - MongoDB session for transaction
- * @returns {Object} { success: boolean, availablePoints: number, redeemedPoints: number }
- */
 const redeemPointsFIFO = async (customer_id, pointsToRedeem, session) => {
   try {
     // Get all valid (non-expired) loyalty points sorted by expiry date (oldest first)
@@ -882,6 +874,7 @@ const redeemPoints = async (req, res) => {
 
     if (!redemptionRules) {
       logger.info(`No redemption rules found for ${requested_by}`);
+
     }
     if (redemptionRules) {
       // Check minimum points requirement
@@ -932,8 +925,14 @@ const redeemPoints = async (req, res) => {
       // Apply tier multiplier if exists
     }
 
+    if(pointsToRedeem > customer.total_points){
+      await transaction.abort();
+      return response_handler(res, 400, "Insufficient points");
+    }
+
+
     // Use FIFO redemption logic
-    const fifoResult = await redeemPointsFIFO(customer._id, pointsToRedeem, session);
+     const fifoResult = await redeemPointsFIFO(customer._id, pointsToRedeem, session);
 
     if (!fifoResult.success) {
       await transaction.abort();
@@ -951,6 +950,27 @@ const redeemPoints = async (req, res) => {
       { new: true, session }
     );
 
+    //add transaction
+    await Transaction.create(
+      [
+        {
+          customer_id: customer._id,
+          transaction_id: transaction_id,
+          transaction_type: "redeem",
+          points: fifoResult.redeemedPoints,
+          app_type: appType._id,
+          status: "completed",
+          note: `Points redeemed via Khedmah SDK - ${requested_by || "Khedmah SDK"
+            }`,
+          metadata: {
+            original_amount: total_spent,
+          },
+          transaction_date: new Date(),
+        },
+      ],
+      { session }
+    );
+
     await transaction.commit();
 
     logger.info(`Points redeemed successfully: ${customer_id}`, {
@@ -960,6 +980,7 @@ const redeemPoints = async (req, res) => {
       total_spent,
       requested_by,
     });
+   
 
     return response_handler(res, 200, "Points redeemed successfully", {
       total_spent,
@@ -967,6 +988,7 @@ const redeemPoints = async (req, res) => {
     });
   } catch (error) {
     await transaction.abort();
+    console.log("error", error);
     logger.error(`Error redeeming points: ${error.message}`, {
       stack: error.stack,
       body: req.body,
@@ -986,6 +1008,7 @@ const cancelRedemption = async (req, res) => {
 
   try {
     const { customer_id, transaction_id } = req.body;
+    console.log("cancelRedemption", req.body);
 
     // Validate required fields
     if (!customer_id || !transaction_id) {
@@ -997,9 +1020,16 @@ const cancelRedemption = async (req, res) => {
       );
     }
 
+    const customer = await Customer.findOne({ customer_id }).session(session);
+    if (!customer) {
+      await transaction.abort();
+      return response_handler(res, 404, "Customer not found");
+    }
+
     // Find the original redemption transaction
     const originalTransaction = await Transaction.findOne({
       transaction_id: transaction_id,
+      customer_id: customer._id,
       transaction_type: "redeem",
     })
       .populate("customer_id")
@@ -1010,15 +1040,7 @@ const cancelRedemption = async (req, res) => {
       return response_handler(res, 404, "Redemption transaction not found");
     }
 
-    // Verify customer matches
-    if (originalTransaction.customer_id.customer_id !== customer_id) {
-      await transaction.abort();
-      return response_handler(
-        res,
-        400,
-        "Customer ID does not match transaction"
-      );
-    }
+
 
     // Check if already cancelled
     const existingCancellation = await Transaction.findOne({
@@ -1136,6 +1158,7 @@ const cancelRedemption = async (req, res) => {
     });
   } catch (error) {
     await transaction.abort();
+    console.log("error", error);
     logger.error(`Error cancelling redemption: ${error.message}`, {
       stack: error.stack,
       body: req.body,
