@@ -599,7 +599,9 @@ const addPoints = async (req, res) => {
               console.log("itemPoints", itemPoints);
             } else {
               //flat points
-              itemPoints = price * pointSystemEntry.pointRate;
+              
+              itemPoints =  pointSystemEntry.pointRate;
+              console.log("test",itemPoints)
             }
 
             // Ensure points is a valid number
@@ -608,6 +610,7 @@ const addPoints = async (req, res) => {
             }
 
             totalPointsAwarded += itemPoints;
+            console.log(totalPointsAwarded)
             transactionDetails.push({
               criteria_code,
               price,
