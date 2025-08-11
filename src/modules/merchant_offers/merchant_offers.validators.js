@@ -195,7 +195,7 @@ const checkEligibility = Joi.object({
 const redeemDynamicCoupon = Joi.object({
   couponId: Joi.string().required(),
   pin: Joi.string().required(),
-  userId: Joi.string().required(),
+  customer_id: Joi.string().required(),
 });
 
 module.exports = {
