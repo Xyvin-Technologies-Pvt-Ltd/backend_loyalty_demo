@@ -15,15 +15,8 @@ const CouponCode = require("../../models/merchant_offers.model");
 const TierEligibilityCriteria = require("../../models/tier_eligibility_criteria_model");
 const CouponBrand = require("../../models/coupon_brand_model");
 const CouponCategory = require("../../models/coupon_category_model");
+const moment = require('moment-timezone');
 
-/**
- * FIFO Point Redemption Helper Function
- * Redeems points using First-In-First-Out logic (oldest points first)
- * @param {ObjectId} customer_id - Customer's MongoDB ObjectId
- * @param {number} pointsToRedeem - Number of points to redeem
- * @param {Object} session - MongoDB session for transaction
- * @returns {Object} { success: boolean, availablePoints: number, redeemedPoints: number }
- */
 const redeemPointsFIFO = async (customer_id, pointsToRedeem, session) => {
   try {
     // Get all valid (non-expired) loyalty points sorted by expiry date (oldest first)
@@ -1224,9 +1217,14 @@ const getTransactionHistory = async (req, res) => {
     // Calculate skip for pagination
     const skip = (page - 1) * limit;
 
-    // Get transactions with pagination
-    const transactions = await Transaction.find({ customer_id: customer._id })
-      .sort({ transaction_date: -1 })
+    // Calculate the date one year ago from today
+const oneYearAgo = new Date();
+oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+
+    // Get transactions with pagination and only last 1 year
+    const transactions = await Transaction.find({ customer_id: customer._id ,transaction_date: { $gte: oneYearAgo }})
+      .sort({ transaction_date: -1 }) 
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
@@ -1248,16 +1246,9 @@ const getTransactionHistory = async (req, res) => {
         title: isEarned ? "Points Earned" : "Points Redeemed",
         description: transaction.note || "Transaction",
         points: Math.abs(transaction.points),
-        date: new Date(transaction.transaction_date).toLocaleDateString(
-          "en-GB",
-          {
-            day: "2-digit",
-            month: "2-digit",
-            year: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-          }
-        ),
+        date: moment(transaction.transaction_date)
+        .tz("Asia/Muscat")
+        .format("DD/MM/YY HH:mm"),
         transaction_id: transaction.transaction_id,
         status: transaction.status,
       };
@@ -1510,6 +1501,11 @@ const redeemCoupon = async (req, res) => {
     if (coupon.isRedeemed === true) {
       return response_handler(res, 400, "Coupon has already been redeemed");
     }
+
+
+
+
+    
   } catch (error) {
     console.error("Error redeeming coupon:", error);
     return response_handler(res, 500, false, "Error redeeming coupon");

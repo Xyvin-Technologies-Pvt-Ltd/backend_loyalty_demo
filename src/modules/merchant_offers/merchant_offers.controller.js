@@ -3,6 +3,7 @@ const CouponCode = require("../../models/merchant_offers.model");
 const {
   validateCouponUpdate,
   createPreGeneratedCoupons,
+  redeemDynamicCoupon,
 } = require("./merchant_offers.validators");
 const { v4: uuidv4 } = require("uuid");
 
@@ -294,7 +295,8 @@ exports.getAllCoupons = async (req, res) => {
     if (type) {
       filter.type = type;
     }
-    const coupons = await CouponCode.find(filter).populate("merchantId")
+    const coupons = await CouponCode.find(filter)
+      .populate("merchantId")
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
@@ -381,5 +383,78 @@ exports.deleteCoupon = async (req, res) => {
   } catch (error) {
     console.error("Error deleting coupon:", error);
     return response_handler(res, 500, false, "Error deleting coupon");
+  }
+};
+
+// Redeem a dynamic coupon by checking pin and updating redemption status
+exports.redeemDynamicCoupon = async (req, res) => {
+  try {
+    // Validate request body
+    const { error } = redeemDynamicCoupon.validate(req.body);
+    if (error) {
+      return response_handler(res, 400, false, error.details[0].message);
+    }
+
+    const { couponId, pin, customer_id } = req.body;
+
+    // Find the coupon by ID
+    const coupon = await CouponCode.findById(couponId);
+    if (!coupon) {
+      return response_handler(res, 404, false, "Coupon not found");
+    }
+
+    // Check if coupon is of type DYNAMIC
+    if (coupon.type !== "DYNAMIC") {
+      return response_handler(res, 400, false, "This is not a dynamic coupon");
+    }
+
+    // Check if coupon is expired
+    const currentDate = new Date();
+    if (
+      currentDate < new Date(coupon.validityPeriod.startDate) ||
+      currentDate > new Date(coupon.validityPeriod.endDate)
+    ) {
+      return response_handler(
+        res,
+        400,
+        false,
+        "Coupon has expired or is not yet valid"
+      );
+    }
+
+    // Find the specific pin in the code array
+    const pinIndex = coupon.code.findIndex((code) => code.pin === pin);
+    if (pinIndex === -1) {
+      return response_handler(res, 404, false, "Invalid coupon pin");
+    }
+
+    // Check if pin is already redeemed
+    if (coupon.code[pinIndex].isRedeemed) {
+      return response_handler(
+        res,
+        400,
+        false,
+        "Coupon has already been redeemed"
+      );
+    }
+
+    // Update the redemption status
+    coupon.code[pinIndex].isRedeemed = true;
+
+    // Add user ID to the redeemed pin if needed
+    coupon.code[pinIndex].redeemedBy = customer_id;
+    coupon.code[pinIndex].redeemedAt = new Date();
+
+    // Save the updated coupon
+    await coupon.save();
+
+    return response_handler(res, 200, true, "Coupon redeemed successfully", {
+      couponId: coupon._id,
+      title: coupon.title,
+      discountDetails: coupon.discountDetails,
+    });
+  } catch (error) {
+    console.error("Error redeeming coupon:", error);
+    return response_handler(res, 500, false, "Error redeeming coupon");
   }
 };

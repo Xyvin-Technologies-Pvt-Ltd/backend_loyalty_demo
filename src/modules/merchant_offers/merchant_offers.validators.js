@@ -10,18 +10,19 @@ const createPreGeneratedCoupons = Joi.object({
     ar: Joi.string().required().allow(""),
   }),
   posterImage: Joi.string().required(),
-  code: Joi.alternatives().try(
-    Joi.array().items(
-      Joi.object({
-        pin: Joi.string().required(),
-        value: Joi.string()
-      })
-    ),
-    Joi.string()
-  ).optional(),
-  
-  
-  type:Joi.string(),
+  code: Joi.alternatives()
+    .try(
+      Joi.array().items(
+        Joi.object({
+          pin: Joi.string().required(),
+          value: Joi.string(),
+        })
+      ),
+      Joi.string()
+    )
+    .optional(),
+
+  type: Joi.string(),
   numberOfCodes: Joi.number(),
   codes: Joi.array().items(Joi.string()),
   redemptionUrl: Joi.string(),
@@ -53,17 +54,17 @@ const createPreGeneratedCoupons = Joi.object({
     userLimit: Joi.number().allow(null).default(null),
   }).required(),
   conditions: Joi.array()
-  .items(
-    Joi.object({
-      appType: Joi.array().required(),
-      minTransactionValue: Joi.number().min(0).default(0),
-      maxTransactionValue: Joi.number().allow(null).default(null),
-      applicablePaymentMethods: Joi.array()
-        .items(Joi.string().valid("Khedmah-Pay", "Khedmah-Wallet", "ALL"))
-        .default(["ALL"]),
-    })
-  )
-  .default([]),
+    .items(
+      Joi.object({
+        appType: Joi.array().required(),
+        minTransactionValue: Joi.number().min(0).default(0),
+        maxTransactionValue: Joi.number().allow(null).default(null),
+        applicablePaymentMethods: Joi.array()
+          .items(Joi.string().valid("Khedmah-Pay", "Khedmah-Wallet", "ALL"))
+          .default(["ALL"]),
+      })
+    )
+    .default([]),
 
   termsAndConditions: Joi.array().items(Joi.string()),
   redemptionInstructions: Joi.string().allow(""),
@@ -191,10 +192,17 @@ const checkEligibility = Joi.object({
     .required(),
 });
 
+const redeemDynamicCoupon = Joi.object({
+  couponId: Joi.string().required(),
+  pin: Joi.string().required(),
+  userId: Joi.string().required(),
+});
+
 module.exports = {
   createPreGeneratedCoupons,
   generateDynamicCoupon,
   createOneTimeLink,
   validateCoupon,
   checkEligibility,
+  redeemDynamicCoupon,
 };
