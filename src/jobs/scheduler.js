@@ -92,9 +92,9 @@ function initializeScheduledJobs() {
     // Schedule expired points processing to run at 1:00 AM daily
 
     // Schedule points expiration and tier downgrade to run at midnight on first day of each month
-    scheduleMonthly(processPointsAndTiers);
+    // scheduleMonthly(processPointsAndTiers);
     // scheduleDaily(processPointsAndTiers, 1, 0);
-    // scheduleNow(processPointsAndTiers);
+    scheduleNow(processPointsAndTiers);
     // Add more scheduled jobs here as needed
 
     logger.info("All jobs scheduled successfully");
