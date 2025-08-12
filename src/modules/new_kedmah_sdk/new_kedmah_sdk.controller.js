@@ -25,7 +25,7 @@ const redeemPointsFIFO = async (customer_id, pointsToRedeem, session) => {
       expiryDate: { $gte: new Date() },
       status: "active",
     })
-      .sort({ expiryDate: 1 }) // Oldest points first (FIFO)
+      .sort({ earnedAt: 1 }) // Oldest points first (FIFO)
       .session(session);
 
     // Calculate total available points

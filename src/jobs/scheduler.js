@@ -1,13 +1,7 @@
 const { logger } = require("../middlewares/logger");
 const { processPointsAndTiers } = require("./tier_downgrade.job");
 
-/**
- * Schedule a job to run at a specific time each day
- * @param {Function} job - The job function to run
- * @param {number} hour - Hour of the day (0-23)
- * @param {number} minute - Minute of the hour (0-59)
- * @returns {NodeJS.Timeout} - The timer object
- */
+
 function scheduleDaily(job, hour, minute) {
   const now = new Date();
   let scheduledTime = new Date(
@@ -49,11 +43,7 @@ function scheduleDaily(job, hour, minute) {
   return timer;
 }
 
-/**
- * Schedule a job to run at midnight on the first day of each month
- * @param {Function} job - The job function to run
- * @returns {NodeJS.Timeout} - The timer object
- */
+
 function scheduleMonthly(job) {
   const now = new Date();
   let scheduledTime = new Date(
@@ -90,9 +80,11 @@ function scheduleMonthly(job) {
   return timer;
 }
 
-/**
- * Initialize all scheduled jobs
- */
+function scheduleNow(job) {
+  job();
+}
+
+
 function initializeScheduledJobs() {
   try {
     logger.info("Initializing scheduled jobs");
@@ -101,7 +93,8 @@ function initializeScheduledJobs() {
 
     // Schedule points expiration and tier downgrade to run at midnight on first day of each month
     scheduleMonthly(processPointsAndTiers);
-
+    // scheduleDaily(processPointsAndTiers, 1, 0);
+    // scheduleNow(processPointsAndTiers);
     // Add more scheduled jobs here as needed
 
     logger.info("All jobs scheduled successfully");

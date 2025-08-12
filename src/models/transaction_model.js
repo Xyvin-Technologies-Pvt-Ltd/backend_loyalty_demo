@@ -10,7 +10,6 @@ const transaction_schema = new mongoose.Schema(
 
     transaction_type: {
       type: String,
-      enum: ["earn", "redeem","adjust", "expire"],
       required: true,
     },
    

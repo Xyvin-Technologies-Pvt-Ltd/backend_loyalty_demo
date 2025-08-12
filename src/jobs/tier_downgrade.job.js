@@ -169,6 +169,7 @@ async function processPointsAndTiers() {
           ],
           { session }
         );
+        console.log("expiry transaction created",Transaction);
 
         // Update customer's total points
         await Customer.findByIdAndUpdate(

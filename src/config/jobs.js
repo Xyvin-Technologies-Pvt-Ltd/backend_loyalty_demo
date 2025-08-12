@@ -1,7 +1,4 @@
-/**
- * Jobs configuration
- * Handles initialization of scheduled jobs
- */
+
 
 const { initializeScheduledJobs } = require('../jobs/scheduler');
 const { logger } = require('../middlewares/logger');
