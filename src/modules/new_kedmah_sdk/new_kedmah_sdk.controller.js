@@ -15,7 +15,7 @@ const CouponCode = require("../../models/merchant_offers.model");
 const TierEligibilityCriteria = require("../../models/tier_eligibility_criteria_model");
 const CouponBrand = require("../../models/coupon_brand_model");
 const CouponCategory = require("../../models/coupon_category_model");
-const moment = require('moment-timezone');
+const moment = require("moment-timezone");
 
 const redeemPointsFIFO = async (customer_id, pointsToRedeem, session) => {
   try {
@@ -592,9 +592,9 @@ const addPoints = async (req, res) => {
               console.log("itemPoints", itemPoints);
             } else {
               //flat points
-              
-              itemPoints =  pointSystemEntry.pointRate;
-              console.log("test",itemPoints)
+
+              itemPoints = pointSystemEntry.pointRate;
+              console.log("test", itemPoints);
             }
 
             // Ensure points is a valid number
@@ -603,7 +603,7 @@ const addPoints = async (req, res) => {
             }
 
             totalPointsAwarded += itemPoints;
-            console.log(totalPointsAwarded)
+            console.log(totalPointsAwarded);
             transactionDetails.push({
               criteria_code,
               price,
@@ -882,62 +882,66 @@ const redeemPoints = async (req, res) => {
       await transaction.abort();
       return response_handler(res, 404, "App type requested by not found");
     }
-    const redemptionRules = await RedemptionRules.findOne({
-      is_active: true,
-      appType: appType._id,
-    }).session(session);
 
-    if (!redemptionRules) {
-      logger.info(`No redemption rules found for ${requested_by}`);
-    }
-    if (redemptionRules) {
-      // Check minimum points requirement
-      if (pointsToRedeem < redemptionRules.minimum_points_required) {
-        await transaction.abort();
-        return response_handler(
-          res,
-          400,
-          `Minimum points required for redemption is ${redemptionRules.minimum_points_required}`
-        );
-      }
+    //!not for kedhmah
+    // const redemptionRules = await RedemptionRules.findOne({
+    //   is_active: true,
+    //   appType: appType._id,
+    // }).session(session);
 
-      // Check daily points limit
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todaysRedemptions = await Transaction.aggregate([
-        {
-          $match: {
-            customer_id: customer._id,
-            transaction_type: "redeem",
-            transaction_date: { $gte: today },
-            status: "completed",
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            totalPoints: { $sum: "$points" },
-          },
-        },
-      ]).session(session);
+    // console.log("redemptionRules", redemptionRules);
 
-      const pointsRedeemedToday = Math.abs(
-        todaysRedemptions[0]?.totalPoints || 0
-      );
+    // if (!redemptionRules) {
+    //   logger.info(`No redemption rules found for ${requested_by}`);
+    // }
+    // if (redemptionRules) {
+    //   // Check minimum points requirement
+    //   if (pointsToRedeem < redemptionRules.minimum_points_required) {
+    //     await transaction.abort();
+    //     return response_handler(
+    //       res,
+    //       400,
+    //       `Minimum points required for redemption is ${redemptionRules.minimum_points_required}`
+    //     );
+    //   }
 
-      if (
-        pointsRedeemedToday + pointsToRedeem >
-        redemptionRules.maximum_points_per_day
-      ) {
-        await transaction.abort();
-        return response_handler(
-          res,
-          400,
-          `Daily redemption limit of ${redemptionRules.maximum_points_per_day} points would be exceeded`
-        );
-      }
-      // Apply tier multiplier if exists
-    }
+    //   // Check daily points limit
+    //   const today = new Date();
+    //   today.setHours(0, 0, 0, 0);
+    //   const todaysRedemptions = await Transaction.aggregate([
+    //     {
+    //       $match: {
+    //         customer_id: customer._id,
+    //         transaction_type: "redeem",
+    //         transaction_date: { $gte: today },
+    //         status: "completed",
+    //       },
+    //     },
+    //     {
+    //       $group: {
+    //         _id: null,
+    //         totalPoints: { $sum: "$points" },
+    //       },
+    //     },
+    //   ]).session(session);
+
+    //   const pointsRedeemedToday = Math.abs(
+    //     todaysRedemptions[0]?.totalPoints || 0
+    //   );
+
+    //   if (
+    //     pointsRedeemedToday + pointsToRedeem >
+    //     redemptionRules.maximum_points_per_day
+    //   ) {
+    //     await transaction.abort();
+    //     return response_handler(
+    //       res,
+    //       400,
+    //       `Daily redemption limit of ${redemptionRules.maximum_points_per_day} points would be exceeded`
+    //     );
+    //   }
+    //   // Apply tier multiplier if exists
+    // }
 
     // Use FIFO redemption logic
     const fifoResult = await redeemPointsFIFO(
@@ -948,6 +952,7 @@ const redeemPoints = async (req, res) => {
 
     if (!fifoResult.success) {
       await transaction.abort();
+      console.log("fifoResult", fifoResult);
       return response_handler(res, 400, fifoResult.message);
     }
 
@@ -960,6 +965,27 @@ const redeemPoints = async (req, res) => {
         },
       },
       { new: true, session }
+    );
+
+    // Create transaction record for the redemption
+    await Transaction.create(
+      [
+        {
+          customer_id: customer._id,
+          transaction_id: transaction_id,
+          transaction_type: "redeem",
+          points: -fifoResult.redeemedPoints, // Negative for redemption
+          status: "completed",
+          note: "Points redeemed for purchase",
+          metadata: {
+            total_spent,
+            requested_by,
+          },
+          transaction_date: new Date(),
+          app_type: appType._id,
+        },
+      ],
+      { session }
     );
 
     await transaction.commit();
@@ -1218,13 +1244,15 @@ const getTransactionHistory = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Calculate the date one year ago from today
-const oneYearAgo = new Date();
-oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
     // Get transactions with pagination and only last 1 year
-    const transactions = await Transaction.find({ customer_id: customer._id ,transaction_date: { $gte: oneYearAgo }})
-      .sort({ transaction_date: -1 }) 
+    const transactions = await Transaction.find({
+      customer_id: customer._id,
+      transaction_date: { $gte: oneYearAgo },
+    })
+      .sort({ transaction_date: -1 })
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
@@ -1247,8 +1275,8 @@ oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
         description: transaction.note || "Transaction",
         points: Math.abs(transaction.points),
         date: moment(transaction.transaction_date)
-        .tz("Asia/Muscat")
-        .format("DD/MM/YY HH:mm"),
+          .tz("Asia/Muscat")
+          .format("DD/MM/YY HH:mm"),
         transaction_id: transaction.transaction_id,
         status: transaction.status,
       };
@@ -1322,7 +1350,6 @@ const getMerchantOffers = async (req, res) => {
     let allCoupons = await CouponCode.find(filter)
       .populate("merchantId")
       .sort({ createdAt: 1 });
-
 
     // Replace URLs
     allCoupons.forEach((coupon) => {
@@ -1501,11 +1528,6 @@ const redeemCoupon = async (req, res) => {
     if (coupon.isRedeemed === true) {
       return response_handler(res, 400, "Coupon has already been redeemed");
     }
-
-
-
-
-    
   } catch (error) {
     console.error("Error redeeming coupon:", error);
     return response_handler(res, 500, false, "Error redeeming coupon");
