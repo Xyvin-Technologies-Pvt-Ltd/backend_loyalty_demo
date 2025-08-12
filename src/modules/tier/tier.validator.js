@@ -6,6 +6,11 @@ exports.create_tier = Joi.object({
     ar: Joi.string().required().allow(""),
   }).required(),
   points_required: Joi.number().required(),
+  hierarchy_level: Joi.number()
+    .integer()
+    .min(0)
+    .required()
+    .description("Hierarchy level of the tier (0 being the lowest)"),
   description: Joi.object({
     en: Joi.array().items(Joi.string()).required(),
     ar: Joi.array().items(Joi.string()).required(),
@@ -25,6 +30,10 @@ exports.update_tier = Joi.object({
     ar: Joi.string().allow(""),
   }),
   points_required: Joi.number(),
+  hierarchy_level: Joi.number()
+    .integer()
+    .min(0)
+    .description("Hierarchy level of the tier (0 being the lowest)"),
   description: Joi.object({
     en: Joi.array().items(Joi.string()),
     ar: Joi.array().items(Joi.string()),

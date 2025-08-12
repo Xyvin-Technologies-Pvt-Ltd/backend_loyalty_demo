@@ -17,11 +17,9 @@ const createTierEligibilityCriteria = async (req, res) => {
             app_type,
             settings
         } = req.body;
+        console.log("req.body", req.body);
 
-        // Validate required fields
-        if (!tier_id || !net_earning_required || !evaluation_period_days || !consecutive_periods_required) {
-            return response_handler(res, 400, "Missing required fields");
-        }
+       
 
         // Check if tier exists
         const tier = await Tier.findById(tier_id);

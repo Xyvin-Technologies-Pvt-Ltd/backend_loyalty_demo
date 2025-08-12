@@ -112,12 +112,23 @@ const checkTierEligibility = async (
   session = null
 ) => {
   try {
-    // Check if customer has crossed the minimum threshold
-
+    // Check if customer has crossed the minimum threshold for points
     if (customer.total_points < targetTier.points_required) {
       return {
         eligible: false,
         reason: `Insufficient points. Need ${targetTier.points_required} points, have ${customer.total_points}`,
+      };
+    }
+
+    // Check if customer's current tier hierarchy level is below the target tier
+    if (
+      customer.tier &&
+      customer.tier.hierarchy_level >= targetTier.hierarchy_level
+    ) {
+      // Customer is already at this tier level or higher, no need for additional checks
+      return {
+        eligible: true,
+        reason: "Customer already at or above this tier level",
       };
     }
 
@@ -278,7 +289,7 @@ const registerCustomer = async (req, res) => {
     }
 
     // Get default tier (Bronze)
-    let defaultTier = await Tier.findOne({ points_required: 0 });
+    let defaultTier = await Tier.findOne({ hierarchy_level: 0 });
     if (!defaultTier) {
       // Create default Bronze tier if it doesn't exist
       defaultTier = await Tier.create({
@@ -349,34 +360,39 @@ const viewCustomer = async (req, res) => {
     }
 
     // Find next tier logic
-    let nextTier = null;
     let pointsNeeded = 0;
 
-    // Get all tiers sorted by points_required to find the maximum tier
-    const allTiers = await Tier.find({ isActive: true }).sort({
-      points_required: 1,
-    });
+    let nextTier = await Tier.findOne({
+      hierarchy_level: customer.tier.hierarchy_level + 1,
+    })
 
-    if (allTiers.length > 0) {
-      const maxTier = allTiers[allTiers.length - 1]; // Highest tier (highest points_required)
+    if (!nextTier) {
+      nextTier = null;
+    }
 
-      // Check if customer is already at maximum tier
-      if (customer.tier._id.toString() === maxTier._id.toString()) {
-        nextTier = null; // Customer is at maximum tier
-      } else {
-        // Find the next tier (tier with higher points_required than current)
-        nextTier = allTiers.find(
-          (tier) => tier.points_required > customer.tier.points_required
-        );
 
-        if (nextTier) {
-          // Calculate points needed for next tier
-          pointsNeeded = Math.max(
-            0,
-            nextTier.points_required - customer.total_points
-          );
-        }
+   
+
+    // Get detailed tier progress information
+    let tierProgress = {};
+    try {
+      const tierController = require("../tier/tier.controller");
+      const progressResult = await tierController.getCustomerTierProgress(
+        customer._id,
+        null
+      );
+
+      if (progressResult.success) {
+        tierProgress = {
+          next_tier_progress: progressResult.progress,
+          eligibility_status: progressResult.eligibility_status,
+        };
       }
+    } catch (progressError) {
+      logger.error(`Error getting tier progress: ${progressError.message}`, {
+        customer_id,
+        error: progressError.stack,
+      });
     }
 
     const responseData = {
@@ -390,13 +406,10 @@ const viewCustomer = async (req, res) => {
             required_point: pointsNeeded.toString(),
             en: nextTier.name.en || nextTier.name,
             ar: nextTier.name.ar || nextTier.name,
+            // Include tier progress information if available
+            ...tierProgress,
           }
         : null,
-      // : {
-      //   required_point: 0,
-      //   en: "Congratulations! You are a Gold Member",
-      //   ar: "تهانينا! أنت عضو ذهبي",
-      // },
     };
 
     logger.info(`Customer details retrieved: ${customer_id}`);
@@ -422,7 +435,7 @@ const viewCustomer = async (req, res) => {
 const addPoints = async (req, res) => {
   const transaction = new SafeTransaction();
   const session = await transaction.start();
-
+  let responseData = {};
   try {
     const {
       payment_method,
@@ -767,37 +780,48 @@ const addPoints = async (req, res) => {
       }
 
       // Check for tier upgrade
-      const availableTiers = await Tier.find({})
-        .sort({ points_required: 1 })
-        .session(session);
-      let newTier = customer.tier;
-
-      for (const tier of availableTiers) {
-        if (updatedCustomer.total_points >= tier.points_required) {
-          newTier = tier;
-        }
-      }
-      // Update tier if changed
-      if (newTier._id.toString() !== customer.tier._id.toString()) {
-        await Customer.findByIdAndUpdate(
+      try {
+        const tierController = require("../tier/tier.controller");
+        const tierUpgradeResult = await tierController.checkAndUpgradeTier(
           customer._id,
-          { tier: newTier._id },
-          { session }
+          null,
+          session
         );
 
-        logger.info(`Customer tier upgraded: ${customer_id}`, {
-          customer_id,
-          from_tier: customer.tier.name,
-          to_tier: newTier.name,
-          upgrade_details: `Points-based upgrade: ${updatedCustomer.total_points} points`,
-        });
+        if (tierUpgradeResult.upgraded) {
+          logger.info(
+            `Customer tier upgraded during point earning: ${customer_id}`,
+            {
+              customer_id,
+              from_tier: tierUpgradeResult.previousTier.name,
+              to_tier: tierUpgradeResult.newTier.name,
+              points: updatedCustomer.total_points,
+            }
+          );
+
+          // Add tier upgrade info to response
+          responseData.tier_upgrade = {
+            upgraded: true,
+            previous_tier: tierUpgradeResult.previousTier.name,
+            new_tier: tierUpgradeResult.newTier.name,
+          };
+        }
+      } catch (tierUpgradeError) {
+        // Log error but don't fail the transaction
+        logger.error(
+          `Error checking tier upgrade: ${tierUpgradeError.message}`,
+          {
+            customer_id,
+            error: tierUpgradeError.stack,
+          }
+        );
       }
     }
 
     await transaction.commit();
 
     // Prepare response data
-    const responseData = {
+    responseData = {
       points_awarded: totalPointsAwarded,
       point_balance: updatedCustomer.total_points,
     };

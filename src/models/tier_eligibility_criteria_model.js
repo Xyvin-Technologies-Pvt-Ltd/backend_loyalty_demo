@@ -117,6 +117,7 @@ tierEligibilityCriteriaSchema.methods.validateCustomerEligibility = async functi
         const transactions = await Transaction.find({
             customer_id: customer_id,
             transaction_date: { $gte: startDate },
+            transaction_type: { $in: ['earn', 'adjust'] },
             status: 'completed'
         })
             .sort({ transaction_date: 1 })
