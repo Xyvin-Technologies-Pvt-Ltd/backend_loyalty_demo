@@ -1288,13 +1288,22 @@ const getTransactionHistory = async (req, res) => {
 
     // Format transactions for frontend
     const formattedTransactions = transactions.map((transaction) => {
-      const isEarned =
-        transaction.transaction_type === "earn" ||
-        (transaction.transaction_type === "adjust" && transaction.points > 0);
-
+      if (transaction.transaction_type === "earn") {
+        title = "Points Earned";
+      } else if (transaction.transaction_type === "redeem") {
+        title = "Points Redeemed";
+      } else if (transaction.transaction_type === "adjust") {
+        title = "Points Adjusted";
+      }else if(transaction.transaction_type === "expire") {
+        title = "Points Expired";
+      }else if(transaction.transaction_type === "tier_downgrade"){
+        title = "Tier Downgrade";
+      }else if(transaction.transaction_type === "tier_upgrade"){
+        title = "Tier Upgrade";
+      }
       return {
         id: transaction._id,
-        type: isEarned ? "earned" : "burned",
+        type: transaction.transaction_type,
         title: isEarned ? "Points Earned" : "Points Redeemed",
         description: transaction.note || "Transaction",
         points: Math.abs(transaction.points),
