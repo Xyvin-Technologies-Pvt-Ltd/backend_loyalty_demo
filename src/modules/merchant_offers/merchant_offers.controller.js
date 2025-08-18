@@ -7,6 +7,9 @@ const {
 } = require("./merchant_offers.validators");
 const { v4: uuidv4 } = require("uuid");
 
+//!search for coupon by title, description, code, merchantId, couponCategoryId, type, validityPeriod, discountDetails, redeemablePointsCount, eligibilityCriteria, usagePolicy, conditions, termsAndConditions, redemptionInstructions, redemptionUrl, linkData
+//!reordering based on priority
+
 // Create a single coupon
 exports.createCoupon = async (req, res) => {
   try {
@@ -34,6 +37,7 @@ exports.createCoupon = async (req, res) => {
       redemptionInstructions,
       redemptionUrl,
       linkData,
+      priority,
     } = req.body;
 
     // Validate type-specific requirements
@@ -55,6 +59,15 @@ exports.createCoupon = async (req, res) => {
       );
     }
 
+    //if priority already present we shoudl shift the existing coupon to the next priority
+
+    if (!priority) {
+      //get the highest priority
+      const highestPriority = await CouponCode.findOne({}).sort({ priority: -1 });
+      priority = highestPriority.priority + 1;
+    }
+
+
     const couponData = {
       title,
       description,
@@ -72,6 +85,7 @@ exports.createCoupon = async (req, res) => {
       redemptionInstructions,
       redemptionUrl,
       linkData,
+      priority,
     };
     if (type === "DYNAMIC") {
       couponData.code = Array.from({ length: numberOfCodes }, () => ({

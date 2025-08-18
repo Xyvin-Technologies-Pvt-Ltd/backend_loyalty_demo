@@ -7,7 +7,7 @@ const tier_schema = new mongoose.Schema(
       ar: { type: String, trim: true },
     },
     points_required: { type: Number, default: 0, trim: true },
-    hierarchy_level: { type: Number, default: 0, required: true },
+    hierarchy_level: { type: Number,  required: true ,unique: true},
     isActive: {
       type: Boolean,
       default: true,

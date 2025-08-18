@@ -17,6 +17,15 @@ exports.create = async (req, res) => {
       return response_handler(res, 400, `Invalid input: ${error_messages}`);
     }
 
+    if (!req.body.hierarchy_level) {
+      const highestHierarchyLevel = await Tier.findOne({}).sort({ hierarchy_level: -1 });
+      if (highestHierarchyLevel) {
+        req.body.hierarchy_level = highestHierarchyLevel.hierarchy_level + 1;
+      } else {
+        req.body.hierarchy_level = 1;
+      }
+    }
+
     const new_tier = await Tier.create(req.body);
 
     return response_handler(res, 201, "Tier created successfully!", new_tier);
