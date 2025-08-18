@@ -468,7 +468,7 @@ exports.redeemDynamicCoupon = async (req, res) => {
     const transaction = new Transaction({
       customer_id: customer._id ,
       coupon_id: coupon._id,
-      transaction_type: "redeem",
+      transaction_type: "offer-redeem",
       points: coupon.redeemablePointsCount,
       status: "completed",
       metadata: {

@@ -1300,6 +1300,8 @@ const getTransactionHistory = async (req, res) => {
         title = "Tier Downgrade";
       }else if(transaction.transaction_type === "tier_upgrade"){
         title = "Tier Upgrade";
+      }else if(transaction.transaction_type === "offer-redeem"){
+        title = "Offer Redeemed";
       }
       return {
         id: transaction._id,
