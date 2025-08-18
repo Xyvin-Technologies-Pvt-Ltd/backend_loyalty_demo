@@ -57,7 +57,8 @@ exports.list = async (req, res) => {
 exports.get_tier = async (req, res) => {
   try {
     const { id } = req.params;
-    const tier = await Tier.findById(id);
+    const tier = await Tier.findById(id).sort({ hierarchy_level: 1 });
+    console.log(tier);
     return response_handler(res, 200, "Tier fetched successfully!", tier);
   } catch (error) {
     return response_handler(

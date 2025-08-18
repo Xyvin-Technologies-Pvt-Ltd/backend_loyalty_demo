@@ -6,7 +6,8 @@ const {
   redeemDynamicCoupon,
 } = require("./merchant_offers.validators");
 const { v4: uuidv4 } = require("uuid");
-
+const Transaction = require("../../models/transaction_model");  
+const Customer = require("../../models/customer_model");
 //!search for coupon by title, description, code, merchantId, couponCategoryId, type, validityPeriod, discountDetails, redeemablePointsCount, eligibilityCriteria, usagePolicy, conditions, termsAndConditions, redemptionInstructions, redemptionUrl, linkData
 //!reordering based on priority
 
@@ -458,6 +459,25 @@ exports.redeemDynamicCoupon = async (req, res) => {
 
     // Save the updated coupon
     await coupon.save();
+    //get customer
+    const customer = await Customer.findOne({ customer_id });
+    if (!customer) {
+      return response_handler(res, 404, false, "Customer not found");
+    }
+    //transaction
+    const transaction = new Transaction({
+      customer_id: customer._id ,
+      coupon_id: coupon._id,
+      transaction_type: "redeem",
+      points: coupon.redeemablePointsCount,
+      status: "completed",
+      metadata: {
+        coupon_id: coupon._id,
+        coupon_title: coupon.title,
+        coupon_discount: coupon.discountDetails,
+      },
+    });
+    await transaction.save();
 
     return response_handler(res, 200, true, "Coupon redeemed successfully", {
       couponId: coupon._id,

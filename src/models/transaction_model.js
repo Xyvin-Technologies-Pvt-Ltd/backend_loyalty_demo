@@ -7,7 +7,11 @@ const transaction_schema = new mongoose.Schema(
       ref: "Customer",
       required: true,
     },
-
+    coupon_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CouponCode",
+      default: null,
+    },  
     transaction_type: {
       type: String,
       required: true,
