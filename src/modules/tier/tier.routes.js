@@ -59,7 +59,7 @@ router.get(
     targetModel: "Tier",
     targetId: (req) => req.params.id,
   }),
-  cacheMiddleware(60, cacheKeys.tierById),
+  cacheMiddleware(30, cacheKeys.tierById),
   tier_controller.get_tier
 );
 

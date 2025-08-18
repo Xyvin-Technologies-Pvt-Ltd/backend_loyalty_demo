@@ -417,10 +417,7 @@ exports.redeemDynamicCoupon = async (req, res) => {
       return response_handler(res, 404, false, "Coupon not found");
     }
 
-    // Check if coupon is of type DYNAMIC
-    if (coupon.type !== "DYNAMIC") {
-      return response_handler(res, 400, false, "This is not a dynamic coupon");
-    }
+   
 
     // Check if coupon is expired
     const currentDate = new Date();

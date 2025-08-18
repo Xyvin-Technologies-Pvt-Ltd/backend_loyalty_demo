@@ -79,6 +79,29 @@ exports.update_tier = async (req, res) => {
       return response_handler(res, 400, `Invalid input: ${error_messages}`);
     }
 
+    //if priority present we should shift the existing tier to the next priority
+    const tier = await Tier.findById(id);
+    const oldPriority = tier.hierarchy_level;
+    const newPriority = req.body.hierarchy_level;
+    console.log(newPriority, oldPriority);
+    if (newPriority < oldPriority) {
+      // Moving UP
+      console.log("Moving UP");
+      await Tier.updateMany(
+        { hierarchy_level: { $gte: newPriority, $lt: oldPriority } },
+        { $inc: { hierarchy_level: 1 } }
+      );
+    } else if (newPriority > oldPriority) {
+      // Moving DOWN
+      console.log("Moving DOWN");
+      await Tier.updateMany(
+        { hierarchy_level: { $gt: oldPriority, $lte: newPriority } },
+        { $inc: { hierarchy_level: -1 } }
+      );
+    }
+    
+
+
     const updated_tier = await Tier.findByIdAndUpdate(id, req.body, {
       new: true,
     });
