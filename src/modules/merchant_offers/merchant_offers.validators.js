@@ -24,6 +24,7 @@ const createPreGeneratedCoupons = Joi.object({
 
   type: Joi.string(),
   numberOfCodes: Joi.number(),
+  priority: Joi.number(),
   codes: Joi.array().items(Joi.string()),
   redemptionUrl: Joi.string(),
   merchantId: Joi.string().required(),
@@ -33,7 +34,7 @@ const createPreGeneratedCoupons = Joi.object({
     endDate: Joi.date().greater(Joi.ref("startDate")).required(),
   }).required(),
   discountDetails: Joi.object({
-    type: Joi.string().valid("PERCENTAGE", "FIXED").required(),
+    type: Joi.string().valid("PERCENTAGE", "FIXED","BUY-1-GET-1").required(),
     value: Joi.number().required(),
   }).required(),
   redeemablePointsCount: Joi.number().min(0).default(0),
@@ -90,7 +91,7 @@ const generateDynamicCoupon = Joi.object({
     endDate: Joi.date().greater(Joi.ref("startDate")).required(),
   }).required(),
   discountDetails: Joi.object({
-    type: Joi.string().valid("PERCENTAGE", "FIXED").required(),
+    type: Joi.string().valid("PERCENTAGE", "FIXED","BUY-1-GET-1").required(),
     value: Joi.number().required(),
   }).required(),
   redeemablePointsCount: Joi.number().min(0).default(0),
@@ -102,6 +103,7 @@ const generateDynamicCoupon = Joi.object({
     minPointsBalance: Joi.number().min(0).default(0),
     minTransactionHistory: Joi.number().min(0).default(0),
   }).default({}),
+  priority: Joi.number(),
   usagePolicy: Joi.object({
     frequency: Joi.string()
       .valid("DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY", "TOTAL")
@@ -110,6 +112,7 @@ const generateDynamicCoupon = Joi.object({
     maxTotalUsage: Joi.number().allow(null).default(null),
     userLimit: Joi.number().allow(null).default(null),
   }).required(),
+  
   conditions: Joi.object({
     minTransactionValue: Joi.number().min(0).default(0),
     maxTransactionValue: Joi.number().allow(null).default(null),
@@ -140,7 +143,7 @@ const createOneTimeLink = Joi.object({
     endDate: Joi.date().greater(Joi.ref("startDate")).required(),
   }).required(),
   discountDetails: Joi.object({
-    type: Joi.string().valid("PERCENTAGE", "FIXED").required(),
+    type: Joi.string().valid("PERCENTAGE", "FIXED","BUY-1-GET-1").required(),
     value: Joi.number().required(),
   }).required(),
   redeemablePointsCount: Joi.number().min(0).default(0),
