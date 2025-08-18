@@ -1304,7 +1304,7 @@ const getTransactionHistory = async (req, res) => {
       return {
         id: transaction._id,
         type: transaction.transaction_type,
-        title: isEarned ? "Points Earned" : "Points Redeemed",
+        title: title,
         description: transaction.note || "Transaction",
         points: Math.abs(transaction.points),
         date: moment(transaction.transaction_date)
