@@ -465,12 +465,21 @@ exports.redeemDynamicCoupon = async (req, res) => {
       return response_handler(res, 404, false, "Customer not found");
     }
     //transaction
+    //CREATE TRANSACTION ID WITH UNIQUE CODE 
+    let transactionId =
+    coupon.title.substring(0, 4).toUpperCase() + "-" +   // first 4 of title
+    coupon.code[pinIndex].pin + // first 4 of code
+    Math.floor(1000 + Math.random() * 9000);
+    
+    
+    
     const transaction = new Transaction({
       customer_id: customer._id ,
       coupon_id: coupon._id,
       transaction_type: "offer-redeem",
       points: coupon.redeemablePointsCount,
       status: "completed",
+      transaction_id: transactionId,
       metadata: {
         coupon_id: coupon._id,
         coupon_title: coupon.title,

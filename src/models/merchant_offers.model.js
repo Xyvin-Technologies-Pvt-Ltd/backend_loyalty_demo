@@ -16,7 +16,7 @@ const couponCodeSchema = new mongoose.Schema({
     },
     priority: {
         type: Number,
-        unique: true,
+       
     },
 
     // Relationships

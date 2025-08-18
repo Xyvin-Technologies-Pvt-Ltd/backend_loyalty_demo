@@ -281,6 +281,18 @@ const registerCustomer = async (req, res) => {
     const existingCustomer = await Customer.findOne({ customer_id });
     if (existingCustomer) {
       // Get tier information
+      //update user data if name, email, mobile is present
+      if (name && name !== existingCustomer.name) {
+        existingCustomer.name = name;
+      }
+      if (email && email !== existingCustomer.email) {
+        existingCustomer.email = email;
+      }
+      if (mobile && mobile !== existingCustomer.phone) {
+        existingCustomer.phone = mobile;
+      }
+      await existingCustomer.save();
+      //get tier information
       const tier = await Tier.findById(existingCustomer.tier);
 
       return response_handler(res, 200, "Customer already registered", {
@@ -1314,6 +1326,7 @@ const getTransactionHistory = async (req, res) => {
           .format("DD/MM/YY HH:mm"),
         transaction_id: transaction.transaction_id,
         status: transaction.status,
+        metadata: transaction.metadata,
       };
     });
 
