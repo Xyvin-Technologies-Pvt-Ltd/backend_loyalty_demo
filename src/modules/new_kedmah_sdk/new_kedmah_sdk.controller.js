@@ -301,7 +301,7 @@ const registerCustomer = async (req, res) => {
     }
 
     // Get default tier (Bronze)
-    let defaultTier = await Tier.findOne({ hierarchy_level: 0 });
+    let defaultTier = await Tier.findOne({ hierarchy_level: 1 });
     if (!defaultTier) {
       // Create default Bronze tier if it doesn't exist
       defaultTier = await Tier.create({
