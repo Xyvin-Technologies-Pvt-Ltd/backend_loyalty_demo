@@ -140,7 +140,7 @@ router.get(
   kedmah_sdk_controller.getCouponDetails
 );
 
-router.post("/redeem-coupon", key_protect, merchant_offers_controller.redeemDynamicCoupon);
+router.post("/redeem-coupon", key_protect, merchant_offers_controller.redeemPreGeneratedCoupon);
 //transaction
 
 module.exports = router;

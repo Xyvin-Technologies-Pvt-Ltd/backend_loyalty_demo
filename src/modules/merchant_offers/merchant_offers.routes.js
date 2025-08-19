@@ -158,7 +158,7 @@ router.post(
     { pattern: cachePatterns.allCoupons }, // Clear all coupons cache (all query variations)
     cacheKeys.allCoupons
   ),
-  merchant_offers_controller.redeemDynamicCoupon
+  merchant_offers_controller.redeemPreGeneratedCoupon
 );
 
 module.exports = router;

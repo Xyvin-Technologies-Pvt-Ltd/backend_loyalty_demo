@@ -402,7 +402,7 @@ exports.deleteCoupon = async (req, res) => {
 };
 
 // Redeem a dynamic coupon by checking pin and updating redemption status
-exports.redeemDynamicCoupon = async (req, res) => {
+exports.redeemPreGeneratedCoupon = async (req, res) => {
   try {
     // Validate request body
     const { error } = redeemDynamicCoupon.validate(req.body);
@@ -440,15 +440,7 @@ exports.redeemDynamicCoupon = async (req, res) => {
       return response_handler(res, 404, false, "Invalid coupon pin");
     }
 
-    // Check if pin is already redeemed
-    if (coupon.code[pinIndex].isRedeemed) {
-      return response_handler(
-        res,
-        400,
-        false,
-        "Coupon has already been redeemed"
-      );
-    }
+  
 
     // Update the redemption status
     coupon.code[pinIndex].isRedeemed = true;
@@ -466,8 +458,9 @@ exports.redeemDynamicCoupon = async (req, res) => {
     }
     //transaction
     //CREATE TRANSACTION ID WITH UNIQUE CODE 
+    console.log(coupon.title)
     let transactionId =
-    coupon.title.substring(0, 4).toUpperCase() + "-" +   // first 4 of title
+    coupon.title?.en?.substring(0, 4).toUpperCase() + "-" +   // first 4 of title
     coupon.code[pinIndex].pin + // first 4 of code
     Math.floor(1000 + Math.random() * 9000);
     
