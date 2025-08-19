@@ -554,7 +554,7 @@ exports.redeemPreGeneratedCoupon = async (req, res) => {
       customer_id: customer._id,
       usedAt: new Date(),
       pin: coupon.code[pinIndex].pin,
-      transactionId: transactionId,
+      transactionId: transaction._id,
     });
     await coupon.save();
 
