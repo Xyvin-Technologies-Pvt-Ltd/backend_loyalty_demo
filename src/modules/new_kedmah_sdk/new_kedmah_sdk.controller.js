@@ -1397,7 +1397,7 @@ const getMerchantOffers = async (req, res) => {
 
     let allCoupons = await CouponCode.find(filter)
       .populate("merchantId")
-      .sort({ priority: 1 });
+      .sort({ priority: -1 });
 
     // Replace URLs
     allCoupons.forEach((coupon) => {
