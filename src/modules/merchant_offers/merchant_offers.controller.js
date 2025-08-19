@@ -19,7 +19,7 @@ exports.createCoupon = async (req, res) => {
       return response_handler(res, 400, false, error.details[0].message);
     }
 
-    const {
+    let {
       title,
       description,
       posterImage,
@@ -65,7 +65,7 @@ exports.createCoupon = async (req, res) => {
     if (!priority) {
       //get the highest priority
       const highestPriority = await CouponCode.findOne({}).sort({ priority: -1 });
-      priority = highestPriority.priority + 1;
+      priority = highestPriority.priority? highestPriority.priority + 1:1;
     }
 
 
@@ -305,16 +305,32 @@ exports.getCouponDetails = async (req, res) => {
 
 exports.getAllCoupons = async (req, res) => {
   try {
-    const { page = 1, limit = 10, type } = req.query;
+    const {
+      page = 1,
+      limit = 10,
+      type,
+      categoryId,
+      brandId,
+      search = "",
+    } = req.query;
+
     const filter = {};
-    if (type) {
-      filter.type = type;
+    if (type) filter.type = type;
+    if (categoryId) filter.couponCategoryId = categoryId;
+    if (search && search.trim()) {
+      const searchRegex = { $regex: search.trim(), $options: "i" };
+      filter.$or = [
+        { "title.en": searchRegex },
+        { "title.ar": searchRegex },
+        { "description.en": searchRegex },
+        { "description.ar": searchRegex },
+      ];
     }
     const coupons = await CouponCode.find(filter)
       .populate("merchantId")
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
-      .sort({ createdAt: -1 });
+      .sort({ priority: 1 });
 
     const total = await CouponCode.countDocuments();
 
@@ -355,9 +371,31 @@ exports.updateCoupon = async (req, res) => {
       redemptionInstructions,
       redemptionUrl,
       linkData,
-    } = req.body;
+      priority,
+    } = req.body;   
 
-    const coupon = await CouponCode.findByIdAndUpdate(couponId, {
+
+    //if priority present we should shift the existing coupon to the next priority
+    const coupon = await CouponCode.findById(couponId);
+    const oldPriority = coupon.priority;
+    const newPriority = priority;
+    if (newPriority < oldPriority) {
+      // Moving UP
+      console.log("Moving UP");
+      await CouponCode.updateMany(
+        { priority: { $gte: newPriority, $lt: oldPriority } },
+        { $inc: { priority: 1 } }
+      );
+    } else if (newPriority > oldPriority) {
+      // Moving DOWN
+      console.log("Moving DOWN");
+      await CouponCode.updateMany(
+        { priority: { $gt: oldPriority, $lte: newPriority } },
+        { $inc: { priority: -1 } }
+      );
+    }
+
+    const updatedCoupon = await CouponCode.findByIdAndUpdate(couponId, {
       $set: {
         title,
         description,
@@ -374,6 +412,7 @@ exports.updateCoupon = async (req, res) => {
         redemptionInstructions,
         redemptionUrl,
         linkData,
+        priority,
       },
     });
 
@@ -382,7 +421,7 @@ exports.updateCoupon = async (req, res) => {
       200,
       true,
       "Coupon updated successfully",
-      coupon
+      updatedCoupon
     );
   } catch (error) {
     console.error("Error updating coupon:", error);

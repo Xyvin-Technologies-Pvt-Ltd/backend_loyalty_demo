@@ -84,7 +84,6 @@ exports.update_tier = async (req, res) => {
     const tier = await Tier.findById(id);
     const oldPriority = tier.hierarchy_level;
     const newPriority = req.body.hierarchy_level;
-    console.log(newPriority, oldPriority);
     if (newPriority < oldPriority) {
       // Moving UP
       console.log("Moving UP");

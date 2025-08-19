@@ -24,7 +24,6 @@ const createPreGeneratedCoupons = Joi.object({
 
   type: Joi.string(),
   numberOfCodes: Joi.number(),
-  priority: Joi.number(),
   codes: Joi.array().items(Joi.string()),
   redemptionUrl: Joi.string(),
   merchantId: Joi.string().required(),
@@ -70,6 +69,7 @@ const createPreGeneratedCoupons = Joi.object({
   termsAndConditions: Joi.array().items(Joi.string()),
   redemptionInstructions: Joi.string().allow(""),
   isActive: Joi.boolean().default(true),
+  priority: Joi.number().default(0),
 });
 
 const generateDynamicCoupon = Joi.object({
@@ -103,7 +103,6 @@ const generateDynamicCoupon = Joi.object({
     minPointsBalance: Joi.number().min(0).default(0),
     minTransactionHistory: Joi.number().min(0).default(0),
   }).default({}),
-  priority: Joi.number(),
   usagePolicy: Joi.object({
     frequency: Joi.string()
       .valid("DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY", "TOTAL")

@@ -116,10 +116,10 @@ router.put(
     targetId: (req) => req.params.couponId,
     details: (req) => req.body,
   }),
-  // enhancedCacheInvalidationMiddleware(
-  //   { pattern: cachePatterns.allCoupons }, // Clear all coupons cache (all query variations)
-  //   cacheKeys.allCoupons
-  // ),
+  enhancedCacheInvalidationMiddleware(
+    { pattern: cachePatterns.allCoupons }, // Clear all coupons cache (all query variations)
+    cacheKeys.allCoupons
+  ),
   merchant_offers_controller.updateCoupon
 );
 
