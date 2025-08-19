@@ -140,6 +140,22 @@ router.delete(
   merchant_offers_controller.deleteCoupon
 );
 
+// Initialize sequential priorities for all existing coupons
+router.post(
+  "/initialize-priorities",
+  authorizePermission("MANAGE_COUPONS"),
+  couponAudit.captureResponse(),
+  couponAudit.adminAction("initialize_coupon_priorities", {
+    description: "Admin initialized priorities for all coupons",
+    targetModel: "CouponCode",
+  }),
+  enhancedCacheInvalidationMiddleware(
+    { pattern: cachePatterns.allCoupons }, // Clear all coupons cache
+    cacheKeys.allCoupons
+  ),
+  merchant_offers_controller.initializeCouponPriorities
+);
+
 // Redeem a dynamic coupon
 router.post(
   "/redeem",
