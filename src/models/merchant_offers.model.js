@@ -168,6 +168,10 @@ const couponCodeSchema = new mongoose.Schema({
             type: Date,
             default: Date.now
         },
+        pin: {
+            type: String,
+            required: true
+        },
         transactionId: {
             type: String,
             default: null

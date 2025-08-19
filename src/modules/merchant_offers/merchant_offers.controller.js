@@ -449,6 +449,9 @@ exports.redeemPreGeneratedCoupon = async (req, res) => {
     coupon.code[pinIndex].redeemedBy = customer_id;
     coupon.code[pinIndex].redeemedAt = new Date();
 
+    //usuageHistory
+ 
+
     // Save the updated coupon
     await coupon.save();
     //get customer
@@ -458,12 +461,12 @@ exports.redeemPreGeneratedCoupon = async (req, res) => {
     }
     //transaction
     //CREATE TRANSACTION ID WITH UNIQUE CODE 
-    console.log(coupon.title)
     let transactionId =
-    coupon.title?.en?.substring(0, 4).toUpperCase() + "-" +   // first 4 of title
-    coupon.code[pinIndex].pin + // first 4 of code
+    coupon.title?.en?.substring(5, 9).toUpperCase() + "-" +   // first 4 of title
+    coupon.code[pinIndex].pin +"-" // first 4 of code
     Math.floor(1000 + Math.random() * 9000);
     
+   
     
     
     const transaction = new Transaction({
@@ -480,6 +483,16 @@ exports.redeemPreGeneratedCoupon = async (req, res) => {
       },
     });
     await transaction.save();
+
+    //add to usageHistory
+
+    coupon.usageHistory.push({
+      customer_id: customer._id,
+      usedAt: new Date(),
+      pin: coupon.code[pinIndex].pin,
+      transactionId: transactionId,
+    });
+    await coupon.save();
 
     return response_handler(res, 200, true, "Coupon redeemed successfully", {
       couponId: coupon._id,
