@@ -527,9 +527,7 @@ exports.redeemPreGeneratedCoupon = async (req, res) => {
     //transaction
     //CREATE TRANSACTION ID WITH UNIQUE CODE
     let transactionId =
-      coupon.title?.en?.substring(0, 5).toUpperCase() +
-      "-" + // first 4 of title
-      Date.now() 
+    Math.random().toString(36).substring(2, 10).toUpperCase();
      
     
 
