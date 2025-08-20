@@ -376,14 +376,11 @@ const viewCustomer = async (req, res) => {
 
     let nextTier = await Tier.findOne({
       hierarchy_level: customer.tier.hierarchy_level + 1,
-    })
+    });
 
     if (!nextTier) {
       nextTier = null;
     }
-
-
-   
 
     // Get detailed tier progress information
     let tierProgress = {};
@@ -1306,13 +1303,13 @@ const getTransactionHistory = async (req, res) => {
         title = "Points Redeemed";
       } else if (transaction.transaction_type === "adjust") {
         title = "Points Adjusted";
-      }else if(transaction.transaction_type === "expire") {
+      } else if (transaction.transaction_type === "expire") {
         title = "Points Expired";
-      }else if(transaction.transaction_type === "tier_downgrade"){
+      } else if (transaction.transaction_type === "tier_downgrade") {
         title = "Tier Downgrade";
-      }else if(transaction.transaction_type === "tier_upgrade"){
+      } else if (transaction.transaction_type === "tier_upgrade") {
         title = "Tier Upgrade";
-      }else if(transaction.transaction_type === "offer-redeem"){
+      } else if (transaction.transaction_type === "offer-redeem") {
         title = "Offer Redeemed";
       }
       return {
@@ -1378,6 +1375,7 @@ const getMerchantOffers = async (req, res) => {
       limit = 10,
       type,
       categoryId,
+      customer_id,
       brandId,
       search = "",
     } = req.query;
@@ -1393,11 +1391,62 @@ const getMerchantOffers = async (req, res) => {
         { "description.en": searchRegex },
         { "description.ar": searchRegex },
       ];
+
+      // We need to handle merchant name and category name search differently
+      // since they are in referenced collections
+      const merchantFilter = {
+        $or: [{ "title.en": searchRegex }, { "title.ar": searchRegex }],
+      };
+      const categoryFilter = {
+        $or: [{ "title.en": searchRegex }, { "title.ar": searchRegex }],
+      };
+
+      // We'll use aggregation to find matching merchants and categories
+      const merchantPromise = mongoose
+        .model("CouponBrand")
+        .find(merchantFilter)
+        .select("_id");
+      const categoryPromise = mongoose
+        .model("CouponCategory")
+        .find(categoryFilter)
+        .select("_id");
+
+      // Wait for both queries to complete
+      const [matchingMerchants, matchingCategories] = await Promise.all([
+        merchantPromise,
+        categoryPromise,
+      ]);
+
+      // If we found matching merchants or categories, add them to the filter
+      if (matchingMerchants.length > 0) {
+        const merchantIds = matchingMerchants.map((m) => m._id);
+        if (!filter.$or) filter.$or = [];
+        filter.$or.push({ merchantId: { $in: merchantIds } });
+      }
+
+      if (matchingCategories.length > 0) {
+        const categoryIds = matchingCategories.map((c) => c._id);
+        if (!filter.$or) filter.$or = [];
+        filter.$or.push({ couponCategoryId: { $in: categoryIds } });
+      }
     }
 
     let allCoupons = await CouponCode.find(filter)
       .populate("merchantId")
+      .populate("couponCategoryId")
       .sort({ priority: 1 });
+
+    //add a field such as eligible for user tier true or false based on coupon tier eligibilty
+    const customer = await Customer.findOne({ customer_id: customer_id });
+    if (customer) {
+      allCoupons.forEach((coupon) => {
+        if (coupon.eligibilityCriteria.tiers.includes(customer.tier)) {
+          coupon.eligible_for_tier = true;
+        } else {
+          coupon.eligible_for_tier = false;
+        }
+      });
+    }
 
     // Replace URLs
     allCoupons.forEach((coupon) => {
@@ -1545,6 +1594,7 @@ const getCouponDetails = async (req, res) => {
         "http://141.105.172.45:7733/api/"
       );
     }
+
     return response_handler(
       res,
       200,

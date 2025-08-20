@@ -8,6 +8,7 @@ const {
 const { v4: uuidv4 } = require("uuid");
 const Transaction = require("../../models/transaction_model");
 const Customer = require("../../models/customer_model");
+const mongoose = require("mongoose");
 //!search for coupon by title, description, code, merchantId, couponCategoryId, type, validityPeriod, discountDetails, redeemablePointsCount, eligibilityCriteria, usagePolicy, conditions, termsAndConditions, redemptionInstructions, redemptionUrl, linkData
 //!reordering based on priority
 
@@ -326,14 +327,56 @@ exports.getAllCoupons = async (req, res) => {
         { "description.en": searchRegex },
         { "description.ar": searchRegex },
       ];
+
+      // Handle merchant name and category name search
+      const merchantFilter = {
+        $or: [{ "title.en": searchRegex }, { "title.ar": searchRegex }],
+      };
+      const categoryFilter = {
+        $or: [{ "title.en": searchRegex }, { "title.ar": searchRegex }],
+      };
+
+      // Find matching merchants and categories
+      const merchantPromise = mongoose
+        .model("CouponBrand")
+        .find(merchantFilter)
+        .select("_id");
+      const categoryPromise = mongoose
+        .model("CouponCategory")
+        .find(categoryFilter)
+        .select("_id");
+
+      // Wait for both queries to complete
+      const [matchingMerchants, matchingCategories] = await Promise.all([
+        merchantPromise,
+        categoryPromise,
+      ]);
+
+      // If we found matching merchants or categories, add them to the filter
+      if (matchingMerchants.length > 0) {
+        const merchantIds = matchingMerchants.map((m) => m._id);
+        if (!filter.$or) filter.$or = [];
+        filter.$or.push({ merchantId: { $in: merchantIds } });
+      }
+
+      if (matchingCategories.length > 0) {
+        const categoryIds = matchingCategories.map((c) => c._id);
+        if (!filter.$or) filter.$or = [];
+        filter.$or.push({ couponCategoryId: { $in: categoryIds } });
+      }
     }
+
+    if (brandId) filter.merchantId = brandId;
+
+    const total = await CouponCode.countDocuments(filter);
+
+    // Get coupons with pagination and populate related fields
     const coupons = await CouponCode.find(filter)
       .populate("merchantId")
+      .populate("couponCategoryId")
+      .sort({ priority: 1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit))
-      .sort({ priority: 1 });
-
-    const total = await CouponCode.countDocuments();
+      .limit(parseInt(limit));
 
     return response_handler(
       res,
@@ -526,10 +569,10 @@ exports.redeemPreGeneratedCoupon = async (req, res) => {
     }
     //transaction
     //CREATE TRANSACTION ID WITH UNIQUE CODE
-    let transactionId =
-    Math.random().toString(36).substring(2, 10).toUpperCase();
-     
-    
+    let transactionId = Math.random()
+      .toString(36)
+      .substring(2, 10)
+      .toUpperCase();
 
     const transaction = new Transaction({
       customer_id: customer._id,
@@ -549,16 +592,17 @@ exports.redeemPreGeneratedCoupon = async (req, res) => {
     //add to usageHistory
 
     coupon.usageHistory.push({
-      customer_id: customer._id,
+      customerId: customer._id,
       usedAt: new Date(),
       pin: coupon.code[pinIndex].pin,
-      transactionId: transaction._id,
+      transactionId: transactionId,
     });
     await coupon.save();
 
     return response_handler(res, 200, true, "Coupon redeemed successfully", {
       couponId: coupon._id,
       title: coupon.title,
+      transactionId: transactionId,
       discountDetails: coupon.discountDetails,
     });
   } catch (error) {
