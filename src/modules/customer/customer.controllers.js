@@ -115,8 +115,7 @@ const getAllCustomers = async (req, res) => {
   
     const customers = await Customer.aggregate([
       { $match: filter },
-      { $addFields: { customer_id_numeric: { $toInt: "$customer_id" } } }, // convert to number
-      { $sort: { customer_id_numeric: 1 } }, // numeric sort
+
       { $skip: (page - 1) * parseInt(limit) },
       { $limit: parseInt(limit) },
       {
@@ -133,6 +132,17 @@ const getAllCustomers = async (req, res) => {
           localField: "app_type",
           foreignField: "_id",
           as: "app_type",
+        },
+      },
+      {
+        $project: {
+          customer_id: 1,
+          name: 1,
+          email: 1,
+          phone: 1,
+          points: 1,  // 👈 include points field
+          tier: { $arrayElemAt: ["$tier", 0] }, // flatten array
+          app_type: { $arrayElemAt: ["$app_type", 0] }, // flatten array
         },
       },
     ]);
