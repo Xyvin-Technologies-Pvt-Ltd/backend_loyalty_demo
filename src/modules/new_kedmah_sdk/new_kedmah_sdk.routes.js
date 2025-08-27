@@ -12,6 +12,8 @@ const {
   cancelRedemptionSchema,
 } = require("./new_kedmah_sdk.validator");
 
+const merchant_offers_controller = require("../merchant_offers/merchant_offers.controller.js")
+
 // Create audit middleware for the new Khedmah SDK module
 const kedmahSdkAudit = createAuditMiddleware("new_kedmah_sdk");
 
@@ -138,7 +140,7 @@ router.get(
   kedmah_sdk_controller.getCouponDetails
 );
 
-router.post("/redeem-coupon", key_protect, kedmah_sdk_controller.redeemCoupon);
+router.post("/redeem-coupon", key_protect, merchant_offers_controller.redeemPreGeneratedCoupon);
 //transaction
 
 module.exports = router;

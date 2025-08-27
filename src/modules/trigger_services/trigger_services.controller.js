@@ -32,8 +32,11 @@ exports.getAllTriggerServices = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skipCount = (page - 1) * limit;
-
+    const searchQuery = req.query.search || "";
     const filter = {};
+    if (searchQuery) {
+      filter["title.en"] = { $regex: searchQuery, $options: "i" };
+    }
     const trigger_services = await TriggerServices.find(filter)
       .populate("triggerEvent")
       .skip(skipCount)

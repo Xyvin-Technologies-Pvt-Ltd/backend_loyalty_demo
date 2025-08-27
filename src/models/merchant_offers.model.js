@@ -14,6 +14,10 @@ const couponCodeSchema = new mongoose.Schema({
         type: String,  // URL to the image
         required: true
     },
+    priority: {
+        type: Number,
+       
+    },
 
     // Relationships
     merchantId: {
@@ -69,7 +73,7 @@ const couponCodeSchema = new mongoose.Schema({
     discountDetails: {
         type: {
             type: String,
-            enum: ['PERCENTAGE', 'FIXED'],
+            enum: ['PERCENTAGE', 'FIXED','BUY-1-GET-1'],
             required: true
         },
         value: {
@@ -163,6 +167,10 @@ const couponCodeSchema = new mongoose.Schema({
         usedAt: {
             type: Date,
             default: Date.now
+        },
+        pin: {
+            type: String,
+            required: true
         },
         transactionId: {
             type: String,

@@ -92,11 +92,17 @@ const getAllCustomers = async (req, res) => {
     } = req.query;
 
     // Build filter object
-    const filter = {};
 
-    if (name) filter.name = { $regex: name, $options: "i" };
-    if (email) filter.email = { $regex: email, $options: "i" };
-    if (phone) filter.phone = { $regex: phone, $options: "i" };
+    let filter = {};
+
+    if (name && name.trim() !== "") {
+      filter.$or = [
+        { name: { $regex: name, $options: "i" } },
+        { customer_id: { $regex: name, $options: "i" } },
+        { email: { $regex: name, $options: "i" } },
+        { phone: { $regex: name, $options: "i" } },
+      ];
+    }
     if (app_type) filter.app_type = app_type;
     if (status !== undefined) filter.status = status === "true";
 
@@ -104,17 +110,42 @@ const getAllCustomers = async (req, res) => {
     const sort = {};
     sort[sort_by] = sort_order === "asc" ? 1 : -1;
 
-    // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Execute query with pagination
-    const customers = await Customer.find(filter)
-      .sort(sort)
-      .skip(skip)
-      .limit(parseInt(limit))
-      .populate("tier", "name description points_required")
-      .populate("app_type", "name description");
+  
+    const customers = await Customer.aggregate([
+      { $match: filter },
 
+      { $skip: (page - 1) * parseInt(limit) },
+      { $limit: parseInt(limit) },
+      {
+        $lookup: {
+          from: "tiers",
+          localField: "tier",
+          foreignField: "_id",
+          as: "tier",
+        },
+      },
+      {
+        $lookup: {
+          from: "apptypes",
+          localField: "app_type",
+          foreignField: "_id",
+          as: "app_type",
+        },
+      },
+      {
+        $project: {
+          customer_id: 1,
+          name: 1,
+          email: 1,
+          phone: 1,
+          points: 1,  // 👈 include points field
+          tier: { $arrayElemAt: ["$tier", 0] }, // flatten array
+          app_type: { $arrayElemAt: ["$app_type", 0] }, // flatten array
+        },
+      },
+    ]);
     // Get total count for pagination
     const totalCustomers = await Customer.countDocuments(filter);
 
@@ -181,7 +212,7 @@ const getCustomerById = async (req, res) => {
 const updateCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, app_type, status } = req.body;
+    const { name, email, phone, app_type, status,tier } = req.body;
 
     // Check if customer exists
     const customer = await Customer.findById(id);
@@ -222,7 +253,7 @@ const updateCustomer = async (req, res) => {
     // Update customer
     const updatedCustomer = await Customer.findByIdAndUpdate(
       id,
-      { name, email, phone, app_type, status },
+      { name, email, phone, app_type, status,tier },
       { new: true, runValidators: true }
     )
       .populate("tier", "name description points_required")

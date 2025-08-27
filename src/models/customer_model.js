@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const customer_schema = new mongoose.Schema(
   {
-    customer_id: { type: String, trim: true },
+    customer_id: { type: String, trim: true ,unique: true},
     name: { type: String, trim: true },
     email: { type: String, trim: true },
     phone: { type: String, trim: true },
@@ -63,8 +63,7 @@ const Customer = mongoose.model("Customer", customer_schema);
 
 //INDEXING
 customer_schema.index({ customer_id: 1 });
-customer_schema.index({ email: 1 });
-customer_schema.index({ phone: 1 });
+
 customer_schema.index({ app_type: 1 });
 
 

@@ -3,8 +3,14 @@ const CouponCode = require("../../models/merchant_offers.model");
 const {
   validateCouponUpdate,
   createPreGeneratedCoupons,
+  redeemDynamicCoupon,
 } = require("./merchant_offers.validators");
 const { v4: uuidv4 } = require("uuid");
+const Transaction = require("../../models/transaction_model");
+const Customer = require("../../models/customer_model");
+const mongoose = require("mongoose");
+//!search for coupon by title, description, code, merchantId, couponCategoryId, type, validityPeriod, discountDetails, redeemablePointsCount, eligibilityCriteria, usagePolicy, conditions, termsAndConditions, redemptionInstructions, redemptionUrl, linkData
+//!reordering based on priority
 
 // Create a single coupon
 exports.createCoupon = async (req, res) => {
@@ -14,7 +20,7 @@ exports.createCoupon = async (req, res) => {
       return response_handler(res, 400, false, error.details[0].message);
     }
 
-    const {
+    let {
       title,
       description,
       posterImage,
@@ -33,6 +39,7 @@ exports.createCoupon = async (req, res) => {
       redemptionInstructions,
       redemptionUrl,
       linkData,
+      priority,
     } = req.body;
 
     // Validate type-specific requirements
@@ -54,6 +61,16 @@ exports.createCoupon = async (req, res) => {
       );
     }
 
+    //if priority already present we shoudl shift the existing coupon to the next priority
+
+    if (!priority) {
+      //get the highest priority
+      const highestPriority = await CouponCode.findOne({}).sort({
+        priority: -1,
+      });
+      priority = highestPriority.priority ? highestPriority.priority + 1 : 1;
+    }
+
     const couponData = {
       title,
       description,
@@ -71,6 +88,7 @@ exports.createCoupon = async (req, res) => {
       redemptionInstructions,
       redemptionUrl,
       linkData,
+      priority,
     };
     if (type === "DYNAMIC") {
       couponData.code = Array.from({ length: numberOfCodes }, () => ({
@@ -289,17 +307,76 @@ exports.getCouponDetails = async (req, res) => {
 
 exports.getAllCoupons = async (req, res) => {
   try {
-    const { page = 1, limit = 10, type } = req.query;
-    const filter = {};
-    if (type) {
-      filter.type = type;
-    }
-    const coupons = await CouponCode.find(filter).populate("merchantId")
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
-      .sort({ createdAt: -1 });
+    const {
+      page = 1,
+      limit = 10,
+      type,
+      categoryId,
+      brandId,
+      search = "",
+    } = req.query;
 
-    const total = await CouponCode.countDocuments();
+    const filter = {};
+    if (type) filter.type = type;
+    if (categoryId) filter.couponCategoryId = categoryId;
+    if (search && search.trim()) {
+      const searchRegex = { $regex: search.trim(), $options: "i" };
+      filter.$or = [
+        { "title.en": searchRegex },
+        { "title.ar": searchRegex },
+        { "description.en": searchRegex },
+        { "description.ar": searchRegex },
+      ];
+
+      // Handle merchant name and category name search
+      const merchantFilter = {
+        $or: [{ "title.en": searchRegex }, { "title.ar": searchRegex }],
+      };
+      const categoryFilter = {
+        $or: [{ "title.en": searchRegex }, { "title.ar": searchRegex }],
+      };
+
+      // Find matching merchants and categories
+      const merchantPromise = mongoose
+        .model("CouponBrand")
+        .find(merchantFilter)
+        .select("_id");
+      const categoryPromise = mongoose
+        .model("CouponCategory")
+        .find(categoryFilter)
+        .select("_id");
+
+      // Wait for both queries to complete
+      const [matchingMerchants, matchingCategories] = await Promise.all([
+        merchantPromise,
+        categoryPromise,
+      ]);
+
+      // If we found matching merchants or categories, add them to the filter
+      if (matchingMerchants.length > 0) {
+        const merchantIds = matchingMerchants.map((m) => m._id);
+        if (!filter.$or) filter.$or = [];
+        filter.$or.push({ merchantId: { $in: merchantIds } });
+      }
+
+      if (matchingCategories.length > 0) {
+        const categoryIds = matchingCategories.map((c) => c._id);
+        if (!filter.$or) filter.$or = [];
+        filter.$or.push({ couponCategoryId: { $in: categoryIds } });
+      }
+    }
+
+    if (brandId) filter.merchantId = brandId;
+
+    const total = await CouponCode.countDocuments(filter);
+
+    // Get coupons with pagination and populate related fields
+    const coupons = await CouponCode.find(filter)
+      .populate("merchantId")
+      .populate("couponCategoryId")
+      .sort({ priority: 1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
 
     return response_handler(
       res,
@@ -338,9 +415,30 @@ exports.updateCoupon = async (req, res) => {
       redemptionInstructions,
       redemptionUrl,
       linkData,
+      priority,
     } = req.body;
 
-    const coupon = await CouponCode.findByIdAndUpdate(couponId, {
+    //if priority present we should shift the existing coupon to the next priority
+    const coupon = await CouponCode.findById(couponId);
+    const oldPriority = coupon.priority;
+    const newPriority = priority;
+    if (newPriority < oldPriority) {
+      // Moving UP
+      console.log("Moving UP");
+      await CouponCode.updateMany(
+        { priority: { $gte: newPriority, $lt: oldPriority } },
+        { $inc: { priority: 1 } }
+      );
+    } else if (newPriority > oldPriority) {
+      // Moving DOWN
+      console.log("Moving DOWN");
+      await CouponCode.updateMany(
+        { priority: { $gt: oldPriority, $lte: newPriority } },
+        { $inc: { priority: -1 } }
+      );
+    }
+
+    const updatedCoupon = await CouponCode.findByIdAndUpdate(couponId, {
       $set: {
         title,
         description,
@@ -357,6 +455,7 @@ exports.updateCoupon = async (req, res) => {
         redemptionInstructions,
         redemptionUrl,
         linkData,
+        priority,
       },
     });
 
@@ -365,7 +464,7 @@ exports.updateCoupon = async (req, res) => {
       200,
       true,
       "Coupon updated successfully",
-      coupon
+      updatedCoupon
     );
   } catch (error) {
     console.error("Error updating coupon:", error);
@@ -381,5 +480,133 @@ exports.deleteCoupon = async (req, res) => {
   } catch (error) {
     console.error("Error deleting coupon:", error);
     return response_handler(res, 500, false, "Error deleting coupon");
+  }
+};
+
+// Redeem a dynamic coupon by checking pin and updating redemption status
+// Initialize sequential priorities for all existing coupons
+exports.initializeCouponPriorities = async (req, res) => {
+  try {
+    // Get all coupons sorted by creation date (oldest first)
+    const coupons = await CouponCode.find().sort({ createdAt: 1 });
+
+    // Update each coupon with a sequential priority
+    for (let i = 0; i < coupons.length; i++) {
+      await CouponCode.findByIdAndUpdate(coupons[i]._id, {
+        $set: { priority: i + 1 }, // Start from 1
+      });
+    }
+
+    return response_handler(
+      res,
+      200,
+      true,
+      `Successfully initialized priorities for ${coupons.length} coupons`,
+      { totalCoupons: coupons.length }
+    );
+  } catch (error) {
+    console.error("Error initializing coupon priorities:", error);
+    return response_handler(
+      res,
+      500,
+      false,
+      "Error initializing coupon priorities"
+    );
+  }
+};
+
+exports.redeemPreGeneratedCoupon = async (req, res) => {
+  try {
+    // Validate request body
+    const { error } = redeemDynamicCoupon.validate(req.body);
+    if (error) {
+      return response_handler(res, 400, false, error.details[0].message);
+    }
+
+    const { couponId, pin, customer_id } = req.body;
+
+    // Find the coupon by ID
+    const coupon = await CouponCode.findById(couponId);
+    if (!coupon) {
+      return response_handler(res, 404, false, "Coupon not found");
+    }
+
+    // Check if coupon is expired
+    const currentDate = new Date();
+    if (
+      currentDate < new Date(coupon.validityPeriod.startDate) ||
+      currentDate > new Date(coupon.validityPeriod.endDate)
+    ) {
+      return response_handler(
+        res,
+        400,
+        false,
+        "Coupon has expired or is not yet valid"
+      );
+    }
+
+    // Find the specific pin in the code array
+    const pinIndex = coupon.code.findIndex((code) => code.pin === pin);
+    if (pinIndex === -1) {
+      return response_handler(res, 404, false, "Invalid coupon pin");
+    }
+
+    // Update the redemption status
+    coupon.code[pinIndex].isRedeemed = true;
+
+    // Add user ID to the redeemed pin if needed
+    coupon.code[pinIndex].redeemedBy = customer_id;
+    coupon.code[pinIndex].redeemedAt = new Date();
+
+    //usuageHistory
+
+    // Save the updated coupon
+    await coupon.save();
+    //get customer
+    const customer = await Customer.findOne({ customer_id });
+    if (!customer) {
+      return response_handler(res, 404, false, "Customer not found");
+    }
+    //transaction
+    //CREATE TRANSACTION ID WITH UNIQUE CODE
+    let transactionId = Math.random()
+      .toString(36)
+      .substring(2, 10)
+      .toUpperCase();
+
+    const transaction = new Transaction({
+      customer_id: customer._id,
+      coupon_id: coupon._id,
+      transaction_type: "offer-redeem",
+      points: coupon.redeemablePointsCount,
+      status: "completed",
+      transaction_id: transactionId,
+      metadata: {
+        coupon_id: coupon._id,
+        coupon_title: coupon.title,
+        coupon_discount: coupon.discountDetails,
+      },
+    });
+    await transaction.save();
+
+    //add to usageHistory
+
+    coupon.usageHistory.push({
+      customerId: customer._id,
+      usedAt: new Date(),
+      pin: coupon.code[pinIndex].pin,
+      transactionId: transactionId,
+    });
+    await coupon.save();
+
+    return response_handler(res, 200, true, "Coupon redeemed successfully", {
+      couponId: coupon._id,
+      title: coupon.title,
+      transactionId: transactionId,
+      discountDetails: coupon.discountDetails,
+    });
+  } catch (error) {
+    console.error("Error redeeming coupon:", error);
+    return response_handler(res, 500, false, "Error redeeming coupon");
   }
 };
