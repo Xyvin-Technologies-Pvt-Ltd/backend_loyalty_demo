@@ -212,7 +212,7 @@ const getCustomerById = async (req, res) => {
 const updateCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, app_type, status } = req.body;
+    const { name, email, phone, app_type, status,tier } = req.body;
 
     // Check if customer exists
     const customer = await Customer.findById(id);
@@ -253,7 +253,7 @@ const updateCustomer = async (req, res) => {
     // Update customer
     const updatedCustomer = await Customer.findByIdAndUpdate(
       id,
-      { name, email, phone, app_type, status },
+      { name, email, phone, app_type, status,tier },
       { new: true, runValidators: true }
     )
       .populate("tier", "name description points_required")
