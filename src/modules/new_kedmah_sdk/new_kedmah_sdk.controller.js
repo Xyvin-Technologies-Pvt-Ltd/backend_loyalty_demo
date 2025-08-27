@@ -15,15 +15,8 @@ const CouponCode = require("../../models/merchant_offers.model");
 const TierEligibilityCriteria = require("../../models/tier_eligibility_criteria_model");
 const CouponBrand = require("../../models/coupon_brand_model");
 const CouponCategory = require("../../models/coupon_category_model");
+const moment = require("moment-timezone");
 
-/**
- * FIFO Point Redemption Helper Function
- * Redeems points using First-In-First-Out logic (oldest points first)
- * @param {ObjectId} customer_id - Customer's MongoDB ObjectId
- * @param {number} pointsToRedeem - Number of points to redeem
- * @param {Object} session - MongoDB session for transaction
- * @returns {Object} { success: boolean, availablePoints: number, redeemedPoints: number }
- */
 const redeemPointsFIFO = async (customer_id, pointsToRedeem, session) => {
   try {
     // Get all valid (non-expired) loyalty points sorted by expiry date (oldest first)
@@ -32,7 +25,7 @@ const redeemPointsFIFO = async (customer_id, pointsToRedeem, session) => {
       expiryDate: { $gte: new Date() },
       status: "active",
     })
-      .sort({ expiryDate: 1 }) // Oldest points first (FIFO)
+      .sort({ earnedAt: 1 }) // Oldest points first (FIFO)
       .session(session);
 
     // Calculate total available points
@@ -119,12 +112,23 @@ const checkTierEligibility = async (
   session = null
 ) => {
   try {
-    // Check if customer has crossed the minimum threshold
-
+    // Check if customer has crossed the minimum threshold for points
     if (customer.total_points < targetTier.points_required) {
       return {
         eligible: false,
         reason: `Insufficient points. Need ${targetTier.points_required} points, have ${customer.total_points}`,
+      };
+    }
+
+    // Check if customer's current tier hierarchy level is below the target tier
+    if (
+      customer.tier &&
+      customer.tier.hierarchy_level >= targetTier.hierarchy_level
+    ) {
+      // Customer is already at this tier level or higher, no need for additional checks
+      return {
+        eligible: true,
+        reason: "Customer already at or above this tier level",
       };
     }
 
@@ -277,6 +281,18 @@ const registerCustomer = async (req, res) => {
     const existingCustomer = await Customer.findOne({ customer_id });
     if (existingCustomer) {
       // Get tier information
+      //update user data if name, email, mobile is present
+      if (name && name !== existingCustomer.name) {
+        existingCustomer.name = name;
+      }
+      if (email && email !== existingCustomer.email) {
+        existingCustomer.email = email;
+      }
+      if (mobile && mobile !== existingCustomer.phone) {
+        existingCustomer.phone = mobile;
+      }
+      await existingCustomer.save();
+      //get tier information
       const tier = await Tier.findById(existingCustomer.tier);
 
       return response_handler(res, 200, "Customer already registered", {
@@ -285,7 +301,7 @@ const registerCustomer = async (req, res) => {
     }
 
     // Get default tier (Bronze)
-    let defaultTier = await Tier.findOne({ points_required: 0 });
+    let defaultTier = await Tier.findOne({ hierarchy_level: 1 });
     if (!defaultTier) {
       // Create default Bronze tier if it doesn't exist
       defaultTier = await Tier.create({
@@ -356,34 +372,36 @@ const viewCustomer = async (req, res) => {
     }
 
     // Find next tier logic
-    let nextTier = null;
     let pointsNeeded = 0;
 
-    // Get all tiers sorted by points_required to find the maximum tier
-    const allTiers = await Tier.find({ isActive: true }).sort({
-      points_required: 1,
+    let nextTier = await Tier.findOne({
+      hierarchy_level: customer.tier.hierarchy_level + 1,
     });
 
-    if (allTiers.length > 0) {
-      const maxTier = allTiers[allTiers.length - 1]; // Highest tier (highest points_required)
+    if (!nextTier) {
+      nextTier = null;
+    }
 
-      // Check if customer is already at maximum tier
-      if (customer.tier._id.toString() === maxTier._id.toString()) {
-        nextTier = null; // Customer is at maximum tier
-      } else {
-        // Find the next tier (tier with higher points_required than current)
-        nextTier = allTiers.find(
-          (tier) => tier.points_required > customer.tier.points_required
-        );
+    // Get detailed tier progress information
+    let tierProgress = {};
+    try {
+      const tierController = require("../tier/tier.controller");
+      const progressResult = await tierController.getCustomerTierProgress(
+        customer._id,
+        null
+      );
 
-        if (nextTier) {
-          // Calculate points needed for next tier
-          pointsNeeded = Math.max(
-            0,
-            nextTier.points_required - customer.total_points
-          );
-        }
+      if (progressResult.success) {
+        tierProgress = {
+          next_tier_progress: progressResult.progress,
+          eligibility_status: progressResult.eligibility_status,
+        };
       }
+    } catch (progressError) {
+      logger.error(`Error getting tier progress: ${progressError.message}`, {
+        customer_id,
+        error: progressError.stack,
+      });
     }
 
     const responseData = {
@@ -397,13 +415,10 @@ const viewCustomer = async (req, res) => {
             required_point: pointsNeeded.toString(),
             en: nextTier.name.en || nextTier.name,
             ar: nextTier.name.ar || nextTier.name,
+            // Include tier progress information if available
+            ...tierProgress,
           }
         : null,
-      // : {
-      //   required_point: 0,
-      //   en: "Congratulations! You are a Gold Member",
-      //   ar: "تهانينا! أنت عضو ذهبي",
-      // },
     };
 
     logger.info(`Customer details retrieved: ${customer_id}`);
@@ -429,7 +444,7 @@ const viewCustomer = async (req, res) => {
 const addPoints = async (req, res) => {
   const transaction = new SafeTransaction();
   const session = await transaction.start();
-
+  let responseData = {};
   try {
     const {
       payment_method,
@@ -599,7 +614,9 @@ const addPoints = async (req, res) => {
               console.log("itemPoints", itemPoints);
             } else {
               //flat points
-              itemPoints = price * pointSystemEntry.pointRate;
+
+              itemPoints = pointSystemEntry.pointRate;
+              console.log("test", itemPoints);
             }
 
             // Ensure points is a valid number
@@ -608,6 +625,7 @@ const addPoints = async (req, res) => {
             }
 
             totalPointsAwarded += itemPoints;
+            console.log(totalPointsAwarded);
             transactionDetails.push({
               criteria_code,
               price,
@@ -771,37 +789,48 @@ const addPoints = async (req, res) => {
       }
 
       // Check for tier upgrade
-      const availableTiers = await Tier.find({})
-        .sort({ points_required: 1 })
-        .session(session);
-      let newTier = customer.tier;
-
-      for (const tier of availableTiers) {
-        if (updatedCustomer.total_points >= tier.points_required) {
-          newTier = tier;
-        }
-      }
-      // Update tier if changed
-      if (newTier._id.toString() !== customer.tier._id.toString()) {
-        await Customer.findByIdAndUpdate(
+      try {
+        const tierController = require("../tier/tier.controller");
+        const tierUpgradeResult = await tierController.checkAndUpgradeTier(
           customer._id,
-          { tier: newTier._id },
-          { session }
+          null,
+          session
         );
 
-        logger.info(`Customer tier upgraded: ${customer_id}`, {
-          customer_id,
-          from_tier: customer.tier.name,
-          to_tier: newTier.name,
-          upgrade_details: `Points-based upgrade: ${updatedCustomer.total_points} points`,
-        });
+        if (tierUpgradeResult.upgraded) {
+          logger.info(
+            `Customer tier upgraded during point earning: ${customer_id}`,
+            {
+              customer_id,
+              from_tier: tierUpgradeResult.previousTier.name,
+              to_tier: tierUpgradeResult.newTier.name,
+              points: updatedCustomer.total_points,
+            }
+          );
+
+          // Add tier upgrade info to response
+          responseData.tier_upgrade = {
+            upgraded: true,
+            previous_tier: tierUpgradeResult.previousTier.name,
+            new_tier: tierUpgradeResult.newTier.name,
+          };
+        }
+      } catch (tierUpgradeError) {
+        // Log error but don't fail the transaction
+        logger.error(
+          `Error checking tier upgrade: ${tierUpgradeError.message}`,
+          {
+            customer_id,
+            error: tierUpgradeError.stack,
+          }
+        );
       }
     }
 
     await transaction.commit();
 
     // Prepare response data
-    const responseData = {
+    responseData = {
       points_awarded: totalPointsAwarded,
       point_balance: updatedCustomer.total_points,
     };
@@ -886,62 +915,66 @@ const redeemPoints = async (req, res) => {
       await transaction.abort();
       return response_handler(res, 404, "App type requested by not found");
     }
-    const redemptionRules = await RedemptionRules.findOne({
-      is_active: true,
-      appType: appType._id,
-    }).session(session);
 
-    if (!redemptionRules) {
-      logger.info(`No redemption rules found for ${requested_by}`);
-    }
-    if (redemptionRules) {
-      // Check minimum points requirement
-      if (pointsToRedeem < redemptionRules.minimum_points_required) {
-        await transaction.abort();
-        return response_handler(
-          res,
-          400,
-          `Minimum points required for redemption is ${redemptionRules.minimum_points_required}`
-        );
-      }
+    //!not for kedhmah
+    // const redemptionRules = await RedemptionRules.findOne({
+    //   is_active: true,
+    //   appType: appType._id,
+    // }).session(session);
 
-      // Check daily points limit
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todaysRedemptions = await Transaction.aggregate([
-        {
-          $match: {
-            customer_id: customer._id,
-            transaction_type: "redeem",
-            transaction_date: { $gte: today },
-            status: "completed",
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            totalPoints: { $sum: "$points" },
-          },
-        },
-      ]).session(session);
+    // console.log("redemptionRules", redemptionRules);
 
-      const pointsRedeemedToday = Math.abs(
-        todaysRedemptions[0]?.totalPoints || 0
-      );
+    // if (!redemptionRules) {
+    //   logger.info(`No redemption rules found for ${requested_by}`);
+    // }
+    // if (redemptionRules) {
+    //   // Check minimum points requirement
+    //   if (pointsToRedeem < redemptionRules.minimum_points_required) {
+    //     await transaction.abort();
+    //     return response_handler(
+    //       res,
+    //       400,
+    //       `Minimum points required for redemption is ${redemptionRules.minimum_points_required}`
+    //     );
+    //   }
 
-      if (
-        pointsRedeemedToday + pointsToRedeem >
-        redemptionRules.maximum_points_per_day
-      ) {
-        await transaction.abort();
-        return response_handler(
-          res,
-          400,
-          `Daily redemption limit of ${redemptionRules.maximum_points_per_day} points would be exceeded`
-        );
-      }
-      // Apply tier multiplier if exists
-    }
+    //   // Check daily points limit
+    //   const today = new Date();
+    //   today.setHours(0, 0, 0, 0);
+    //   const todaysRedemptions = await Transaction.aggregate([
+    //     {
+    //       $match: {
+    //         customer_id: customer._id,
+    //         transaction_type: "redeem",
+    //         transaction_date: { $gte: today },
+    //         status: "completed",
+    //       },
+    //     },
+    //     {
+    //       $group: {
+    //         _id: null,
+    //         totalPoints: { $sum: "$points" },
+    //       },
+    //     },
+    //   ]).session(session);
+
+    //   const pointsRedeemedToday = Math.abs(
+    //     todaysRedemptions[0]?.totalPoints || 0
+    //   );
+
+    //   if (
+    //     pointsRedeemedToday + pointsToRedeem >
+    //     redemptionRules.maximum_points_per_day
+    //   ) {
+    //     await transaction.abort();
+    //     return response_handler(
+    //       res,
+    //       400,
+    //       `Daily redemption limit of ${redemptionRules.maximum_points_per_day} points would be exceeded`
+    //     );
+    //   }
+    //   // Apply tier multiplier if exists
+    // }
 
     // Use FIFO redemption logic
     const fifoResult = await redeemPointsFIFO(
@@ -952,6 +985,7 @@ const redeemPoints = async (req, res) => {
 
     if (!fifoResult.success) {
       await transaction.abort();
+      console.log("fifoResult", fifoResult);
       return response_handler(res, 400, fifoResult.message);
     }
 
@@ -964,6 +998,27 @@ const redeemPoints = async (req, res) => {
         },
       },
       { new: true, session }
+    );
+
+    // Create transaction record for the redemption
+    await Transaction.create(
+      [
+        {
+          customer_id: customer._id,
+          transaction_id: transaction_id,
+          transaction_type: "redeem",
+          points: -fifoResult.redeemedPoints, // Negative for redemption
+          status: "completed",
+          note: "Points redeemed for purchase",
+          metadata: {
+            total_spent,
+            requested_by,
+          },
+          transaction_date: new Date(),
+          app_type: appType._id,
+        },
+      ],
+      { session }
     );
 
     await transaction.commit();
@@ -1221,8 +1276,15 @@ const getTransactionHistory = async (req, res) => {
     // Calculate skip for pagination
     const skip = (page - 1) * limit;
 
-    // Get transactions with pagination
-    const transactions = await Transaction.find({ customer_id: customer._id })
+    // Calculate the date one year ago from today
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+    // Get transactions with pagination and only last 1 year
+    const transactions = await Transaction.find({
+      customer_id: customer._id,
+      transaction_date: { $gte: oneYearAgo },
+    })
       .sort({ transaction_date: -1 })
       .skip(skip)
       .limit(parseInt(limit))
@@ -1235,28 +1297,33 @@ const getTransactionHistory = async (req, res) => {
 
     // Format transactions for frontend
     const formattedTransactions = transactions.map((transaction) => {
-      const isEarned =
-        transaction.transaction_type === "earn" ||
-        (transaction.transaction_type === "adjust" && transaction.points > 0);
-
+      if (transaction.transaction_type === "earn") {
+        title = "Points Earned";
+      } else if (transaction.transaction_type === "redeem") {
+        title = "Points Redeemed";
+      } else if (transaction.transaction_type === "adjust") {
+        title = "Points Adjusted";
+      } else if (transaction.transaction_type === "expire") {
+        title = "Points Expired";
+      } else if (transaction.transaction_type === "tier_downgrade") {
+        title = "Tier Downgrade";
+      } else if (transaction.transaction_type === "tier_upgrade") {
+        title = "Tier Upgrade";
+      } else if (transaction.transaction_type === "offer-redeem") {
+        title = "Offer Redeemed";
+      }
       return {
         id: transaction._id,
-        type: isEarned ? "earned" : "burned",
-        title: isEarned ? "Points Earned" : "Points Redeemed",
+        type: transaction.transaction_type,
+        title: title,
         description: transaction.note || "Transaction",
         points: Math.abs(transaction.points),
-        date: new Date(transaction.transaction_date).toLocaleDateString(
-          "en-GB",
-          {
-            day: "2-digit",
-            month: "2-digit",
-            year: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-          }
-        ),
+        date: moment(transaction.transaction_date)
+          .tz("Asia/Muscat")
+          .format("DD/MM/YY HH:mm"),
         transaction_id: transaction.transaction_id,
         status: transaction.status,
+        metadata: transaction.metadata,
       };
     });
 
@@ -1303,38 +1370,119 @@ const getTransactionHistory = async (req, res) => {
 
 const getMerchantOffers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, type, categoryId } = req.query;
-    const filter = {};
-    if (type) {
-      filter.type = type;
-    }
-    if (categoryId) filter.couponCategoryId = categoryId;
-    const coupons = await CouponCode.find(filter)
-      .populate("merchantId")
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
-      .sort({ createdAt: 1 });
+    const {
+      page = 1,
+      limit = 10,
+      type,
+      categoryId,
+      customer_id,
+      brandId,
+      search = "",
+    } = req.query;
 
-    //replace a string  like api-uat-loyalty.xyvin.com in image url with 141.105.172.45:7733/api
-    coupons.forEach((coupon) => {
-      coupon.posterImage = coupon.posterImage.replace(
-        "http://api-uat-loyalty.xyvin.com/",
-        "http://141.105.172.45:7733/api/"
-      );
+    const filter = {};
+    if (type) filter.type = type;
+    if (categoryId) filter.couponCategoryId = categoryId;
+    if (search && search.trim()) {
+      const searchRegex = { $regex: search.trim(), $options: "i" };
+      filter.$or = [
+        { "title.en": searchRegex },
+        { "title.ar": searchRegex },
+        { "description.en": searchRegex },
+        { "description.ar": searchRegex },
+      ];
+
+      // We need to handle merchant name and category name search differently
+      // since they are in referenced collections
+      const merchantFilter = {
+        $or: [{ "title.en": searchRegex }, { "title.ar": searchRegex }],
+      };
+      const categoryFilter = {
+        $or: [{ "title.en": searchRegex }, { "title.ar": searchRegex }],
+      };
+
+      // We'll use aggregation to find matching merchants and categories
+      const merchantPromise = mongoose
+        .model("CouponBrand")
+        .find(merchantFilter)
+        .select("_id");
+      const categoryPromise = mongoose
+        .model("CouponCategory")
+        .find(categoryFilter)
+        .select("_id");
+
+      // Wait for both queries to complete
+      const [matchingMerchants, matchingCategories] = await Promise.all([
+        merchantPromise,
+        categoryPromise,
+      ]);
+
+      // If we found matching merchants or categories, add them to the filter
+      if (matchingMerchants.length > 0) {
+        const merchantIds = matchingMerchants.map((m) => m._id);
+        if (!filter.$or) filter.$or = [];
+        filter.$or.push({ merchantId: { $in: merchantIds } });
+      }
+
+      if (matchingCategories.length > 0) {
+        const categoryIds = matchingCategories.map((c) => c._id);
+        if (!filter.$or) filter.$or = [];
+        filter.$or.push({ couponCategoryId: { $in: categoryIds } });
+      }
+    }
+
+    let allCoupons = await CouponCode.find(filter)
+      .populate("merchantId")
+      .populate("couponCategoryId")
+      .sort({ priority: 1 });
+
+    //add a field such as eligible for user tier true or false based on coupon tier eligibilty
+    const customer = await Customer.findOne({ customer_id: customer_id });
+    if (customer) {
+      allCoupons.forEach((coupon) => {
+        if (coupon.eligibilityCriteria.tiers.includes(customer.tier)) {
+          coupon.eligible_for_tier = true;
+        } else {
+          coupon.eligible_for_tier = false;
+        }
+      });
+    }
+
+    // Replace URLs
+    allCoupons.forEach((coupon) => {
+      if (coupon.posterImage) {
+        coupon.posterImage = coupon.posterImage.replace(
+          "http://api-uat-loyalty.xyvin.com/",
+          "http://141.105.172.45:7733/api/"
+        );
+      }
+      if (coupon.merchantId?.image) {
+        coupon.merchantId.image = coupon.merchantId.image.replace(
+          "http://api-uat-loyalty.xyvin.com/",
+          "http://141.105.172.45:7733/api/"
+        );
+      }
     });
-    coupons.forEach((coupon) => {
-      coupon.merchantId.image = coupon.merchantId.image.replace(
-        "http://api-uat-loyalty.xyvin.com/",
-        "http://141.105.172.45:7733/api/"
-      );
-    });
-    const total = await CouponCode.countDocuments();
+
+    let sortedCoupons = allCoupons;
+    if (brandId) {
+      sortedCoupons = allCoupons.sort((a, b) => {
+        const aIsBrand = a.merchantId?._id?.toString() === brandId;
+        const bIsBrand = b.merchantId?._id?.toString() === brandId;
+        return bIsBrand - aIsBrand;
+      });
+    }
+    const total = sortedCoupons.length;
+    const paginatedCoupons = sortedCoupons.slice(
+      (page - 1) * limit,
+      page * limit
+    );
 
     return response_handler(
       res,
       200,
       "All coupons retrieved successfully",
-      coupons,
+      paginatedCoupons,
       total
     );
   } catch (error) {
@@ -1348,21 +1496,31 @@ const getCouponBrands = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skipCount = (page - 1) * limit;
+    const search = req.query.search || "";
 
     const filter = {};
+
+    if (search) {
+      filter["title.en"] = { $regex: search, $options: "i" }; // case-insensitive search
+    }
 
     const couponBrands = await CouponBrand.find(filter)
       .skip(skipCount)
       .limit(limit)
       .sort({ priority: -1 })
       .lean();
+
     couponBrands.forEach((brand) => {
-      brand.image = brand.image.replace(
-        "http://api-uat-loyalty.xyvin.com/",
-        "http://141.105.172.45:7733/api/"
-      );
+      if (brand.image) {
+        brand.image = brand.image.replace(
+          "http://api-uat-loyalty.xyvin.com/",
+          "http://141.105.172.45:7733/api/"
+        );
+      }
     });
-    const total_count = await CouponBrand.countDocuments();
+
+    const total_count = await CouponBrand.countDocuments(filter);
+
     return response_handler(
       res,
       200,
@@ -1374,25 +1532,37 @@ const getCouponBrands = async (req, res) => {
     return response_handler(res, 500, "Error retrieving coupon brands", error);
   }
 };
+
 const getAllCategories = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skipCount = (page - 1) * limit;
+    const search = req.query.search || "";
 
     const filter = {};
+
+    if (search) {
+      filter["title.en"] = { $regex: search, $options: "i" }; // Case-insensitive search on English title
+    }
+
     const couponCategories = await CouponCategory.find(filter)
       .skip(skipCount)
       .limit(limit)
       .sort({ priority: -1 })
       .lean();
+
     couponCategories.forEach((category) => {
-      category.image = category.image.replace(
-        "http://api-uat-loyalty.xyvin.com/",
-        "http://141.105.172.45:7733/api/"
-      );
+      if (category.image) {
+        category.image = category.image.replace(
+          "http://api-uat-loyalty.xyvin.com/",
+          "http://141.105.172.45:7733/api/"
+        );
+      }
     });
-    const total_count = await CouponCategory.countDocuments();
+
+    const total_count = await CouponCategory.countDocuments(filter);
+
     return response_handler(
       res,
       200,
@@ -1424,6 +1594,7 @@ const getCouponDetails = async (req, res) => {
         "http://141.105.172.45:7733/api/"
       );
     }
+
     return response_handler(
       res,
       200,

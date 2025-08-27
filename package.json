@@ -42,6 +42,7 @@
     "mongoose": "^8.10.1",
     "multer": "^1.4.5-lts.2",
     "multer-s3": "^3.0.1",
+    "mysql2": "^3.14.3",
     "nodemon": "^3.1.9",
     "prom-client": "^14.2.0",
     "swagger-jsdoc": "^6.2.8",

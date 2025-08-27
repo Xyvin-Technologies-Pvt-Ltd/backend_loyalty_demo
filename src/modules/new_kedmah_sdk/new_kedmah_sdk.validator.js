@@ -16,7 +16,10 @@ const registerCustomerSchema = Joi.object({
  */
 const viewCustomerSchema = Joi.object({
   customer_id: Joi.string().trim().max(50).required(),
+  page: Joi.number().integer().min(1).optional(),
+  limit: Joi.number().integer().min(1).optional()
 });
+
 
 /**
  * Validation schema for adding points

@@ -34,14 +34,21 @@ exports.getAllCouponCategories = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skipCount = (page - 1) * limit;
 
+    const searchQuery = req.query.search || "";
+
     const filter = {};
+    if (searchQuery) {
+      filter["title.en"] = { $regex: searchQuery, $options: "i" }; 
+    }
+
     const couponCategories = await CouponCategory.find(filter)
       .skip(skipCount)
       .limit(limit)
       .sort({ _id: -1 })
       .lean();
 
-    const total_count = await CouponCategory.countDocuments();
+    const total_count = await CouponCategory.countDocuments(filter);
+
     return response_handler(
       res,
       200,

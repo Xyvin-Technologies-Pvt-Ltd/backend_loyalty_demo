@@ -13,10 +13,7 @@ const helmet = require("helmet");
 const { xss } = require("express-xss-sanitizer");
 const compression = require("compression");
 const { env } = require("./env");
-const {
-  metricsMiddleware,
-  metricsEndpoint,
-} = require("../middlewares/metrics.middleware");
+
 
 // Get the appropriate upload path based on environment
 function getUploadPath() {
@@ -33,10 +30,7 @@ function getUploadPath() {
   }
 }
 
-/**
- * Initialize Express application with common middleware
- * @returns {Object} Configured Express application
- */
+
 function initializeExpress() {
   // Create Express application
   const app = express();
@@ -116,23 +110,10 @@ function initializeExpress() {
     })
   );
 
-  console.log(`📂 Static files served from: ${uploadPath} → /uploads/*`);
 
-  // Apply metrics middleware
-  app.use(metricsMiddleware);
 
-  // Expose metrics endpoint
-  app.get("/metrics", metricsEndpoint);
 
-  // CORS test endpoint for debugging
-  app.get("/cors-test", (req, res) => {
-    res.json({
-      success: true,
-      message: "CORS is working correctly",
-      origin: req.get("origin"),
-      timestamp: new Date().toISOString(),
-    });
-  });
+ 
 
   // Apply request logging middleware
   app.use(request_logger);

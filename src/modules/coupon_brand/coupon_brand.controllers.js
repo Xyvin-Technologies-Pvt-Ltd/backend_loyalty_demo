@@ -3,7 +3,7 @@ const response_handler = require("../../helpers/response_handler");
 const { createCouponBrand } = require("./coupon_brand.validators");
 
 exports.createCouponBrand = async (req, res) => {
-  const { title, description, image , priority} = req.body;
+  const { title, description, image, priority } = req.body;
 
   try {
     const { error } = createCouponBrand.validate(req.body);
@@ -15,7 +15,12 @@ exports.createCouponBrand = async (req, res) => {
         error.details[0].message
       );
     }
-    const couponBrand = new CouponBrand({ title, description, image, priority });
+    const couponBrand = new CouponBrand({
+      title,
+      description,
+      image,
+      priority,
+    });
     await couponBrand.save();
     return response_handler(
       res,
@@ -33,9 +38,11 @@ exports.getAllCouponBrands = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skipCount = (page - 1) * limit;
-
+    const searchQuery = req.query.search || "";
     const filter = {};
-
+    if (searchQuery) {
+      filter["title.en"] = { $regex: searchQuery, $options: "i" };
+    }
     const couponBrands = await CouponBrand.find(filter)
       .skip(skipCount)
       .limit(limit)

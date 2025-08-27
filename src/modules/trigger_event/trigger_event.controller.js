@@ -32,7 +32,11 @@ exports.getAllTriggerEvents = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skipCount = (page - 1) * limit;
+    const searchQuery = req.query.search || "";
     const filter = {};
+    if (searchQuery) {
+      filter["name.en"] = { $regex: searchQuery, $options: "i" };
+    }
     const trigger_events = await TriggerEvent.find(filter)
       .skip(skipCount)
       .limit(limit)

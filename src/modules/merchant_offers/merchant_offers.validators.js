@@ -10,18 +10,19 @@ const createPreGeneratedCoupons = Joi.object({
     ar: Joi.string().required().allow(""),
   }),
   posterImage: Joi.string().required(),
-  code: Joi.alternatives().try(
-    Joi.array().items(
-      Joi.object({
-        pin: Joi.string().required(),
-        value: Joi.string()
-      })
-    ),
-    Joi.string()
-  ).optional(),
-  
-  
-  type:Joi.string(),
+  code: Joi.alternatives()
+    .try(
+      Joi.array().items(
+        Joi.object({
+          pin: Joi.string().required(),
+          value: Joi.string(),
+        })
+      ),
+      Joi.string()
+    )
+    .optional(),
+
+  type: Joi.string(),
   numberOfCodes: Joi.number(),
   codes: Joi.array().items(Joi.string()),
   redemptionUrl: Joi.string(),
@@ -32,7 +33,7 @@ const createPreGeneratedCoupons = Joi.object({
     endDate: Joi.date().greater(Joi.ref("startDate")).required(),
   }).required(),
   discountDetails: Joi.object({
-    type: Joi.string().valid("PERCENTAGE", "FIXED").required(),
+    type: Joi.string().valid("PERCENTAGE", "FIXED","BUY-1-GET-1").required(),
     value: Joi.number().required(),
   }).required(),
   redeemablePointsCount: Joi.number().min(0).default(0),
@@ -53,21 +54,22 @@ const createPreGeneratedCoupons = Joi.object({
     userLimit: Joi.number().allow(null).default(null),
   }).required(),
   conditions: Joi.array()
-  .items(
-    Joi.object({
-      appType: Joi.array().required(),
-      minTransactionValue: Joi.number().min(0).default(0),
-      maxTransactionValue: Joi.number().allow(null).default(null),
-      applicablePaymentMethods: Joi.array()
-        .items(Joi.string().valid("Khedmah-Pay", "Khedmah-Wallet", "ALL"))
-        .default(["ALL"]),
-    })
-  )
-  .default([]),
+    .items(
+      Joi.object({
+        appType: Joi.array().required(),
+        minTransactionValue: Joi.number().min(0).default(0),
+        maxTransactionValue: Joi.number().allow(null).default(null),
+        applicablePaymentMethods: Joi.array()
+          .items(Joi.string().valid("Khedmah-Pay", "Khedmah-Wallet", "ALL"))
+          .default(["ALL"]),
+      })
+    )
+    .default([]),
 
   termsAndConditions: Joi.array().items(Joi.string()),
   redemptionInstructions: Joi.string().allow(""),
   isActive: Joi.boolean().default(true),
+  priority: Joi.number().default(0),
 });
 
 const generateDynamicCoupon = Joi.object({
@@ -89,7 +91,7 @@ const generateDynamicCoupon = Joi.object({
     endDate: Joi.date().greater(Joi.ref("startDate")).required(),
   }).required(),
   discountDetails: Joi.object({
-    type: Joi.string().valid("PERCENTAGE", "FIXED").required(),
+    type: Joi.string().valid("PERCENTAGE", "FIXED","BUY-1-GET-1").required(),
     value: Joi.number().required(),
   }).required(),
   redeemablePointsCount: Joi.number().min(0).default(0),
@@ -109,6 +111,7 @@ const generateDynamicCoupon = Joi.object({
     maxTotalUsage: Joi.number().allow(null).default(null),
     userLimit: Joi.number().allow(null).default(null),
   }).required(),
+  
   conditions: Joi.object({
     minTransactionValue: Joi.number().min(0).default(0),
     maxTransactionValue: Joi.number().allow(null).default(null),
@@ -139,7 +142,7 @@ const createOneTimeLink = Joi.object({
     endDate: Joi.date().greater(Joi.ref("startDate")).required(),
   }).required(),
   discountDetails: Joi.object({
-    type: Joi.string().valid("PERCENTAGE", "FIXED").required(),
+    type: Joi.string().valid("PERCENTAGE", "FIXED","BUY-1-GET-1").required(),
     value: Joi.number().required(),
   }).required(),
   redeemablePointsCount: Joi.number().min(0).default(0),
@@ -191,10 +194,17 @@ const checkEligibility = Joi.object({
     .required(),
 });
 
+const redeemDynamicCoupon = Joi.object({
+  couponId: Joi.string().required(),
+  pin: Joi.string().required(),
+  customer_id: Joi.string().required(),
+});
+
 module.exports = {
   createPreGeneratedCoupons,
   generateDynamicCoupon,
   createOneTimeLink,
   validateCoupon,
   checkEligibility,
+  redeemDynamicCoupon,
 };

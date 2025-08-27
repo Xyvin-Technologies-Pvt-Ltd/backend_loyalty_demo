@@ -3,9 +3,9 @@ const Joi = require("joi");
 const pointsExpirationRulesValidation = Joi.object({
   default_expiry_period: Joi.number()
     .integer()
-    .min(1)
+    .min(0)
     .required()
-    .default(12)
+    .default(0)
     .description("Default expiry period in days"),
 
   appType: Joi.string().required(),
