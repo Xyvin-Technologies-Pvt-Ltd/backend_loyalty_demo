@@ -23,7 +23,7 @@ function getUploadPath() {
 
   if (isDocker) {
     // Docker container path (will be mounted as volume in production)
-    return "/app/uploads";
+    return "/usr/src/app/uploads";
   } else {
     // Local development path (relative to project root)
     return path.join(process.cwd(), "uploads");
