@@ -151,3 +151,5 @@ const generateUniqueCode = (eventName, serviceTypeName) => {
 
   return `${sanitizedEvent}-${sanitizedService}-${randomDigits}`;
 };
+
+

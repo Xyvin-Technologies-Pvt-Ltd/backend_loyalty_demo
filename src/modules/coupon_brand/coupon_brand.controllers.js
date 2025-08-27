@@ -98,3 +98,4 @@ exports.deleteCouponBrand = async (req, res) => {
     return response_handler(res, 500, "Error deleting coupon brand", error);
   }
 };
+
