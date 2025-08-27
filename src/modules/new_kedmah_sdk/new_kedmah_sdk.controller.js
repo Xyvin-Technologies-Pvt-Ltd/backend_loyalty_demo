@@ -1583,7 +1583,9 @@ const getAllCategories = async (req, res) => {
 const getCouponDetails = async (req, res) => {
   try {
     const { couponId } = req.params;
-    const coupon = await CouponCode.findById(couponId).populate("merchantId");
+    const { customer_id } = req.query;
+    const customer = await Customer.findOne({ customer_id });
+    const coupon = await CouponCode.findById(couponId).populate("merchantId couponCategoryId").lean();
     coupon.posterImage = coupon.posterImage.replace(
       "http://api-uat-loyalty.xyvin.com/",
       "http://141.105.172.45:7733/api/"
@@ -1593,6 +1595,20 @@ const getCouponDetails = async (req, res) => {
         "http://api-uat-loyalty.xyvin.com/",
         "http://141.105.172.45:7733/api/"
       );
+    }
+
+    console.log('tiers',coupon.eligibilityCriteria.tiers);
+    console.log('tier',customer.tier);
+
+    //add extra feld in response if the custoemr is eligible based in the tier he has the coupon eleigibilityCriteria.tiers
+    if (
+      coupon.eligibilityCriteria.tiers
+        .map(t => t.toString())
+        .includes(customer.tier.toString())
+    ) {
+      coupon.is_eligible = true;
+    } else {
+      coupon.is_eligible = false;
     }
 
     return response_handler(
