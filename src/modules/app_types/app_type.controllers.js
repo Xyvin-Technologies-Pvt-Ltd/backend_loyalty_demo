@@ -54,6 +54,26 @@ const deleteAppType = async (req, res) => {
     }
 };
 
+// function replaceBaseUrl(url) {
+//     if (!url) return url;
+  
+//     // Use regex to strip domain part and replace with new base
+//     return url.replace(/^https?:\/\/[^/]+/, "http://13.127.95.200");
+//   }
+  
+//   async function updateUrls() {
+//         const docs = await AppType.find({ icon: { $regex: "api-uat-loyalty.xyvin.com" } });
+  
+//     for (const doc of docs) {
+//       doc.icon = replaceBaseUrl(doc.icon);
+//       await doc.save();
+//     }
+  
+//     console.log("Updated all URLs successfully");
+//   }
+  
+//   updateUrls();
+
 module.exports = {
     createAppType,
     getAllAppTypes,

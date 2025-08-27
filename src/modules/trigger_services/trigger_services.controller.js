@@ -142,3 +142,5 @@ exports.getTriggerServicesByEventId = async (req, res) => {
     );
   }
 };
+
+
