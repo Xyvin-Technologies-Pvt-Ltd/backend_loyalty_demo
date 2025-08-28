@@ -15,7 +15,7 @@ const getPaymentMethods = async (req, res) => {
       .sort({ _id: -1 })
       .lean();
 
-    const total_count = await PaymentMethod.countDocuments();
+    const total_count = await PaymentMethod.countDocuments(filter);
 
     return response_handler(
       res,
