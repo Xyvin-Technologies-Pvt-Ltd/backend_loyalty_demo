@@ -15,7 +15,7 @@ const { runDatabaseSeeds } = require("./config/seeds");
 const { setupGracefulShutdown } = require("./config/shutdown");
 
 /**
- * Initialize and start the server
+ * Initialize and start the servern
  */
 async function startServer() {
   try {
