@@ -377,6 +377,7 @@ const registerCustomer = async (req, res) => {
 const viewCustomer = async (req, res) => {
   try {
     const { customer_id } = req.body;
+    console.log("customer_id", customer_id);
 
     // Validate required fields
     if (!customer_id) {
