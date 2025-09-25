@@ -168,7 +168,7 @@ tierEligibilityCriteriaSchema.methods.validateCustomerEligibility =
             $gte: periodStart,
             $lte: periodEnd,
           },
-          transaction_type: { $in: ["earn", "adjust"] },
+          transaction_type: { $in: ["earn"] },
           status: "completed",
         }).session(session);
 

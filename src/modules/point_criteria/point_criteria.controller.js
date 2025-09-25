@@ -50,21 +50,35 @@ exports.create = async (req, res) => {
 
 exports.list = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skipCount = (page - 1) * limit;
+    const searchQuery = req.query.search || "";
     const { appType } = req.query;
-
     const filter = {};
+
+    if (searchQuery) {
+      filter["unique_code"] = { $regex: searchQuery, $options: "i" };
+    }
+
     if (appType) {
       filter.appType = appType;
     }
     const criteria = await Criteria.find(filter)
       .populate("eventType")
       .populate("serviceType")
-      .populate("appType");
+      .populate("appType")
+      .skip(skipCount)
+      .limit(limit)
+      .sort({ _id: -1 })
+      .lean();
+    const total_count = await Criteria.countDocuments(filter);
     return response_handler(
       res,
       200,
       "Criteria fetched successfully!",
-      criteria
+      criteria,
+      total_count
     );
   } catch (error) {
     return response_handler(

@@ -48,7 +48,7 @@ exports.getAllCouponBrands = async (req, res) => {
       .limit(limit)
       .sort({ _id: -1 })
       .lean();
-    const total_count = await CouponBrand.countDocuments();
+    const total_count = await CouponBrand.countDocuments(filter);
     return response_handler(
       res,
       200,
